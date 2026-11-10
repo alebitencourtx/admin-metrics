@@ -7,11 +7,17 @@ Observatório executivo dos oito reportes Admin Santander, com atualização rem
 - **[Executar ou consultar o ETL](https://github.com/alebitencourtx/admin-metrics/actions/workflows/pages.yml)**.
 - [Plano anterior à implementação](PLAN.md).
 
+## Documentação atualizada
+
+A referência completa é o [HTML único publicado](https://alebitencourtx.github.io/admin-metrics/documentacao.html), com [índice das fontes e manutenção](docs/README.md). Além de arquitetura, fluxo, ER e uso das sete seções, inclui dicionário JSON/Arrow/SQL, schemas reais do DuckDB, todos os estados de intervalo, exemplos de interpretação, regras fixas versus configuráveis, recuperação e cópias dos workflows/configurações.
+
+O checkout local fica em `teste-opendata/admin-metrics/`, ao lado de `observatory-opendata/`. São repositórios e ambientes independentes. A agenda deste monitor não atualiza o OpenData.
+
 ## Escopo e interpretação
 
 Consulta somente `GET /open-banking/admin/v2/metrics` dos oito hosts em `config/reporters.json`. **Não chama serviços de clientes ou pagamentos listados dentro do relatório.** O vínculo de URL/CNPJ foi verificado no Diretório oficial, com comprovante em `config/catalog-evidence.json`.
 
-Duas medições distintas: duração da nossa tentativa HTTP ao Admin e médias dos serviços declaradas pelo banco. Média não é p95. Erros não identificam seus status HTTP, rejeições não provam 429 e acesso recusado ao Admin não comprova indisponibilidade dos demais serviços. Critérios analíticos não são laudo de conformidade regulatória.
+Duas medições distintas: duração da nossa tentativa HTTP ao Admin e médias dos serviços declaradas pelo banco. Média não é p95. Erros não identificam seus status HTTP, rejeições não provam 429 e acesso recusado ao Admin não comprova indisponibilidade dos demais serviços. Critérios analíticos não são laudo de conformidade regulatória. “Confirmado por persistência” significa repetir um sinal acima do limiar em duas observações; pode ocorrer com cumulativos sem mudança e não demonstra novos erros no intervalo.
 
 A análise preliminar foi conferida independentemente. Na coleta de implementação, os oito reportes retornaram HTTP 200 e 276 identidades; o Santander principal declarou páginas excedentes apesar de já cobrir o total de registros. A divergência de aproximadamente três horas em requestTime permanece sinalizada, sem correção silenciosa. Dados publicados são reais; a série observada cresce a partir da primeira execução remota, sem inventar coletas anteriores.
 
@@ -70,7 +76,7 @@ GitHub Actions agenda por melhor esforço: pode atrasar e pode desabilitar sched
 
 ## Estado, retenção e recuperação
 
-Observações e tentativas normalizadas: **30 dias**, cerca de 360 ciclos. Bronze: **coleta atual e anterior**. Incidentes abertos persistem; resolvidos por 30 dias. `state.json` contém os eventos de falha, mesmo quando nenhuma fonte retorna dados válidos. Configuração de regras usada é registrada por execução.
+Observações e tentativas normalizadas: **30 dias**, cerca de 360 ciclos. Bronze no estado atual: **dois últimos ciclos**. Cada backup aprovado tem sua própria janela; a união de atual/anterior pode conter bytes de três ciclos. A poda temporal é aplicada após uma nova coleta. Incidentes abertos persistem; resolvidos por 30 dias. `state.json` contém os eventos de falha, mesmo quando nenhuma fonte retorna dados válidos. Configuração de regras usada é registrada por execução.
 
 GitHub Releases mantém **dois pacotes aprovados**, atual e anterior. Cada um contém estado limitado e os bronzes dos dois ciclos recentes, com manifesto e SHA256SUMS. Dados novos não entram no histórico Git. Restore verifica checksum externo/interno, referências recentes, nomes permitidos, duplicatas e expansão limitada. Hashes históricos permanecem, mas os bytes bronze mais antigos podem ter expirado.
 

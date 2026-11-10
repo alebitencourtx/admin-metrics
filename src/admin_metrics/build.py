@@ -69,7 +69,7 @@ def build(state, root, output, rules, reporters):
         raw = encoded(payload)
         atomic(stage / 'data.js', b'window.ADMIN_DATA=' + raw + b';\n')
         atomic(stage / 'dashboard.json', raw)
-        generate(payload, stage / 'documentacao.html')
+        generate(payload, stage / 'documentacao.html', db_path)
         asset_id = sha(b''.join(p.read_bytes() for p in sorted(stage.iterdir())))[:20]
         destination = output / 'assets' / asset_id
         destination.parent.mkdir(exist_ok=True)
