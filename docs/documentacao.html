@@ -1,0 +1,1048 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Documentação funcional e técnica completa do Admin Metrics. Arquitetura, regras, dados, operação e uso do dashboard."><title>Admin Metrics · Documentação funcional e técnica</title><style>
+:root{font-family:Inter,'Segoe UI',Arial,sans-serif;color:#172c3b;background:#f5f7f9;line-height:1.8;font-size:14px;--teal:#087f73;--line:#e2e9ed}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:25px}body{margin:0}a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}aside{position:fixed;inset:0 auto 0 0;width:250px;background:#122331;color:white;padding:30px 22px;overflow:auto}.brand{font-size:23px;font-weight:600;letter-spacing:-.7px;color:white}.brand small{display:block;font-size:9px;letter-spacing:1.4px;color:#8fb9b4;margin-top:6px}aside input{width:100%;padding:11px;margin:25px 0 16px;border-radius:5px;border:1px solid #ffffff2a;background:#ffffff0d;color:white;font:inherit;font-size:11px}nav a{display:block;color:#b3c5d0;padding:10px 8px;font-size:11px;border-radius:5px}nav a:hover{background:#ffffff0b;color:#7bd3c1;text-decoration:none}nav a.active{background:#0a867728;color:#83d7cb}.aside-foot{margin-top:30px;border-top:1px solid #ffffff15;padding-top:20px;font-size:10px;color:#8fa8b7}.aside-foot a{display:block;color:#addbd1;margin-top:10px}main{margin-left:250px;padding:35px 5vw;max-width:1550px}.hero{background:#17333f;color:white;border-radius:14px;padding:38px;position:relative;overflow:hidden}.hero:after{content:'';position:absolute;width:200px;height:200px;right:-90px;top:-80px;border:45px solid #44847d24;border-radius:50%}.eyebrow{font-size:10px;letter-spacing:1.7px;font-weight:600;color:#73cabb;margin-bottom:15px}h1{font-size:38px;line-height:1.2;letter-spacing:-1px;max-width:700px;font-weight:580;margin:0 0 20px}h2{font-size:25px;font-weight:630;letter-spacing:-.5px;margin:10px 0 20px}h3{font-size:17px;margin:28px 0 12px}h4{font-size:14px;margin-bottom:8px}p{margin:12px 0}small{font-size:11px;color:#718793}.hero p{color:#b9ced8;max-width:750px;font-size:13px}.meta{display:flex;gap:22px;flex-wrap:wrap;color:#91b9bb;font-size:10px;margin-top:28px}.toolbar{display:flex;justify-content:space-between;align-items:center;margin:22px 0;color:#718793;font-size:11px}.button{display:inline-block;background:white;border:1px solid #dce4e9;border-radius:6px;padding:9px 15px;font:inherit;font-size:11px;color:var(--teal);cursor:pointer}.doc-section{margin:32px 0;padding:30px;background:white;border:1px solid var(--line);border-radius:12px;scroll-margin-top:25px}.number{font-size:9px;color:var(--teal);letter-spacing:1.4px;font-weight:700}.intro{font-size:15px;color:#637985;line-height:1.9}.callout{border-left:3px solid var(--teal);background:#edf7f4;padding:15px 18px;font-size:12px;margin:20px 0;border-radius:4px}.callout.amber{background:#fff6e7;border-color:#b48c43}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.tile{border:1px solid var(--line);border-radius:9px;padding:20px;background:#fbfcfd;font-size:12px}.tile h4{margin:0 0 10px}.tile p{color:#657b88}.table-scroll{overflow:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:11px}td,th{padding:12px 14px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}th{background:#f3f6f8;font-size:10px;color:#607783;font-weight:600;white-space:nowrap}td{overflow-wrap:anywhere;min-width:100px}li{margin:9px 0}ul,ol{padding-left:23px;font-size:13px}code{font-family:Consolas,monospace;font-size:11px;background:#f0f4f6;padding:2px 4px;border-radius:3px;overflow-wrap:anywhere}pre{background:#152b37;color:#d2e6ec;padding:20px;border-radius:8px;overflow:auto;max-height:600px;line-height:1.7;font-size:11px}pre code{background:none;padding:0;color:inherit;font-size:inherit}details{border:1px solid var(--line);border-radius:7px;margin:12px 0;padding:10px 15px}summary{cursor:pointer;font-size:12px;color:#41626d;font-weight:600}svg{max-width:100%;height:auto;display:block;margin:20px auto}svg text{font-family:'Segoe UI',Arial,sans-serif}footer{font-size:10px;color:#718793;padding:20px 0}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #34b29f;outline-offset:3px}.search-hidden{display:none}.no-results{color:#a55a2e;font-size:11px}[hidden]{display:none!important}
+@media(max-width:1000px){aside{width:210px;padding:25px 16px}main{margin-left:210px;padding:30px 3vw}h1{font-size:31px}.doc-section{padding:25px}.grid{grid-template-columns:1fr}}@media(max-width:700px){aside{position:relative;width:auto;padding:20px}aside input{margin:15px 0}nav{display:flex;overflow:auto}nav a{white-space:nowrap;padding:8px 12px}.aside-foot{display:none}main{margin:0;padding:20px 14px}.hero{padding:25px}h1{font-size:29px}.doc-section{padding:22px 18px}h2{font-size:23px}.toolbar{align-items:start;gap:15px}.meta{gap:12px}.table-scroll{margin-inline:-10px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}@media print{aside,.toolbar{display:none}main{margin:0;padding:0}.hero{print-color-adjust:exact}.doc-section{border:0;padding:15px 0;break-inside:avoid}pre{white-space:pre-wrap;max-height:none}details:not([open]){display:none}.search-hidden{display:block}.grid{grid-template-columns:1fr 1fr}a{color:#172c3b}}
+</style></head><body><aside><a href="#inicio" class="brand">◉ Observatory<small>ADMIN METRICS · DOCUMENTAÇÃO</small></a><label for="search" hidden>Pesquisar documentação</label><input id="search" type="search" placeholder="Pesquisar no manual…" aria-label="Pesquisar no manual"><p id="no-results" class="no-results" hidden>Nenhuma seção encontrada.</p><nav aria-label="Índice do manual"><a href="#contexto">01 · Contexto e escopo</a><a href="#fontes">02 · Origens e integrações</a><a href="#solucao">03 · Desenho de solução</a><a href="#fluxo">04 · Fluxo e publicação</a><a href="#modelo">05 · Dados e entidades</a><a href="#regras">06 · Regras funcionais</a><a href="#dashboard">07 · Uso do dashboard</a><a href="#stack">08 · Stack e código</a><a href="#operacao">09 · Operação e recuperação</a><a href="#evidencias">10 · Evidências e limites</a></nav><div class="aside-foot">HTML único · leitura offline<br>Sem CDN, fontes ou scripts externos.<a href="https://alebitencourtx.github.io/admin-metrics/">Dashboard publicado ↗</a><a href="https://github.com/alebitencourtx/admin-metrics">Repositório público ↗</a></div></aside><main id="inicio"><header class="hero"><div class="eyebrow">DOCUMENTAÇÃO FUNCIONAL + TÉCNICA</div><h1>Da métrica reportada à decisão informada.</h1><p>Guia completo do monitor Santander: escopo, fontes, contratos, arquitetura, regras analíticas, operação remota e interpretação do dashboard.</p><div class="meta"><span>VERSÃO 1.0.0</span><span>OBSERVAÇÃO 2026-11-10T18:37:28+00:00</span><span>276 ENDPOINTS NO CONTEXTO ATUAL</span></div></header><div class="toolbar"><span>Documento vinculado à execução <code>initial-local-20261110</code></span><button class="button" id="print">Imprimir / salvar PDF</button></div>
+<section id="contexto" class="doc-section"><div class="number">01 / CONTEXTO E ESCOPO</div><h2>Monitorar o que é observável.</h2><p class="intro">Admin Metrics acompanha oito reportes operacionais Santander publicados via GET /open-banking/admin/v2/metrics. Combina métricas agregadas declaradas pelo banco com a medição independente da consulta ao próprio Admin.</p><div class="grid"><article class="tile"><h4>Decisões apoiadas</h4><p>Identificar concentração de erros, médias elevadas, rejeições, recorrência no histórico reportado, falhas de acesso e inconsistências de dados. Priorizar investigação com volume, instante e evidência.</p></article><article class="tile"><h4>Perímetro</h4><p>Banco Santander, Toro, CCVM, Aymoré, Getnet, Hyundai e os reportes RCI Nissan/Renault. A associação é operacional pelo Diretório; não é atestado de controle societário. Não coletamos dados de clientes nem executamos pagamentos.</p></article></div><div class="callout">Duas latências distintas: <strong>duração Admin</strong> é o tempo observado da nossa tentativa HTTP; <strong>média declarada</strong> é o averageResponse informado pelo banco para o serviço. Nenhuma delas equivale a p95.</div><p>O projeto OpenData existente foi movido integralmente para <code>observatory-opendata/</code>. Este monitor está em <code>admin-metrics/</code>, com repositório e Pages independentes, para isolar publicação, agenda e estado. O plano foi escrito antes da implementação.</p></section>
+<section id="fontes" class="doc-section"><div class="number">02 / ORIGENS E INTEGRAÇÕES</div><h2>Um catálogo explícito e verificável.</h2><p>O catálogo <code>config/reporters.json</code> é conferido contra o <a href="https://data.directory.openbankingbrasil.org.br/participants">Diretório oficial de participantes</a>. O comprovante em <code>config/catalog-evidence.json</code> registra instante, SHA-256, tamanho e correspondências de URL/CNPJ. O scheduler usa esse catálogo versionado; mudanças devem ser revisadas.</p><div class="table-scroll"><table><thead><tr><th>Reporte</th><th>Empresa / CNPJ</th><th>URL Admin</th></tr></thead><tbody><tr><td>Santander CCVM</td><td>SANTANDER CCVM S.A. / 51014223000149</td><td>https://ccvm.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>Aymoré</td><td>AYMORE CFI S.A. / 07707650000110</td><td>https://financiamentos.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>Getnet</td><td>GETNET ADQUIRENCIA E SERVICOS PARA MEIOS DE PAGAMENTO S A / 10440482000154</td><td>https://getnet.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>Hyundai Capital</td><td>BANCO HYUNDAI CAPITAL BRASIL / 30172491000119</td><td>https://hyundai.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>RCI · Nissan</td><td>BCO RCI BRASIL S.A. / 62307848000115</td><td>https://nissan.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>Santander</td><td>BCO SANTANDER (BRASIL) S.A. / 90400888000142</td><td>https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>RCI · Renault</td><td>BCO RCI BRASIL S.A. / 62307848000115</td><td>https://renault.api.santander.com.br/open-banking/admin/v2/metrics</td></tr><tr><td>Toro</td><td>Santander CTVM S.A. / 29162769000198</td><td>https://toro.api.santander.com.br/open-banking/admin/v2/metrics</td></tr></tbody></table></div><h3>Contrato de entrada</h3><p>Fonte técnica: <a href="https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml">OpenAPI oficial Admin 2.0.1</a>. <code>data[]</code> contém endpoint, requestTime, availability e os objetos invocations, errors, rejections, averageResponse, averageTps, peakTps. Cada objeto temporal contém currentDay e previousDays, primeiro elemento referente a ontem, até sete posições.</p><p>A chamada envia <code>period=ALL&amp;page-size=1000&amp;page=N</code>. O total é conciliado por identidade de endpoint. Paginação repetida não aumenta tráfego: vence a primeira observação e valores divergentes são sinalizados. Cobrir totalRecords não comprova conformidade do metadata totalPages.</p><h3>Integrações externas</h3><ul><li>Oito hosts HTTPS Santander: somente o caminho Admin; sem redirects e sem desativar TLS.</li><li>GitHub Actions: executa Python e publica artefato estático.</li><li>GitHub Releases: conserva dois pacotes operacionais aprovados; sem novos dados no histórico Git a cada ciclo.</li><li>GitHub Pages: entrega dashboard e documento na raiz do site.</li></ul><p>O browser lê somente dados empacotados; não consulta APIs bancárias. Links externos são opcionais e explícitos.</p></section>
+<section id="solucao" class="doc-section"><div class="number">03 / ARQUITETURA</div><h2>Desenho de solução.</h2><p>ETL em lote, single node, sem serviço de banco permanente. O runner é descartável: o estado é restaurado antes da coleta e persistido após publicação aprovada.</p>
+<svg id="solution-svg" viewBox="0 0 1000 440" role="img" aria-label="Arquitetura: Santander, runner ETL, Releases e Pages"><defs><marker id="arrow-s" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#4b8e85"/></marker></defs><rect x="225" y="25" width="525" height="370" rx="16" fill="#f1f6f7" stroke="#d5e4e6"/><text x="245" y="53" fill="#597681" font-size="13">GITHUB ACTIONS · RUNNER LINUX TEMPORÁRIO</text><g fill="#17333f"><rect x="15" y="150" width="170" height="110" rx="10"/><rect x="265" y="100" width="195" height="90" rx="10"/><rect x="515" y="100" width="195" height="90" rx="10"/><rect x="265" y="260" width="195" height="90" rx="10"/><rect x="515" y="260" width="195" height="90" rx="10"/><rect x="795" y="65" width="190" height="110" rx="10"/><rect x="795" y="255" width="190" height="110" rx="10"/></g><g fill="#e0f3ee" font-size="14" text-anchor="middle"><text x="100" y="190">8 reportes Admin</text><text x="100" y="216" font-size="11">HTTPS · TLS verificado</text><text x="362" y="134">Coletor HTTPX</text><text x="362" y="158" font-size="11">limites · retry · dedup</text><text x="612" y="134">Bronze SHA-256</text><text x="612" y="158" font-size="11">bytes + proveniência</text><text x="362" y="295">Normalização / regras</text><text x="362" y="319" font-size="11">deltas · incidentes · estado</text><text x="612" y="295">Arrow → DuckDB</text><text x="612" y="319" font-size="11">SQL · Parquet · HTML</text><text x="890" y="103">GitHub Releases</text><text x="890" y="129" font-size="11">estado atual + anterior</text><text x="890" y="293">GitHub Pages</text><text x="890" y="319" font-size="11">dashboard + manual</text></g><g fill="none" stroke="#4b8e85" stroke-width="2" marker-end="url(#arrow-s)"><path d="M185 180 L215 180 L215 145 L265 145"/><path d="M460 145 L515 145"/><path d="M610 190 L610 215 L362 215 L362 260"/><path d="M460 305 L515 305"/><path d="M710 305 L795 305"/><path d="M710 285 L765 285 L765 120 L795 120"/><path d="M795 150 L735 150 L735 375 L240 375 L240 300 L265 300"/></g><text x="480" y="423" font-size="12" fill="#627d88" text-anchor="middle">Schedule 17 */2 * * * UTC · manual · push com republicação sem coleta</text></svg>
+<div class="grid"><div class="tile"><h4>Bronze e estado</h4><p>Respostas exatas por SHA-256; cada tentativa guarda HTTP, URL, duração, Date, bytes e erro. Histórico normalizado de 30 dias. Bronze empacotado apenas dos dois ciclos recentes.</p></div><div class="tile"><h4>Gold e consumo</h4><p>Dados tipados Arrow materializados uma vez no DuckDB; agregações SQL e Parquet Zstandard. HTML real na raiz com assets imutáveis e documento único. Nenhum cluster é necessário nesta escala.</p></div></div></section>
+<section id="fluxo" class="doc-section"><div class="number">04 / FLUXO</div><h2>Da agenda à publicação aprovada.</h2>
+<svg id="flow-svg" viewBox="0 0 1000 490" role="img" aria-label="Fluxo ETL e publicação com gates e retenção"><defs><marker id="arrow-f" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#518d85"/></marker></defs><g fill="#edf6f3" stroke="#9cc9c0"><rect x="20" y="35" width="190" height="75" rx="8"/><rect x="275" y="35" width="190" height="75" rx="8"/><rect x="530" y="35" width="190" height="75" rx="8"/><rect x="785" y="35" width="190" height="75" rx="8"/><rect x="785" y="200" width="190" height="75" rx="8"/><rect x="530" y="200" width="190" height="75" rx="8"/><rect x="275" y="200" width="190" height="75" rx="8"/><rect x="20" y="200" width="190" height="75" rx="8"/><rect x="20" y="365" width="190" height="75" rx="8"/><rect x="275" y="365" width="190" height="75" rx="8"/></g><g fill="#244b50" font-size="13" text-anchor="middle"><text x="115" y="67">Schedule / manual</text><text x="115" y="87" font-size="11">concurrency único</text><text x="370" y="67">Restore verificado</text><text x="370" y="87" font-size="11">SHA + manifesto + limites</text><text x="625" y="67">Coletar 8 fontes</text><text x="625" y="87" font-size="11">4 simultâneas · bounded</text><text x="880" y="67">Validar / normalizar</text><text x="880" y="87" font-size="11">nulos + flags + dedup</text><text x="880" y="232">Deltas e incidentes</text><text x="880" y="252" font-size="11">histórico de 30 dias</text><text x="625" y="232">Gates e artefato</text><text x="625" y="252" font-size="11">SQL + HTML + manual</text><text x="370" y="232">Candidata em draft</text><text x="370" y="252" font-size="11">estado + dois bronzes</text><text x="115" y="232">Deploy Pages</text><text x="115" y="252" font-size="11">artefato completo</text><text x="115" y="397">Confirmar estado</text><text x="115" y="417" font-size="11">recibo + publicar Release</text><text x="370" y="397">Retenção</text><text x="370" y="417" font-size="11">somente atual + anterior</text></g><g stroke="#518d85" stroke-width="2" fill="none" marker-end="url(#arrow-f)"><path d="M210 72 H275"/><path d="M465 72 H530"/><path d="M720 72 H785"/><path d="M880 110 V200"/><path d="M785 238 H720"/><path d="M530 238 H465"/><path d="M275 238 H210"/><path d="M115 275 V365"/><path d="M210 402 H275"/></g><rect x="530" y="350" width="445" height="105" rx="10" fill="#fff5e5" stroke="#e7c383"/><text x="550" y="379" fill="#865f28" font-size="13">Falha observável do banco → publicar diagnóstico.</text><text x="550" y="404" fill="#865f28" font-size="12">Falha estrutural → bloquear; manter último estado aprovado.</text><text x="550" y="429" fill="#865f28" font-size="12">Push sem refresh → restaurar e republicar, sem nova amostra.</text></svg>
+<p>As tarefas compartilham o grupo de concurrency para impedir corrida entre coleta, estado e Pages. Retry é limitado a transporte e HTTP 408/429/500/502/503/504/529, até três tentativas, Retry-After limitado a 15 segundos. HTTP 403 é registrado sem tentativa de contornar bloqueio.</p><p>Limites: 4 reportes concorrentes, uma página por vez/reporte, 20 s de timeout por operação HTTP, 20 páginas por reporte, 16 MiB por resposta e 10.000 identidades por reporte. O workflow tem timeout; o ZIP de estado também tem limites de entrada, tamanho e expansão. Timeout de leitura é por operação, não prazo absoluto de toda a coleta.</p><div class="callout amber">Pages e Releases não formam uma transação distribuída. Se o deploy funcionar e a confirmação do estado falhar, o site poderá mostrar um run ainda em draft. Use o recibo/manifesto do candidato para recuperar; nunca faça fallback silencioso a um estado corrompido.</div></section>
+<section id="modelo" class="doc-section"><div class="number">05 / MODELO DE DADOS</div><h2>Grãos explícitos e rastreabilidade.</h2><svg id="er-svg" viewBox="0 0 1000 535" role="img" aria-label="Entidades e relações de execuções, fontes, tentativas, bronze, observações e incidentes"><defs><marker id="arrow-e" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#648f90"/></marker></defs><g fill="#f4f8fa" stroke="#bcced7"><rect x="25" y="30" width="265" height="125" rx="9"/><rect x="365" y="30" width="265" height="125" rx="9"/><rect x="710" y="30" width="265" height="125" rx="9"/><rect x="25" y="235" width="265" height="130" rx="9"/><rect x="365" y="235" width="265" height="130" rx="9"/><rect x="710" y="235" width="265" height="130" rx="9"/><rect x="365" y="420" width="265" height="95" rx="9"/></g><g fill="#244d58" font-size="14"><text x="43" y="57">RUNS</text><text x="43" y="84" font-size="12">PK run_id · observed_at</text><text x="43" y="107" font-size="12">reports[] · estado da execução</text><text x="383" y="57">RUN_REPORTS (runs.reports)</text><text x="383" y="84" font-size="12">PK run_id + reporter_id</text><text x="383" y="107" font-size="12">FK reporter_id → catálogo · CNPJ</text><text x="728" y="57">PROBES (runs.reports)</text><text x="728" y="84" font-size="12">run + reporter + page + attempt</text><text x="728" y="107" font-size="12">HTTP · duração · FK source_sha</text><text x="43" y="262">OBSERVATIONS / CURRENT_ROWS</text><text x="43" y="289" font-size="12">PK run + entity_id</text><text x="43" y="312" font-size="12">reporter + endpoint · fonte + flags</text><text x="43" y="335" font-size="12">métricas · previous · interval_*</text><text x="383" y="262">INCIDENTS</text><text x="383" y="289" font-size="12">PK id (ocorrência)</text><text x="383" y="312" font-size="12">entity + rule · opened_run</text><text x="383" y="335" font-size="12">status · amostras · recuperação</text><text x="728" y="262">BRONZE</text><text x="728" y="289" font-size="12">PK SHA-256</text><text x="728" y="312" font-size="12">bytes originais · JSON path</text><text x="728" y="335" font-size="12">retenção: dois ciclos</text><text x="383" y="449">REPORTED_HISTORY / INTERVALS</text><text x="383" y="476" font-size="12">derivados por run + entity</text><text x="383" y="498" font-size="12">posição D−n / estado do delta</text></g><g stroke="#648f90" stroke-width="2" fill="none" marker-end="url(#arrow-e)"><path d="M290 75 H365"/><path d="M630 75 H710"/><path d="M157 155 V235"/><path d="M842 155 V235"/><path d="M290 300 H365"/><path d="M710 350 H660 V388 H157 V365"/><path d="M157 365 V468 H365"/></g><g fill="#718b95" font-size="11"><text x="310" y="66">1:N</text><text x="650" y="66">1:N</text><text x="168" y="200">1:N</text><text x="853" y="200">N:1</text><text x="313" y="290">1:N</text></g></svg>
+<p>O diagrama mostra relações lógicas, incluindo estruturas aninhadas no JSON de estado. RUN_REPORTS relaciona execução e catálogo de reportes: cada execução tem vários reportes, e cada reporte participa de várias execuções. As setas indicam dependência de identificação. Não há FK SQL declarada para todas as estruturas aninhadas. <code>entity_id = SHA256(reporter_id, endpoint)[:24]</code>. Incidente tem identidade própria por ocorrência, permitindo reabertura sem sobrescrever a ocorrência resolvida.</p>
+<div class="table-scroll"><table><thead><tr><th>Estrutura</th><th>Grão e campos</th><th>Uso / persistência</th></tr></thead><tbody><tr><td>runs</td><td>Execução: run_id, observed_at; reports com HTTP, records, complete, issues, probes.</td><td>state.json, 30 dias; preserva falhas mesmo sem linhas.</td></tr><tr><td>observations</td><td>Execução × entity_id; UTC, dia, endpoint, seis métricas, availability, previous, flags, fingerprint e deltas.</td><td>Estado normalizado 30 dias; tabela DuckDB/Parquet com projeção tipada das métricas atuais.</td></tr><tr><td>latest_rows / current_rows</td><td>Última observação completa por reporte, uma linha por entity_id; fresh e source_complete.</td><td>Contexto de falha com valores antigos, até limite de 30 dias. Fresh significa mesmo run, não idade do relógio.</td></tr><tr><td>reported_history</td><td>Run × entity × posição D−n; calls, errors, rejections, mean_ms.</td><td>Derivado dos arrays previous do último contexto; incluído em dashboard.json, não tabela física separada.</td></tr><tr><td>intervals</td><td>Observação atual × anterior da entidade; interval_calls/errors/rejections, taxas, interval_state.</td><td>Campos interval_* na observação e no payload; sem tabela física separada.</td></tr><tr><td>incidents</td><td>Ocorrência de regra × entidade; abertura, last_seen, contagens, severidade, evidência, recuperação.</td><td>state.json e payload; resolvidos retidos 30 dias, abertos mantidos até avaliação conclusiva.</td></tr><tr><td>report_summary</td><td>Reporte no ciclo atual completo; calls/errors/rejections, taxas e média ponderada.</td><td>Gold DuckDB/Parquet e payload. Exclui contexto antigo.</td></tr><tr><td>family_summary</td><td>Família no ciclo atual completo; contagens e taxa de erro válida.</td><td>Gold DuckDB/Parquet e payload.</td></tr><tr><td>observation_trends</td><td>Run × instante da fonte × reporte; acumulados e médias de linhas completas.</td><td>Gold DuckDB/Parquet e payload; não somar valores entre runs.</td></tr><tr><td>bronze/&lt;sha&gt;.json</td><td>Corpo HTTP exato. Tentativa aponta SHA; linha aponta SHA + JSON path.</td><td>Dois ciclos recentes por pacote. Observações mais antigas retêm hash, mas os bytes podem ter expirado.</td></tr></tbody></table></div><p>Inteiros atuais devem estar no intervalo não negativo int64. Valores ausentes, booleanos, negativos ou incompatíveis ficam nulos e sinalizados. Uptime é razão [0,1], exibida em percentual. Downtime é mantido em segundos. JSON de saída proíbe NaN/Infinity.</p></section>
+<section id="regras" class="doc-section"><div class="number">06 / REGRAS FUNCIONAIS</div><h2>O diagnóstico é explicável.</h2><h3>Taxas, médias e amostras</h3><ul><li>Erro = 100 × errors / invocations; rejeição = 100 × rejections / invocations. Cada agregado usa só linhas com denominador positivo e numerador válido, menor ou igual às chamadas. Ausência não vira zero.</li><li>Média ponderada = Σ(averageResponse × invocations) / Σ(invocations), só para médias positivas e chamadas positivas. É uma aproximação agregada de médias declaradas; não recupera percentis nem corrige semântica da origem.</li><li>Erro ≥5% e ≥100 chamadas: atenção. Crítico requer erro ≥20% e ≥1.000 chamadas. Rejeição ≥5% com ≥100 chamadas: atenção. A interface mostra os volumes.</li><li>Média ≥2.000 ms: atenção; ≥4.000 ms: crítico, com ≥100 chamadas. Regra de regressão: média ≥2× a mediana de pelo menos três médias diárias anteriores positivas.</li><li>Recorrência contextual: pelo menos três dias anteriores com erro ≥5% e ≥100 chamadas/dia. Não é prova de causa crônica nem SLA violado.</li></ul><h3>Tempo e intervalos</h3><p>O UTC da aquisição é autoritativo para nossa observação. Para dia analítico, usa-se HTTP Date em America/Sao_Paulo, ou instante da coleta se Date não for interpretável; essa convenção não comprova o fuso de agregação do banco. requestTime bruto é preservado, e desvio absoluto &gt;900 s gera flag. Dias anteriores são rotulados D−n, sem fabricar observações passadas.</p><p>Delta só existe entre duas observações da mesma entidade, mesmo dia e fontes completas. Contadores devem ser válidos e não decrescentes; erro/rejeição delta não pode exceder chamadas delta. Reporte idêntico não gera tráfego intervalar. Diminuição é reset/revisão; mudança de dia suspende comparação. Não há média intervalar ou p95 inferidos.</p><h3>Máquina de estados de incidentes</h3><ol><li>Uma regra detectada abre ocorrência provisória; segunda detecção consecutiva confirma persistência.</li><li>Coleta falha na primeira: atenção; segunda falha consecutiva: crítico. Isso é falha da observação Admin, não indisponibilidade comprovada de todos os serviços.</li><li>Amostra avaliável abaixo do limiar inicia recuperação. Duas amostras avaliáveis consecutivas resolvem.</li><li>Origem incompleta, métrica inválida, tráfego insuficiente ou revisão/reset não resolvem incidentes de serviço. Amostra não avaliável interrompe sequência de recuperação.</li><li>Nova detecção durante recuperação reabre o estado ativo e zera recuperação. Após resolução, outra detecção gera nova ocorrência com ID próprio.</li><li>Mesmo endpoint ausente de reporte completo não é automaticamente “saudável”; ocorrência persiste sem avaliação até haver nova evidência.</li></ol><h3>Qualidade</h3><p>Flags cobrem horário inválido/divergente, arrays anteriores incompatíveis, contadores inválidos, erro/rejeição acima de chamadas, uptime inválido, uptime 100% com downtime positivo, uptime zero sem tráfego, média zero com tráfego e TPS médio acima do pico. São indícios de inconsistência; não reescrevemos valores para esconder o problema.</p><h3>Configuração desta publicação</h3><div class="table-scroll"><table><thead><tr><th>Parâmetro</th><th>Valor configurado</th></tr></thead><tbody><tr><td>retention_days</td><td>30</td></tr><tr><td>error_attention_pct</td><td>5</td></tr><tr><td>error_critical_pct</td><td>20</td></tr><tr><td>minimum_calls</td><td>100</td></tr><tr><td>critical_minimum_calls</td><td>1000</td></tr><tr><td>rejection_attention_pct</td><td>5</td></tr><tr><td>latency_attention_ms</td><td>2000</td></tr><tr><td>latency_critical_ms</td><td>4000</td></tr><tr><td>regression_multiplier</td><td>2</td></tr><tr><td>recovery_samples</td><td>2</td></tr><tr><td>stale_after_hours</td><td>3</td></tr></tbody></table></div><details><summary>JSON exato de regras</summary><pre><code>{
+  &quot;retention_days&quot;: 30,
+  &quot;error_attention_pct&quot;: 5,
+  &quot;error_critical_pct&quot;: 20,
+  &quot;minimum_calls&quot;: 100,
+  &quot;critical_minimum_calls&quot;: 1000,
+  &quot;rejection_attention_pct&quot;: 5,
+  &quot;latency_attention_ms&quot;: 2000,
+  &quot;latency_critical_ms&quot;: 4000,
+  &quot;regression_multiplier&quot;: 2,
+  &quot;recovery_samples&quot;: 2,
+  &quot;stale_after_hours&quot;: 3
+}</code></pre></details></section>
+<section id="dashboard" class="doc-section"><div class="number">07 / MANUAL DO DASHBOARD</div><h2>Do panorama ao detalhe.</h2><p class="intro">O painel é uma página contínua. A barra lateral navega por âncoras e acompanha a seção visível; em telas menores, vira uma faixa horizontal. O seletor de reporte muda o recorte global.</p><div class="grid"><div class="tile"><h4>1. Confira instante e cobertura</h4><p>Leia a última coleta, idade, reportes com falha e o aviso de atraso. Após três horas sem coleta, o aviso muda no navegador, mesmo sem novo deploy. Valor antigo não vira volume atual.</p></div><div class="tile"><h4>2. Leia o panorama em conjunto</h4><p>Fontes, chamadas, taxa de erro e média ponderada usam o ciclo completo. O ranking prioriza quantidade de erros. Clique numa fonte para filtrar; volte a “Todos” para recompor o escopo.</p></div><div class="tile"><h4>3. Priorize incidentes</h4><p>Compare severidade, provisório/confirmado, evidência e amostras. Em recuperação ainda não é resolvido. Use o seletor para incluir resolvidos. Clique no endpoint para consultar histórico e fonte.</p></div><div class="tile"><h4>4. Explore tendências</h4><p>Escolha taxa de erro, média ou chamadas do dia. Pontos têm horário e valor no tooltip. Linhas se interrompem em lacunas, atraso ou mudança de dia. Na primeira publicação há apenas uma observação própria.</p></div><div class="tile"><h4>5. Investigue endpoints</h4><p>Busca e família afetam a tabela e o CSV, além do reporte global. Ordene por erro, taxa, média, chamadas ou nome. A tabela pagina 25 linhas. Detalhe abre em dialog acessível por teclado; Escape fecha.</p></div><div class="tile"><h4>6. Confronte coleta e qualidade</h4><p>Compare HTTP/duração do Admin com média declarada do serviço. Consulte flags de contadores/paginação e estados de intervalo antes de concluir que houve melhora ou piora.</p></div></div><h3>O detalhe de cada endpoint</h3><p>Mostra instante, dia convencional, volume, taxa, média atual, mediana histórica de referência, deltas válidos, curva de erro observada, tabela D−1…D−7 declarada, flags, URL, SHA-256, caminho JSON, requestTime, uptime, downtime e TPS. A URL do serviço é evidência textual, não um botão que dispara testes de serviços de cliente.</p><h3>Exportar e compartilhar</h3><p>“Exportar endpoints” gera CSV em UTF-8 com BOM, separador ponto-e-vírgula, todas as linhas do filtro e campos de evidência. Valores com prefixos de fórmula são neutralizados. O botão exporta o contexto selecionado, inclusive métricas antigas identificadas por fresh/source_complete. Para compartilhar o manual, basta este HTML: estilos, scripts e os três diagramas SVG estão embutidos. A impressão oculta a navegação; abra blocos de código antes de imprimir caso queira incluí-los.</p><div class="callout amber">Cores têm rótulo textual: verde = coleta conciliada; âmbar = atenção/provisório/contexto antigo; vermelho = crítico; cinza = neutro/indisponível. “Sem sinais acima do limiar” depende das fontes e regras observáveis; não comprova ausência de problemas.</div></section>
+<section id="stack" class="doc-section"><div class="number">08 / STACK E CÓDIGO</div><h2>Escolhas proporcionais à escala.</h2><div class="table-scroll"><table><thead><tr><th>Componente</th><th>Escolha e motivo</th></tr></thead><tbody><tr><td>Python 3.11/3.12</td><td>Ecossistema de dados, CLI e execução simples no runner; ambientes isolados e dependências fixadas.</td></tr><tr><td>HTTPX HTTP/2 + truststore</td><td>Coleta assíncrona limitada, conexões reutilizadas e cadeia de certificados do sistema. Sem verify=False.</td></tr><tr><td>Arrow + Parquet Zstandard</td><td>Schema tipado, interoperabilidade e armazenamento colunar comprimido.</td></tr><tr><td>DuckDB + SQL</td><td>Análise vetorizada embutida, materialização única e regras de agregado revisáveis, sem servidor pago.</td></tr><tr><td>tzdata / zoneinfo</td><td>Convenção de dia reproduzível em Windows e Linux, sem depender de timezone do runner.</td></tr><tr><td>HTML/CSS/JS + SVG</td><td>Entrega estática, sem CDN/SPA framework; filtros, gráficos, exportação e acessibilidade sem backend.</td></tr><tr><td>pytest / httpx.MockTransport / CI</td><td>Testes de riscos temporais, paginação, recuperação, estado e publicação; sem chamar bancos nos testes.</td></tr><tr><td>Actions / Releases / Pages</td><td>Execução remota com estado persistido fora do Git e site estático público. Runner padrão em repo público elegível ao uso gratuito conforme política da plataforma.</td></tr></tbody></table></div><div class="table-scroll"><table><thead><tr><th>Arquivo</th><th>Responsabilidade</th></tr></thead><tbody><tr><td>collect.py</td><td>HTTP, limites, retry, paginação e bronze</td></tr><tr><td>analysis.py</td><td>Contratos, deltas, histórico e incidentes</td></tr><tr><td>storage.py</td><td>Hash, escrita atômica e exclusão mútua</td></tr><tr><td>build.py</td><td>Arrow, DuckDB, Parquet e publicação estática</td></tr><tr><td>marts.sql</td><td>Definições únicas de agregação SQL</td></tr><tr><td>pipeline.py</td><td>Coleta, build e commit de estado</td></tr><tr><td>archive.py</td><td>Pacote limitado, integridade e restore seguro</td></tr><tr><td>cli.py</td><td>Operação local padronizada</td></tr><tr><td>documentation.py</td><td>Este manual autocontido</td></tr><tr><td>web/app.js</td><td>Filtros, gráficos, navegação, detalhes e exportação</td></tr><tr><td>scripts/cloud_pipeline.py</td><td>Restore, candidato, confirmação e retenção remotos</td></tr></tbody></table></div><h3>Código e SQL desta versão</h3><p>Blocos extraídos diretamente dos arquivos que geraram esta documentação; não são pseudocódigo. O repositório contém também CI, configuração e testes.</p><details><summary>collect.py · HTTP, limites, retry, paginação e bronze</summary><pre><code>&quot;&quot;&quot;Read only the public Admin reports, never the customer endpoints they describe.&quot;&quot;&quot;
+import asyncio
+from datetime import datetime, timezone
+import email.utils
+import json
+import random
+import ssl
+import time
+from urllib.parse import urlsplit
+
+import httpx
+import truststore
+
+from .storage import now, put, sha, encoded
+
+
+def validate_reporter(reporter):
+    url = urlsplit(reporter[&#x27;url&#x27;])
+    expected = reporter[&#x27;id&#x27;] + &#x27;.api.santander.com.br&#x27;
+    if (url.scheme != &#x27;https&#x27; or url.hostname != expected or url.port not in (None, 443)
+            or url.username or url.password or url.query or url.fragment
+            or url.path != &#x27;/open-banking/admin/v2/metrics&#x27;):
+        raise ValueError(&#x27;URL fora do catálogo permitido: &#x27; + reporter[&#x27;id&#x27;])
+
+
+def delay(value, attempt):
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        try:
+            seconds = (email.utils.parsedate_to_datetime(value) - datetime.now(timezone.utc)).total_seconds()
+        except (TypeError, ValueError):
+            seconds = 2 ** attempt + random.random()
+    return min(15, max(0, seconds))
+
+
+async def fetch(client, reporter, root, page, retries=2):
+    probes = []
+    for attempt in range(retries + 1):
+        started = time.perf_counter()
+        probe = {&#x27;page&#x27;: page, &#x27;attempt&#x27;: attempt + 1, &#x27;observed_at&#x27;: now(), &#x27;status&#x27;: 0,
+                 &#x27;source_sha&#x27;: None, &#x27;http_date&#x27;: None, &#x27;error&#x27;: None,
+                 &#x27;url&#x27;: str(httpx.URL(reporter[&#x27;url&#x27;], params={&#x27;page&#x27;: page, &#x27;page-size&#x27;: 1000, &#x27;period&#x27;: &#x27;ALL&#x27;}))}
+        wait = None
+        try:
+            async with client.stream(&#x27;GET&#x27;, reporter[&#x27;url&#x27;], params={&#x27;page&#x27;: page, &#x27;page-size&#x27;: 1000, &#x27;period&#x27;: &#x27;ALL&#x27;}) as response:
+                probe.update(status=response.status_code, http_date=response.headers.get(&#x27;date&#x27;), url=str(response.url))
+                raw = bytearray()
+                async for part in response.aiter_bytes():
+                    raw.extend(part)
+                    if len(raw) &gt; 16 * 1024 * 1024:
+                        raise ValueError(&#x27;response_size_limit&#x27;)
+                raw = bytes(raw)
+                probe[&#x27;source_sha&#x27;] = put(root, raw)
+                probe[&#x27;bytes&#x27;] = len(raw)
+                if response.status_code != 200:
+                    probe[&#x27;error&#x27;] = &#x27;http_&#x27; + str(response.status_code)
+                wait = response.headers.get(&#x27;retry-after&#x27;)
+        except (httpx.HTTPError, ValueError) as error:
+            probe[&#x27;error&#x27;] = str(error)[:300] or type(error).__name__
+            raw = None
+        probe[&#x27;duration_ms&#x27;] = round((time.perf_counter() - started) * 1000, 2)
+        probes.append(probe)
+        if (probe[&#x27;status&#x27;] in (408, 429, 500, 502, 503, 504, 529) or probe[&#x27;status&#x27;] == 0) and attempt &lt; retries:
+            await asyncio.sleep(delay(wait, attempt))
+            continue
+        return raw, probes
+
+
+async def capture(client, reporter, root, max_pages=20, retries=2):
+    validate_reporter(reporter)
+    result = {**reporter, &#x27;observed_at&#x27;: now(), &#x27;probes&#x27;: [], &#x27;issues&#x27;: [], &#x27;rows&#x27;: [],
+              &#x27;complete&#x27;: False, &#x27;coverage&#x27;: &#x27;unknown&#x27;, &#x27;status&#x27;: 0, &#x27;http_date&#x27;: None}
+    unique = {}
+    for page in range(1, max_pages + 1):
+        raw, probes = await fetch(client, reporter, root, page, retries)
+        result[&#x27;probes&#x27;].extend(probes)
+        last = probes[-1]
+        result.update(status=last[&#x27;status&#x27;], http_date=last[&#x27;http_date&#x27;])
+        if last[&#x27;error&#x27;]:
+            result[&#x27;issues&#x27;].append(last[&#x27;error&#x27;])
+            break
+        try:
+            payload = json.loads(raw)
+            if not isinstance(payload, dict) or not isinstance(payload.get(&#x27;data&#x27;), list):
+                raise ValueError(&#x27;data_not_array&#x27;)
+            meta = payload.get(&#x27;meta&#x27;, {})
+            if not isinstance(meta, dict):
+                raise ValueError(&#x27;meta_not_object&#x27;)
+            total = meta.get(&#x27;totalRecords&#x27;)
+            pages = meta.get(&#x27;totalPages&#x27;)
+            if any(v is not None and (type(v) is not int or v &lt; 0) for v in (total, pages)):
+                raise ValueError(&#x27;invalid_totals&#x27;)
+            added = 0
+            for index, row in enumerate(payload[&#x27;data&#x27;]):
+                if not isinstance(row, dict) or not isinstance(row.get(&#x27;endpoint&#x27;), str) or not row[&#x27;endpoint&#x27;]:
+                    result[&#x27;issues&#x27;].append(&#x27;invalid_endpoint_record&#x27;)
+                    continue
+                key = row[&#x27;endpoint&#x27;]
+                if key in unique:
+                    result[&#x27;issues&#x27;].append(&#x27;duplicate_endpoint&#x27;)
+                    old = {k: v for k, v in unique[key][&#x27;record&#x27;].items() if k != &#x27;requestTime&#x27;}
+                    new = {k: v for k, v in row.items() if k != &#x27;requestTime&#x27;}
+                    if sha(encoded(old)) != sha(encoded(new)):
+                        result[&#x27;issues&#x27;].append(&#x27;conflicting_endpoint&#x27;)
+                    continue
+                unique[key] = {&#x27;record&#x27;: row, &#x27;source_sha&#x27;: last[&#x27;source_sha&#x27;], &#x27;json_path&#x27;: f&#x27;$.data[{index}]&#x27;}
+                added += 1
+            if len(unique) &gt; 10000:
+                raise ValueError(&#x27;record_limit&#x27;)
+            if total is not None and len(unique) &gt;= total:
+                result[&#x27;complete&#x27;] = len(unique) == total and &#x27;invalid_endpoint_record&#x27; not in result[&#x27;issues&#x27;]
+                result[&#x27;coverage&#x27;] = &#x27;reported_total_reconciled&#x27; if result[&#x27;complete&#x27;] else &#x27;total_mismatch&#x27;
+                if pages and page &lt; pages:
+                    result[&#x27;issues&#x27;].append(&#x27;page_metadata_conflict&#x27;)
+                break
+            if not added:
+                result[&#x27;issues&#x27;].append(&#x27;pagination_no_new_identity&#x27;)
+                result[&#x27;coverage&#x27;] = &#x27;unconfirmed&#x27;
+                break
+            if pages and page &gt;= pages:
+                result[&#x27;issues&#x27;].append(&#x27;total_mismatch&#x27; if total is not None else &#x27;missing_total&#x27;)
+                result[&#x27;coverage&#x27;] = &#x27;unconfirmed&#x27;
+                break
+        except (ValueError, TypeError) as error:
+            result[&#x27;issues&#x27;].append(str(error))
+            break
+    else:
+        result[&#x27;issues&#x27;].append(&#x27;page_limit&#x27;)
+    result[&#x27;rows&#x27;] = list(unique.values())
+    if not result[&#x27;rows&#x27;]:
+        result[&#x27;issues&#x27;].append(&#x27;empty_report&#x27;)
+    result[&#x27;issues&#x27;] = sorted(set(result[&#x27;issues&#x27;]))
+    result[&#x27;probe_ms&#x27;] = result[&#x27;probes&#x27;][-1][&#x27;duration_ms&#x27;] if result[&#x27;probes&#x27;] else None
+    return result
+
+
+async def collect(reporters, root, transport=None):
+    semaphore = asyncio.Semaphore(4)
+    context = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    async with httpx.AsyncClient(verify=context, timeout=20, http2=True, follow_redirects=False,
+                                transport=transport, limits=httpx.Limits(max_connections=4),
+                                headers={&#x27;User-Agent&#x27;: &#x27;SantanderAdminMetrics/1.0&#x27;}) as client:
+        async def worker(reporter):
+            async with semaphore:
+                result = await capture(client, reporter, root)
+                print(json.dumps({&#x27;event&#x27;: &#x27;report&#x27;, &#x27;reporter&#x27;: reporter[&#x27;id&#x27;], &#x27;status&#x27;: result[&#x27;status&#x27;],
+                                  &#x27;records&#x27;: len(result[&#x27;rows&#x27;]), &#x27;issues&#x27;: result[&#x27;issues&#x27;]}), flush=True)
+                return result
+        return await asyncio.gather(*(worker(r) for r in reporters))
+</code></pre></details><details><summary>analysis.py · Contratos, deltas, histórico e incidentes</summary><pre><code>&quot;&quot;&quot;Explicit nulls, bounded history, cumulative-counter deltas and stateful incidents.&quot;&quot;&quot;
+from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
+import math
+from statistics import median
+from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
+
+from .storage import sha, encoded
+
+FIELDS = {&#x27;invocations&#x27;: &#x27;calls&#x27;, &#x27;errors&#x27;: &#x27;errors&#x27;, &#x27;rejections&#x27;: &#x27;rejections&#x27;,
+          &#x27;averageResponse&#x27;: &#x27;mean_ms&#x27;, &#x27;averageTps&#x27;: &#x27;average_tps&#x27;, &#x27;peakTps&#x27;: &#x27;peak_tps&#x27;}
+
+
+def stamp(value):
+    try:
+        result = datetime.fromisoformat(value.replace(&#x27;Z&#x27;, &#x27;+00:00&#x27;))
+        return result if result.tzinfo else None
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def integer(value):
+    return value if type(value) is int and 0 &lt;= value &lt;= 9223372036854775807 else None
+
+
+def ratio(numerator, denominator):
+    if numerator is None or denominator is None or denominator &lt;= 0 or numerator &gt; denominator:
+        return None
+    return 100 * numerator / denominator
+
+
+def normalize(report, run_id):
+    rows = []
+    acquired = stamp(report[&#x27;observed_at&#x27;])
+    date_valid = True
+    try:
+        reference = parsedate_to_datetime(report[&#x27;http_date&#x27;])
+    except (ValueError, TypeError, OverflowError):
+        reference = acquired
+        date_valid = False
+    if reference.tzinfo is None:
+        reference = acquired
+        date_valid = False
+    day = reference.astimezone(ZoneInfo(&#x27;America/Sao_Paulo&#x27;)).date().isoformat()
+    for item in report[&#x27;rows&#x27;]:
+        raw = item[&#x27;record&#x27;]
+        flags = []
+        endpoint = raw[&#x27;endpoint&#x27;]
+        parsed = urlsplit(endpoint)
+        path = parsed.path if parsed.path else endpoint
+        family = path.split(&#x27;/open-banking/&#x27;, 1)[-1].split(&#x27;/&#x27;)[0]
+        row = {&#x27;run_id&#x27;: run_id, &#x27;observed_at&#x27;: report[&#x27;observed_at&#x27;], &#x27;day&#x27;: day,
+               &#x27;day_basis&#x27;: &#x27;HTTP Date / America_Sao_Paulo&#x27; if date_valid else &#x27;observed_at / America_Sao_Paulo&#x27;, &#x27;reporter_id&#x27;: report[&#x27;id&#x27;], &#x27;reporter&#x27;: report[&#x27;label&#x27;],
+               &#x27;entity_id&#x27;: sha(encoded([report[&#x27;id&#x27;], endpoint]))[:24], &#x27;endpoint&#x27;: endpoint, &#x27;path&#x27;: path,
+               &#x27;family&#x27;: family, &#x27;source_sha&#x27;: item[&#x27;source_sha&#x27;], &#x27;json_path&#x27;: item[&#x27;json_path&#x27;],
+               &#x27;request_time&#x27;: raw.get(&#x27;requestTime&#x27;), &#x27;source_complete&#x27;: report[&#x27;complete&#x27;], &#x27;previous&#x27;: {}}
+        reported = stamp(raw.get(&#x27;requestTime&#x27;))
+        row[&#x27;clock_offset_seconds&#x27;] = (acquired - reported).total_seconds() if reported else None
+        if not reported:
+            flags.append(&#x27;request_time_invalid&#x27;)
+        elif abs(row[&#x27;clock_offset_seconds&#x27;]) &gt; 900:
+            flags.append(&#x27;reported_clock_skew&#x27;)
+        lengths = []
+        for source, target in FIELDS.items():
+            values = raw.get(source)
+            if not isinstance(values, dict):
+                values = {}
+            row[target] = integer(values.get(&#x27;currentDay&#x27;))
+            if row[target] is None:
+                flags.append(target + &#x27;_invalid&#x27;)
+            previous = values.get(&#x27;previousDays&#x27;)
+            if not isinstance(previous, list) or len(previous) &gt; 7:
+                flags.append(target + &#x27;_history_invalid&#x27;)
+                previous = []
+            lengths.append(len(previous))
+            row[&#x27;previous&#x27;][target] = [integer(v) for v in previous]
+            if any(integer(v) is None for v in previous):
+                flags.append(target + &#x27;_history_value_invalid&#x27;)
+        if len(set(lengths)) &gt; 1:
+            flags.append(&#x27;history_lengths_differ&#x27;)
+        availability = raw.get(&#x27;availability&#x27;) if isinstance(raw.get(&#x27;availability&#x27;), dict) else {}
+        uptime = availability.get(&#x27;uptime&#x27;) if isinstance(availability.get(&#x27;uptime&#x27;), dict) else {}
+        downtime = availability.get(&#x27;downtime&#x27;) if isinstance(availability.get(&#x27;downtime&#x27;), dict) else {}
+        for source, target in [(&#x27;uptimeRate&#x27;, &#x27;uptime&#x27;), (&#x27;generalUptimeRate&#x27;, &#x27;general_uptime&#x27;)]:
+            try:
+                value = float(uptime.get(source))
+                row[target] = value if math.isfinite(value) and 0 &lt;= value &lt;= 1 else None
+            except (ValueError, TypeError):
+                row[target] = None
+            if row[target] is None:
+                flags.append(target + &#x27;_invalid&#x27;)
+        for source, target in [(&#x27;partialDowntime&#x27;, &#x27;downtime_seconds&#x27;), (&#x27;generalDowntime&#x27;, &#x27;general_downtime&#x27;), (&#x27;scheduledOutage&#x27;, &#x27;scheduled_outage&#x27;)]:
+            row[target] = integer(downtime.get(source))
+        if row[&#x27;uptime&#x27;] == 1 and (row[&#x27;downtime_seconds&#x27;] or 0) &gt; 0:
+            flags.append(&#x27;uptime_downtime_conflict&#x27;)
+        if row[&#x27;calls&#x27;] == 0 and row[&#x27;uptime&#x27;] == 0:
+            flags.append(&#x27;zero_uptime_without_traffic&#x27;)
+        if row[&#x27;average_tps&#x27;] is not None and row[&#x27;peak_tps&#x27;] is not None and row[&#x27;average_tps&#x27;] &gt; row[&#x27;peak_tps&#x27;]:
+            flags.append(&#x27;average_tps_above_peak&#x27;)
+        row[&#x27;error_pct&#x27;] = ratio(row[&#x27;errors&#x27;], row[&#x27;calls&#x27;])
+        row[&#x27;rejection_pct&#x27;] = ratio(row[&#x27;rejections&#x27;], row[&#x27;calls&#x27;])
+        if row[&#x27;calls&#x27;] is not None and any(row[k] is not None and row[k] &gt; row[&#x27;calls&#x27;] for k in (&#x27;errors&#x27;, &#x27;rejections&#x27;)):
+            flags.append(&#x27;counter_above_invocations&#x27;)
+        if row[&#x27;calls&#x27;] and row[&#x27;mean_ms&#x27;] == 0:
+            flags.append(&#x27;zero_mean_with_traffic&#x27;)
+        previous_means = [x for x in row[&#x27;previous&#x27;][&#x27;mean_ms&#x27;] if x is not None and x &gt; 0]
+        row[&#x27;baseline_mean_ms&#x27;] = median(previous_means) if len(previous_means) &gt;= 3 else None
+        recurrent = 0
+        for calls, errors in zip(row[&#x27;previous&#x27;][&#x27;calls&#x27;], row[&#x27;previous&#x27;][&#x27;errors&#x27;]):
+            value = ratio(errors, calls)
+            if calls is not None and calls &gt;= 100 and value is not None and value &gt;= 5:
+                recurrent += 1
+        row[&#x27;recurrent_days&#x27;] = recurrent
+        row[&#x27;quality&#x27;] = sorted(set(flags))
+        row[&#x27;fingerprint&#x27;] = sha(encoded({k: row[k] for k in (*FIELDS.values(), &#x27;uptime&#x27;, &#x27;downtime_seconds&#x27;, &#x27;previous&#x27;)}))
+        rows.append(row)
+    return rows
+
+
+def interval(current, previous):
+    result = {&#x27;interval_calls&#x27;: None, &#x27;interval_errors&#x27;: None, &#x27;interval_rejections&#x27;: None,
+              &#x27;interval_error_pct&#x27;: None, &#x27;interval_rejection_pct&#x27;: None, &#x27;interval_state&#x27;: &#x27;first_observation&#x27;}
+    if not previous:
+        return result
+    if previous[&#x27;day&#x27;] != current[&#x27;day&#x27;]:
+        result[&#x27;interval_state&#x27;] = &#x27;day_changed&#x27;
+        return result
+    if not previous[&#x27;source_complete&#x27;] or not current[&#x27;source_complete&#x27;]:
+        result[&#x27;interval_state&#x27;] = &#x27;incomplete_source&#x27;
+        return result
+    if previous[&#x27;fingerprint&#x27;] == current[&#x27;fingerprint&#x27;]:
+        result[&#x27;interval_state&#x27;] = &#x27;unchanged_report&#x27;
+        return result
+    if any(current[k] is None or previous[k] is None for k in (&#x27;calls&#x27;, &#x27;errors&#x27;, &#x27;rejections&#x27;)):
+        result[&#x27;interval_state&#x27;] = &#x27;invalid_counter&#x27;
+        return result
+    if any(row[k] &gt; row[&#x27;calls&#x27;] for row in (current, previous) for k in (&#x27;errors&#x27;, &#x27;rejections&#x27;)):
+        result[&#x27;interval_state&#x27;] = &#x27;invalid_counter&#x27;
+        return result
+    delta = {k: current[k] - previous[k] for k in (&#x27;calls&#x27;, &#x27;errors&#x27;, &#x27;rejections&#x27;)}
+    if min(delta.values()) &lt; 0:
+        result[&#x27;interval_state&#x27;] = &#x27;counter_reset_or_revision&#x27;
+        return result
+    if delta[&#x27;errors&#x27;] &gt; delta[&#x27;calls&#x27;] or delta[&#x27;rejections&#x27;] &gt; delta[&#x27;calls&#x27;]:
+        result[&#x27;interval_state&#x27;] = &#x27;inconsistent_delta&#x27;
+        return result
+    result.update(interval_state=&#x27;valid&#x27;, interval_calls=delta[&#x27;calls&#x27;], interval_errors=delta[&#x27;errors&#x27;],
+                  interval_rejections=delta[&#x27;rejections&#x27;], interval_error_pct=ratio(delta[&#x27;errors&#x27;], delta[&#x27;calls&#x27;]),
+                  interval_rejection_pct=ratio(delta[&#x27;rejections&#x27;], delta[&#x27;calls&#x27;]))
+    return result
+
+
+def signals(row, rules):
+    calls = row[&#x27;calls&#x27;] or 0
+    result = []
+    if calls &gt;= rules[&#x27;minimum_calls&#x27;]:
+        if row[&#x27;error_pct&#x27;] is not None and row[&#x27;error_pct&#x27;] &gt;= rules[&#x27;error_attention_pct&#x27;]:
+            level = &#x27;critical&#x27; if calls &gt;= rules[&#x27;critical_minimum_calls&#x27;] and row[&#x27;error_pct&#x27;] &gt;= rules[&#x27;error_critical_pct&#x27;] else &#x27;attention&#x27;
+            result.append((&#x27;error_rate&#x27;, level, f&quot;{row[&#x27;errors&#x27;]} erros / {calls} chamadas ({row[&#x27;error_pct&#x27;]:.2f}%)&quot;))
+        if row[&#x27;rejection_pct&#x27;] is not None and row[&#x27;rejection_pct&#x27;] &gt;= rules[&#x27;rejection_attention_pct&#x27;]:
+            result.append((&#x27;rejection_rate&#x27;, &#x27;attention&#x27;, f&quot;{row[&#x27;rejections&#x27;]} rejeições / {calls} chamadas; causa não identificável&quot;))
+        if row[&#x27;mean_ms&#x27;] is not None and row[&#x27;mean_ms&#x27;] &gt;= rules[&#x27;latency_attention_ms&#x27;]:
+            result.append((&#x27;mean_latency&#x27;, &#x27;critical&#x27; if row[&#x27;mean_ms&#x27;] &gt;= rules[&#x27;latency_critical_ms&#x27;] else &#x27;attention&#x27;, f&quot;Média declarada {row[&#x27;mean_ms&#x27;]} ms; não é p95&quot;))
+        if row[&#x27;mean_ms&#x27;] and row[&#x27;baseline_mean_ms&#x27;] and row[&#x27;mean_ms&#x27;] &gt;= rules[&#x27;regression_multiplier&#x27;] * row[&#x27;baseline_mean_ms&#x27;]:
+            result.append((&#x27;latency_regression&#x27;, &#x27;attention&#x27;, f&quot;Média {row[&#x27;mean_ms&#x27;]} ms / baseline {row[&#x27;baseline_mean_ms&#x27;]} ms&quot;))
+    return result
+
+
+def update_incidents(state, run, rows, rules):
+    existing = {(i[&#x27;entity_id&#x27;], i[&#x27;rule&#x27;]): i for i in state[&#x27;incidents&#x27;] if i[&#x27;status&#x27;] != &#x27;resolved&#x27;}
+    detected = {}
+    eligible = set()
+    for report in run[&#x27;reports&#x27;]:
+        key = &#x27;source:&#x27; + report[&#x27;id&#x27;]
+        eligible.add((key, &#x27;collection&#x27;))
+        if report[&#x27;status&#x27;] != 200 or not report[&#x27;complete&#x27;] or not report[&#x27;records&#x27;]:
+            detected[(key, &#x27;collection&#x27;)] = (&#x27;attention&#x27;, &#x27;; &#x27;.join(report[&#x27;issues&#x27;]) or &#x27;Reporte incompleto&#x27;, report[&#x27;label&#x27;], None)
+    for row in rows:
+        if not row[&#x27;source_complete&#x27;]:
+            continue
+        if row[&#x27;interval_state&#x27;] in (&#x27;counter_reset_or_revision&#x27;, &#x27;inconsistent_delta&#x27;, &#x27;invalid_counter&#x27;):
+            continue
+        # Absence of a signal is recovery only when that rule was evaluable.
+        if (row[&#x27;calls&#x27;] or 0) &gt;= rules[&#x27;minimum_calls&#x27;]:
+            for rule, valid in [(&#x27;error_rate&#x27;, row[&#x27;error_pct&#x27;] is not None),
+                                (&#x27;rejection_rate&#x27;, row[&#x27;rejection_pct&#x27;] is not None),
+                                (&#x27;mean_latency&#x27;, bool(row[&#x27;mean_ms&#x27;])),
+                                (&#x27;latency_regression&#x27;, bool(row[&#x27;mean_ms&#x27;] and row[&#x27;baseline_mean_ms&#x27;]))]:
+                if valid:
+                    eligible.add((row[&#x27;entity_id&#x27;], rule))
+        for rule, severity, evidence in signals(row, rules):
+            detected[(row[&#x27;entity_id&#x27;], rule)] = (severity, evidence, row[&#x27;reporter&#x27;], row[&#x27;endpoint&#x27;])
+    # Apply each observation once, including same-cycle multiple rule detections.
+    for (entity, rule), (severity, evidence, label, endpoint) in detected.items():
+        key = (entity, rule)
+        incident = existing.get(key)
+        if incident is None:
+            incident = {&#x27;id&#x27;: sha(encoded([entity, rule, run[&#x27;run_id&#x27;]]))[:24], &#x27;entity_id&#x27;: entity, &#x27;rule&#x27;: rule, &#x27;reporter&#x27;: label, &#x27;endpoint&#x27;: endpoint,
+                        &#x27;opened_at&#x27;: run[&#x27;observed_at&#x27;], &#x27;opened_run&#x27;: run[&#x27;run_id&#x27;], &#x27;samples&#x27;: 0,
+                        &#x27;consecutive_samples&#x27;: 0, &#x27;recovery_samples&#x27;: 0, &#x27;status&#x27;: &#x27;open&#x27;}
+            state[&#x27;incidents&#x27;].append(incident)
+            existing[key] = incident
+        streak = incident[&#x27;consecutive_samples&#x27;] + 1
+        incident.update(last_seen=run[&#x27;observed_at&#x27;], evaluated_at=run[&#x27;observed_at&#x27;], evidence=evidence,
+                        samples=incident[&#x27;samples&#x27;] + 1, consecutive_samples=streak,
+                        recovery_samples=0, status=&#x27;open&#x27;, severity=&#x27;critical&#x27; if rule == &#x27;collection&#x27; and streak &gt;= 2 else severity)
+        incident[&#x27;confirmed&#x27;] = streak &gt;= 2
+    for incident in existing.values():
+        key = (incident[&#x27;entity_id&#x27;], incident[&#x27;rule&#x27;])
+        if key not in detected:
+            incident[&#x27;consecutive_samples&#x27;] = 0
+        if key in eligible and key not in detected:
+            incident[&#x27;recovery_samples&#x27;] += 1
+            incident.update(status=&#x27;recovering&#x27;, evaluated_at=run[&#x27;observed_at&#x27;])
+            if incident[&#x27;recovery_samples&#x27;] &gt;= rules[&#x27;recovery_samples&#x27;]:
+                incident.update(status=&#x27;resolved&#x27;, resolved_at=run[&#x27;observed_at&#x27;])
+        elif key not in detected:
+            # Unknown/absent/partial samples break the recovery streak.
+            incident[&#x27;recovery_samples&#x27;] = 0
+
+
+def apply(state, reports, rules, observed_at, run_id):
+    if any(r[&#x27;run_id&#x27;] == run_id for r in state[&#x27;runs&#x27;]):
+        raise ValueError(&#x27;Execução já aplicada&#x27;)
+    run = {&#x27;run_id&#x27;: run_id, &#x27;observed_at&#x27;: observed_at, &#x27;reports&#x27;: [], &#x27;rules&#x27;: dict(rules), &#x27;model_version&#x27;: 1}
+    previous = {r[&#x27;entity_id&#x27;]: r for r in state[&#x27;observations&#x27;]}
+    current = []
+    latest = {r[&#x27;entity_id&#x27;]: r for r in state[&#x27;latest_rows&#x27;]}
+    for report in reports:
+        run[&#x27;reports&#x27;].append({k: report[k] for k in (&#x27;id&#x27;, &#x27;label&#x27;, &#x27;url&#x27;, &#x27;cnpj&#x27;, &#x27;observed_at&#x27;, &#x27;status&#x27;, &#x27;complete&#x27;, &#x27;coverage&#x27;, &#x27;issues&#x27;, &#x27;probes&#x27;, &#x27;probe_ms&#x27;)})
+        run[&#x27;reports&#x27;][-1][&#x27;records&#x27;] = len(report[&#x27;rows&#x27;])
+        normalized = normalize(report, run_id)
+        for row in normalized:
+            row.update(interval(row, previous.get(row[&#x27;entity_id&#x27;])))
+        current.extend(normalized)
+        if report[&#x27;complete&#x27;] and normalized:
+            latest = {key: row for key, row in latest.items() if row[&#x27;reporter_id&#x27;] != report[&#x27;id&#x27;]}
+            latest.update({r[&#x27;entity_id&#x27;]: r for r in normalized})
+        elif not any(r[&#x27;reporter_id&#x27;] == report[&#x27;id&#x27;] for r in latest.values()):
+            latest.update({r[&#x27;entity_id&#x27;]: r for r in normalized})
+    state[&#x27;latest_rows&#x27;] = list(latest.values())
+    update_incidents(state, run, current, rules)
+    state[&#x27;observations&#x27;].extend(current)
+    state[&#x27;runs&#x27;].append(run)
+    cutoff = (stamp(observed_at) - timedelta(days=rules[&#x27;retention_days&#x27;])).isoformat(timespec=&#x27;seconds&#x27;)
+    state[&#x27;observations&#x27;] = [r for r in state[&#x27;observations&#x27;] if r[&#x27;observed_at&#x27;] &gt;= cutoff]
+    state[&#x27;runs&#x27;] = [r for r in state[&#x27;runs&#x27;] if r[&#x27;observed_at&#x27;] &gt;= cutoff]
+    state[&#x27;latest_rows&#x27;] = [r for r in state[&#x27;latest_rows&#x27;] if r[&#x27;observed_at&#x27;] &gt;= cutoff]
+    state[&#x27;incidents&#x27;] = [i for i in state[&#x27;incidents&#x27;] if i[&#x27;status&#x27;] != &#x27;resolved&#x27; or i.get(&#x27;resolved_at&#x27;, &#x27;&#x27;) &gt;= cutoff]
+    return state
+</code></pre></details><details><summary>storage.py · Hash, escrita atômica e exclusão mútua</summary><pre><code>import contextlib
+import hashlib
+import json
+import os
+from pathlib import Path
+import uuid
+from datetime import datetime, timezone
+
+
+def now():
+    return datetime.now(timezone.utc).isoformat(timespec=&#x27;seconds&#x27;)
+
+
+def encoded(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(&#x27;,&#x27;, &#x27;:&#x27;), allow_nan=False).encode()
+
+
+def sha(raw):
+    return hashlib.sha256(raw).hexdigest()
+
+
+def atomic(path, raw):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(&#x27;.&#x27; + path.name + &#x27;.&#x27; + uuid.uuid4().hex)
+    try:
+        with temporary.open(&#x27;xb&#x27;) as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def write(path, value):
+    atomic(path, encoded(value))
+
+
+@contextlib.contextmanager
+def lock(root):
+    path = Path(root) / &#x27;.writer.lock&#x27;
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError as error:
+        raise RuntimeError(&#x27;Escritor ativo ou lock abandonado: &#x27; + str(path)) from error
+    try:
+        os.write(fd, encoded({&#x27;pid&#x27;: os.getpid(), &#x27;started_at&#x27;: now()}))
+        os.close(fd)
+        yield
+    finally:
+        path.unlink(missing_ok=True)
+
+
+def put(root, raw):
+    digest = sha(raw)
+    path = Path(root) / &#x27;bronze&#x27; / (digest + &#x27;.json&#x27;)
+    if path.exists():
+        if sha(path.read_bytes()) != digest:
+            raise ValueError(&#x27;Bronze corrompido: &#x27; + digest)
+    else:
+        atomic(path, raw)
+    return digest
+
+
+def empty_state():
+    return {&#x27;version&#x27;: 1, &#x27;runs&#x27;: [], &#x27;observations&#x27;: [], &#x27;incidents&#x27;: [], &#x27;latest_rows&#x27;: []}
+
+
+def load(root):
+    path = Path(root) / &#x27;state.json&#x27;
+    if not path.exists():
+        return empty_state()
+    result = json.loads(path.read_bytes())
+    if result.get(&#x27;version&#x27;) != 1:
+        raise ValueError(&#x27;Versão de estado incompatível&#x27;)
+    for key in (&#x27;runs&#x27;, &#x27;observations&#x27;, &#x27;incidents&#x27;, &#x27;latest_rows&#x27;):
+        if not isinstance(result.get(key), list):
+            raise ValueError(&#x27;Estado inválido: &#x27; + key)
+    return result
+</code></pre></details><details><summary>build.py · Arrow, DuckDB, Parquet e publicação estática</summary><pre><code>import json
+from pathlib import Path
+import shutil
+import tempfile
+
+import duckdb
+import pyarrow as pa
+
+from . import __version__
+from .storage import atomic, encoded, sha
+
+HERE = Path(__file__).parent
+SCHEMA = pa.schema([(k, pa.string()) for k in (&#x27;run_id&#x27;, &#x27;entity_id&#x27;, &#x27;observed_at&#x27;, &#x27;day&#x27;, &#x27;reporter_id&#x27;, &#x27;reporter&#x27;, &#x27;endpoint&#x27;, &#x27;path&#x27;, &#x27;family&#x27;)]
+                   + [(k, pa.int64()) for k in (&#x27;calls&#x27;, &#x27;errors&#x27;, &#x27;rejections&#x27;, &#x27;mean_ms&#x27;)]
+                   + [(k, pa.float64()) for k in (&#x27;error_pct&#x27;, &#x27;rejection_pct&#x27;, &#x27;uptime&#x27;)]
+                   + [(&#x27;source_complete&#x27;, pa.bool_()), (&#x27;fresh&#x27;, pa.bool_())])
+
+
+def rows(db, query):
+    result = db.execute(query)
+    names = [c[0] for c in result.description]
+    return [dict(zip(names, row)) for row in result.fetchall()]
+
+
+def build(state, root, output, rules, reporters):
+    root, output = Path(root), Path(output)
+    root.mkdir(parents=True, exist_ok=True)
+    output.mkdir(parents=True, exist_ok=True)
+    run = state[&#x27;runs&#x27;][-1] if state[&#x27;runs&#x27;] else {&#x27;run_id&#x27;: &#x27;&#x27;, &#x27;observed_at&#x27;: None, &#x27;reports&#x27;: []}
+    latest = [{**r, &#x27;fresh&#x27;: r[&#x27;run_id&#x27;] == run[&#x27;run_id&#x27;]} for r in state[&#x27;latest_rows&#x27;]]
+    db_path = root / &#x27;warehouse.duckdb&#x27;
+    db_path.unlink(missing_ok=True)
+    db = duckdb.connect(str(db_path))
+    try:
+        db.execute(&quot;SET memory_limit=&#x27;1GB&#x27;; SET threads=2&quot;)
+        for name, data in [(&#x27;current_rows&#x27;, latest), (&#x27;observations&#x27;, state[&#x27;observations&#x27;])]:
+            table = pa.Table.from_pylist(data, schema=SCHEMA)
+            db.register(&#x27;incoming&#x27;, table)
+            db.execute(f&#x27;CREATE TABLE {name} AS SELECT * FROM incoming&#x27;)
+        db.execute((HERE / &#x27;marts.sql&#x27;).read_text(encoding=&#x27;utf-8&#x27;))
+        payload = {name: rows(db, f&#x27;SELECT * FROM {name}&#x27;) for name in (&#x27;report_summary&#x27;, &#x27;family_summary&#x27;, &#x27;observation_trends&#x27;)}
+        for name in (&#x27;current_rows&#x27;, &#x27;observations&#x27;, &#x27;report_summary&#x27;, &#x27;family_summary&#x27;, &#x27;observation_trends&#x27;):
+            path = str(root / (name + &#x27;.parquet&#x27;)).replace(&quot;&#x27;&quot;, &quot;&#x27;&#x27;&quot;)
+            db.execute(f&quot;COPY {name} TO &#x27;{path}&#x27; (FORMAT PARQUET, COMPRESSION ZSTD)&quot;)
+    finally:
+        db.close()
+    # The previousDays arrays remain separate from our measured observation series.
+    history = []
+    for row in latest:
+        for i, calls in enumerate(row[&#x27;previous&#x27;][&#x27;calls&#x27;]):
+            def value(key):
+                return row[&#x27;previous&#x27;][key][i] if i &lt; len(row[&#x27;previous&#x27;][key]) else None
+            history.append({&#x27;entity_id&#x27;: row[&#x27;entity_id&#x27;], &#x27;reporter_id&#x27;: row[&#x27;reporter_id&#x27;], &#x27;position&#x27;: i + 1,
+                            &#x27;calls&#x27;: calls, &#x27;errors&#x27;: value(&#x27;errors&#x27;), &#x27;rejections&#x27;: value(&#x27;rejections&#x27;), &#x27;mean_ms&#x27;: value(&#x27;mean_ms&#x27;)})
+    payload.update(meta={&#x27;version&#x27;: __version__, &#x27;run_id&#x27;: run[&#x27;run_id&#x27;], &#x27;observed_at&#x27;: run[&#x27;observed_at&#x27;],
+                         &#x27;history_days&#x27;: rules[&#x27;retention_days&#x27;], &#x27;schedule&#x27;: &#x27;17 */2 * * * UTC&#x27;,
+                         &#x27;partial_day&#x27;: True, &#x27;stale_after_hours&#x27;: rules[&#x27;stale_after_hours&#x27;]},
+                   latest=latest, runs=state[&#x27;runs&#x27;], incidents=state[&#x27;incidents&#x27;], reported_history=history,
+                   rules=rules, reporters=reporters)
+    # Full observation points for endpoint drill-down, not repeated daily sums.
+    payload[&#x27;points&#x27;] = [{k: r.get(k) for k in (&#x27;entity_id&#x27;, &#x27;observed_at&#x27;, &#x27;calls&#x27;, &#x27;errors&#x27;, &#x27;error_pct&#x27;, &#x27;mean_ms&#x27;, &#x27;source_complete&#x27;, &#x27;interval_state&#x27;, &#x27;interval_error_pct&#x27;)}
+                         for r in state[&#x27;observations&#x27;]]
+    from .documentation import generate
+    with tempfile.TemporaryDirectory(dir=output.parent, prefix=&#x27;.admin-stage-&#x27;) as temporary:
+        stage = Path(temporary)
+        for source in (HERE / &#x27;web&#x27;).iterdir():
+            if source.is_file():
+                shutil.copyfile(source, stage / source.name)
+        raw = encoded(payload)
+        atomic(stage / &#x27;data.js&#x27;, b&#x27;window.ADMIN_DATA=&#x27; + raw + b&#x27;;\n&#x27;)
+        atomic(stage / &#x27;dashboard.json&#x27;, raw)
+        generate(payload, stage / &#x27;documentacao.html&#x27;)
+        asset_id = sha(b&#x27;&#x27;.join(p.read_bytes() for p in sorted(stage.iterdir())))[:20]
+        destination = output / &#x27;assets&#x27; / asset_id
+        destination.parent.mkdir(exist_ok=True)
+        if not destination.exists():
+            stage.rename(destination)
+            stage.mkdir()
+        html = (destination / &#x27;index.html&#x27;).read_text(encoding=&#x27;utf-8&#x27;)
+        for asset in (&#x27;app.js&#x27;, &#x27;styles.css&#x27;, &#x27;data.js&#x27;):
+            html = html.replace(&#x27;&quot;&#x27; + asset + &#x27;&quot;&#x27;, &#x27;&quot;assets/&#x27; + asset_id + &#x27;/&#x27; + asset + &#x27;&quot;&#x27;)
+        atomic(output / &#x27;documentacao.html&#x27;, (destination / &#x27;documentacao.html&#x27;).read_bytes())
+        atomic(output / &#x27;dashboard.json&#x27;, raw)
+        atomic(output / &#x27;.nojekyll&#x27;, b&#x27;&#x27;)
+        atomic(output / &#x27;index.html&#x27;, html.encode())
+    return payload
+</code></pre></details><details><summary>marts.sql · Definições únicas de agregação SQL</summary><pre><code>CREATE TABLE report_summary AS
+SELECT reporter_id, any_value(reporter) AS reporter, count(*) AS endpoints,
+       sum(calls) AS calls, sum(errors) AS errors, sum(rejections) AS rejections,
+       100.0 * sum(errors) FILTER(WHERE errors&lt;=calls AND calls&gt;0) /
+         nullif(sum(calls) FILTER(WHERE errors&lt;=calls AND calls&gt;0),0) AS error_pct,
+       100.0 * sum(rejections) FILTER(WHERE rejections&lt;=calls AND calls&gt;0) /
+         nullif(sum(calls) FILTER(WHERE rejections&lt;=calls AND calls&gt;0),0) AS rejection_pct,
+       sum(mean_ms::DOUBLE*calls) FILTER(WHERE mean_ms&gt;0 AND calls&gt;0) /
+         nullif(sum(calls) FILTER(WHERE mean_ms&gt;0 AND calls&gt;0),0) AS mean_ms
+FROM current_rows WHERE fresh AND source_complete GROUP BY reporter_id;
+
+CREATE TABLE family_summary AS
+SELECT family,count(*) AS endpoints,sum(calls) AS calls,sum(errors) AS errors,
+       100.0*sum(errors) FILTER(WHERE errors&lt;=calls AND calls&gt;0)/
+         nullif(sum(calls) FILTER(WHERE errors&lt;=calls AND calls&gt;0),0) AS error_pct
+FROM current_rows WHERE fresh AND source_complete GROUP BY family;
+
+CREATE TABLE observation_trends AS
+SELECT run_id, observed_at, reporter_id, sum(calls) AS calls, sum(errors) AS errors,
+       100.0*sum(errors) FILTER(WHERE errors&lt;=calls AND calls&gt;0)/
+         nullif(sum(calls) FILTER(WHERE errors&lt;=calls AND calls&gt;0),0) AS error_pct,
+       sum(mean_ms::DOUBLE*calls) FILTER(WHERE mean_ms&gt;0 AND calls&gt;0)/
+         nullif(sum(calls) FILTER(WHERE mean_ms&gt;0 AND calls&gt;0),0) AS mean_ms
+FROM observations WHERE source_complete GROUP BY ALL ORDER BY observed_at,reporter_id;
+</code></pre></details><details><summary>pipeline.py · Coleta, build e commit de estado</summary><pre><code>import asyncio
+from datetime import datetime, timezone
+import json
+from pathlib import Path
+import uuid
+
+from .analysis import apply
+from .archive import validate
+from .build import build
+from .collect import collect
+from .storage import load, lock, now, write, sha, encoded
+
+
+def run(root=Path(&#x27;data&#x27;), output=Path(&#x27;site&#x27;), config=Path(&#x27;config&#x27;), refresh=True, transport=None):
+    root = Path(root)
+    reporters = json.loads((config / &#x27;reporters.json&#x27;).read_bytes())
+    rules = json.loads((config / &#x27;rules.json&#x27;).read_bytes())
+    if len({r[&#x27;id&#x27;] for r in reporters}) != len(reporters) or not reporters:
+        raise ValueError(&#x27;Catálogo vazio ou duplicado&#x27;)
+    with lock(root):
+        state = load(root)
+        if refresh:
+            observed_at = now()
+            run_id = datetime.now(timezone.utc).strftime(&#x27;%Y%m%dT%H%M%SZ&#x27;) + &#x27;-&#x27; + uuid.uuid4().hex[:8]
+            reports = asyncio.run(collect(reporters, root, transport))
+            state = apply(state, reports, rules, observed_at, run_id)
+        if not state[&#x27;runs&#x27;]:
+            raise ValueError(&#x27;Nenhuma observação; execute collect primeiro&#x27;)
+        validate(state)
+        payload = build(state, root / &#x27;gold&#x27;, output, rules, reporters)
+        # State only advances after the full artifact and marts have been generated.
+        write(root / &#x27;state.json&#x27;, state)
+        keep = {p[&#x27;source_sha&#x27;] for r in state[&#x27;runs&#x27;][-2:] for report in r[&#x27;reports&#x27;] for p in report[&#x27;probes&#x27;] if p[&#x27;source_sha&#x27;]}
+        # Logical retention; package excludes older objects. Local GC removes only known hash files.
+        for path in (root / &#x27;bronze&#x27;).glob(&#x27;*.json&#x27;):
+            if path.stem not in keep and len(path.stem) == 64:
+                path.unlink()
+        return payload
+</code></pre></details><details><summary>archive.py · Pacote limitado, integridade e restore seguro</summary><pre><code>&quot;&quot;&quot;Bounded, checksummed state transport. Never extract arbitrary ZIP paths.&quot;&quot;&quot;
+import json
+from pathlib import Path
+import re
+import zipfile
+
+from .storage import atomic, encoded, load, sha
+
+HEX = re.compile(r&#x27;^[0-9a-f]{64}$&#x27;)
+MAX_ARCHIVE = 300 * 1024**2
+MAX_EXPANDED = 512 * 1024**2
+
+
+def recent_objects(state):
+    return {p[&#x27;source_sha&#x27;] for run in state[&#x27;runs&#x27;][-2:] for report in run[&#x27;reports&#x27;]
+            for p in report[&#x27;probes&#x27;] if p.get(&#x27;source_sha&#x27;)}
+
+
+def validate(state):
+    if state.get(&#x27;version&#x27;) != 1 or any(not isinstance(state.get(k), list) for k in (&#x27;runs&#x27;,&#x27;observations&#x27;,&#x27;incidents&#x27;,&#x27;latest_rows&#x27;)):
+        raise ValueError(&#x27;Contrato de estado inválido&#x27;)
+    if not state[&#x27;runs&#x27;]:
+        raise ValueError(&#x27;Estado sem execuções&#x27;)
+    runs = [r[&#x27;run_id&#x27;] for r in state[&#x27;runs&#x27;]]
+    if len(runs) != len(set(runs)):
+        raise ValueError(&#x27;Execuções duplicadas&#x27;)
+    identities = [(r[&#x27;run_id&#x27;],r[&#x27;entity_id&#x27;]) for r in state[&#x27;observations&#x27;]]
+    if len(identities) != len(set(identities)) or any(r not in runs for r,_ in identities):
+        raise ValueError(&#x27;Identidades ou referências inválidas&#x27;)
+    ids=[i[&#x27;id&#x27;] for i in state[&#x27;incidents&#x27;]]
+    if len(ids)!=len(set(ids)):
+        raise ValueError(&#x27;Ocorrência duplicada&#x27;)
+    for digest in recent_objects(state):
+        if not isinstance(digest,str) or not HEX.fullmatch(digest):
+            raise ValueError(&#x27;Hash bronze inválido&#x27;)
+    return state
+
+
+def pack(root, output):
+    root, output = Path(root),Path(output)
+    state=validate(load(root))
+    files={&#x27;state.json&#x27;:encoded(state)}
+    for digest in recent_objects(state):
+        raw=(root/&#x27;bronze&#x27;/(digest+&#x27;.json&#x27;)).read_bytes()
+        if sha(raw)!=digest:
+            raise ValueError(&#x27;Bronze corrompido&#x27;)
+        files[&#x27;bronze/&#x27;+digest+&#x27;.json&#x27;]=raw
+    manifest={&#x27;version&#x27;:1,&#x27;run_id&#x27;:state[&#x27;runs&#x27;][-1][&#x27;run_id&#x27;], &#x27;files&#x27;:{name:sha(raw) for name,raw in files.items()}}
+    files[&#x27;manifest.json&#x27;]=encoded(manifest)
+    if sum(map(len,files.values()))&gt;MAX_EXPANDED:
+        raise ValueError(&#x27;Estado excede limite de transporte&#x27;)
+    output.parent.mkdir(parents=True,exist_ok=True)
+    with zipfile.ZipFile(output,&#x27;w&#x27;,compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
+        for name,raw in sorted(files.items()):
+            archive.writestr(name,raw)
+    if output.stat().st_size&gt;MAX_ARCHIVE:
+        raise ValueError(&#x27;Arquivo excede limite&#x27;)
+    atomic(output.parent/&#x27;SHA256SUMS&#x27;,(sha(output.read_bytes())+&#x27;  &#x27;+output.name+&#x27;\n&#x27;).encode())
+    return manifest
+
+
+def restore(package, checksum, root):
+    package,checksum,root=Path(package),Path(checksum),Path(root)
+    if (root/&#x27;state.json&#x27;).exists() or any((root/&#x27;bronze&#x27;).glob(&#x27;*&#x27;)):
+        raise ValueError(&#x27;Restaure em diretório de dados vazio&#x27;)
+    if package.stat().st_size&gt;MAX_ARCHIVE:
+        raise ValueError(&#x27;Arquivo excede limite&#x27;)
+    fields=checksum.read_text().strip().split()
+    if len(fields)!=2 or fields[1]!=package.name or sha(package.read_bytes())!=fields[0]:
+        raise ValueError(&#x27;Checksum externo inválido&#x27;)
+    with zipfile.ZipFile(package) as archive:
+        items=archive.infolist()
+        names=[i.filename for i in items]
+        if len(items)&gt;4096 or len(names)!=len(set(names)) or sum(i.file_size for i in items)&gt;MAX_EXPANDED:
+            raise ValueError(&#x27;Limites de expansão / entradas inválidos&#x27;)
+        for item in items:
+            if item.filename not in (&#x27;state.json&#x27;,&#x27;manifest.json&#x27;) and not re.fullmatch(r&#x27;bronze/[0-9a-f]{64}\.json&#x27;,item.filename):
+                raise ValueError(&#x27;Caminho não permitido no pacote&#x27;)
+            limit=256*1024**2 if item.filename==&#x27;state.json&#x27; else 16*1024**2
+            if item.file_size&gt;limit or item.flag_bits&amp;1:
+                raise ValueError(&#x27;Entrada fora dos limites&#x27;)
+        manifest=json.loads(archive.read(&#x27;manifest.json&#x27;))
+        if manifest.get(&#x27;version&#x27;)!=1 or set(manifest.get(&#x27;files&#x27;,{}))!=set(names)-{&#x27;manifest.json&#x27;}:
+            raise ValueError(&#x27;Manifesto incompatível&#x27;)
+        files={name:archive.read(name) for name in manifest[&#x27;files&#x27;]}
+        if any(sha(raw)!=manifest[&#x27;files&#x27;][name] for name,raw in files.items()):
+            raise ValueError(&#x27;Checksum interno inválido&#x27;)
+        state=validate(json.loads(files[&#x27;state.json&#x27;]))
+        if state[&#x27;runs&#x27;][-1][&#x27;run_id&#x27;]!=manifest[&#x27;run_id&#x27;]:
+            raise ValueError(&#x27;Run do manifesto divergente&#x27;)
+        expected={&#x27;bronze/&#x27;+s+&#x27;.json&#x27; for s in recent_objects(state)}
+        if set(files)-{&#x27;state.json&#x27;}!=expected:
+            raise ValueError(&#x27;Referências bronze não conciliadas&#x27;)
+        if any(sha(files[&#x27;bronze/&#x27;+s+&#x27;.json&#x27;])!=s for s in recent_objects(state)):
+            raise ValueError(&#x27;Hash de origem divergente&#x27;)
+    # All checks precede mutation; the state pointer is committed last.
+    for name,raw in files.items():
+        if name!=&#x27;state.json&#x27;:
+            atomic(root/name,raw)
+    atomic(root/&#x27;state.json&#x27;,files[&#x27;state.json&#x27;])
+    return manifest
+</code></pre></details><details><summary>cli.py · Operação local padronizada</summary><pre><code>import argparse
+from pathlib import Path
+
+from .pipeline import run
+
+
+def main():
+    parser = argparse.ArgumentParser(description=&#x27;Santander Admin Metrics · observação a cada duas horas&#x27;)
+    parser.add_argument(&#x27;command&#x27;, choices=[&#x27;collect&#x27;, &#x27;build&#x27;])
+    parser.add_argument(&#x27;--root&#x27;, type=Path, default=Path(&#x27;data&#x27;))
+    parser.add_argument(&#x27;--output&#x27;, type=Path, default=Path(&#x27;site&#x27;))
+    parser.add_argument(&#x27;--config&#x27;, type=Path, default=Path(&#x27;config&#x27;))
+    args = parser.parse_args()
+    payload = run(args.root, args.output, args.config, refresh=args.command == &#x27;collect&#x27;)
+    print({&#x27;run_id&#x27;: payload[&#x27;meta&#x27;][&#x27;run_id&#x27;], &#x27;rows&#x27;: len(payload[&#x27;latest&#x27;]), &#x27;sources&#x27;: len(payload[&#x27;reporters&#x27;])})
+
+
+if __name__ == &#x27;__main__&#x27;:
+    main()
+</code></pre></details><details><summary>documentation.py · Este manual autocontido</summary><pre><code>&quot;&quot;&quot;One standalone manual, tied to the actual observation and bundled source.&quot;&quot;&quot;
+from html import escape
+import json
+import re
+from pathlib import Path
+
+from .storage import atomic
+
+HERE = Path(__file__).parent
+
+
+def generate(payload, output):
+    template = (HERE / &#x27;manual-template.html&#x27;).read_text(encoding=&#x27;utf-8&#x27;)
+    def text(v):
+        return escape(str(v))
+    def table(headers, values):
+        return &#x27;&lt;div class=&quot;table-scroll&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&#x27; + &#x27;&#x27;.join(&#x27;&lt;th&gt;&#x27;+text(h)+&#x27;&lt;/th&gt;&#x27; for h in headers) + &#x27;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;&#x27; + &#x27;&#x27;.join(&#x27;&lt;tr&gt;&#x27;+&#x27;&#x27;.join(&#x27;&lt;td&gt;&#x27;+text(v)+&#x27;&lt;/td&gt;&#x27; for v in row)+&#x27;&lt;/tr&gt;&#x27; for row in values)+&#x27;&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&#x27;
+    sources = table([&#x27;Reporte&#x27;, &#x27;Empresa / CNPJ&#x27;, &#x27;URL Admin&#x27;], [(r[&#x27;label&#x27;], r[&#x27;company&#x27;]+&#x27; / &#x27;+r[&#x27;cnpj&#x27;], r[&#x27;url&#x27;]) for r in payload[&#x27;reporters&#x27;]])
+    rules = table([&#x27;Parâmetro&#x27;, &#x27;Valor configurado&#x27;], payload[&#x27;rules&#x27;].items())
+    evidence = table([&#x27;Reporte&#x27;, &#x27;HTTP&#x27;, &#x27;Identidades&#x27;, &#x27;Cobertura&#x27;, &#x27;Diagnóstico&#x27;], [(r[&#x27;label&#x27;],r[&#x27;status&#x27;],r[&#x27;records&#x27;],r[&#x27;coverage&#x27;], &#x27;, &#x27;.join(r[&#x27;issues&#x27;]) or &#x27;Sem flags de coleta&#x27;) for r in payload[&#x27;runs&#x27;][-1][&#x27;reports&#x27;]])
+    modules = [(&#x27;collect.py&#x27;,&#x27;HTTP, limites, retry, paginação e bronze&#x27;), (&#x27;analysis.py&#x27;,&#x27;Contratos, deltas, histórico e incidentes&#x27;), (&#x27;storage.py&#x27;,&#x27;Hash, escrita atômica e exclusão mútua&#x27;), (&#x27;build.py&#x27;,&#x27;Arrow, DuckDB, Parquet e publicação estática&#x27;), (&#x27;marts.sql&#x27;,&#x27;Definições únicas de agregação SQL&#x27;), (&#x27;pipeline.py&#x27;,&#x27;Coleta, build e commit de estado&#x27;), (&#x27;archive.py&#x27;,&#x27;Pacote limitado, integridade e restore seguro&#x27;), (&#x27;cli.py&#x27;,&#x27;Operação local padronizada&#x27;), (&#x27;documentation.py&#x27;,&#x27;Este manual autocontido&#x27;), (&#x27;web/app.js&#x27;,&#x27;Filtros, gráficos, navegação, detalhes e exportação&#x27;), (&#x27;scripts/cloud_pipeline.py&#x27;,&#x27;Restore, candidato, confirmação e retenção remotos&#x27;)]
+    code = &#x27;&#x27;
+    for name, desc in modules:
+        path = HERE/name
+        if not path.exists():
+            path = HERE.parents[1]/name
+        if path.is_file():
+            code += &#x27;&lt;details&gt;&lt;summary&gt;&#x27;+text(name)+&#x27; · &#x27;+text(desc)+&#x27;&lt;/summary&gt;&lt;pre&gt;&lt;code&gt;&#x27;+text(path.read_text(encoding=&#x27;utf-8&#x27;))+&#x27;&lt;/code&gt;&lt;/pre&gt;&lt;/details&gt;&#x27;
+    substitutes = {&#x27;SOURCES&#x27;: sources, &#x27;RULES&#x27;: rules, &#x27;EVIDENCE&#x27;: evidence, &#x27;MODULES&#x27;: table([&#x27;Arquivo&#x27;,&#x27;Responsabilidade&#x27;],modules), &#x27;CODE&#x27;:code,
+                   &#x27;RUN&#x27;:text(payload[&#x27;meta&#x27;][&#x27;run_id&#x27;]), &#x27;OBSERVED&#x27;:text(payload[&#x27;meta&#x27;][&#x27;observed_at&#x27;]), &#x27;ROWS&#x27;:str(len(payload[&#x27;latest&#x27;])),
+                   &#x27;VERSION&#x27;:text(payload[&#x27;meta&#x27;][&#x27;version&#x27;]), &#x27;CONFIG&#x27;:text(json.dumps(payload[&#x27;rules&#x27;],ensure_ascii=False,indent=2))}
+    for key, value in substitutes.items():
+        template = template.replace(&#x27;@@&#x27;+key+&#x27;@@&#x27;,value)
+    if re.search(r&#x27;@@[A-Z_]+@@&#x27;, template):
+        raise ValueError(&#x27;Manual contém placeholder não preenchido&#x27;)
+    atomic(output, template.encode())
+    return Path(output)
+</code></pre></details><details><summary>web/app.js · Filtros, gráficos, navegação, detalhes e exportação</summary><pre><code>&#x27;use strict&#x27;;
+(() =&gt; {
+const D = window.ADMIN_DATA, $ = id =&gt; document.getElementById(id);
+if (!D) { $(&#x27;freshness&#x27;).textContent = &#x27;Dados indisponíveis. Consulte as execuções e tente recarregar.&#x27;; return; }
+const esc = value =&gt; String(value ?? &#x27;&#x27;).replace(/[&amp;&lt;&gt;&quot;&#x27;]/g, c =&gt; ({&#x27;&amp;&#x27;:&#x27;&amp;amp;&#x27;,&#x27;&lt;&#x27;:&#x27;&amp;lt;&#x27;,&#x27;&gt;&#x27;:&#x27;&amp;gt;&#x27;,&#x27;&quot;&#x27;:&#x27;&amp;quot;&#x27;,&quot;&#x27;&quot;:&#x27;&amp;#39;&#x27;}[c]));
+const num = (v, decimals=0) =&gt; v == null || !Number.isFinite(v) ? &#x27;—&#x27; : v.toLocaleString(&#x27;pt-BR&#x27;,{maximumFractionDigits:decimals,minimumFractionDigits:decimals});
+const pct = v =&gt; v == null ? &#x27;—&#x27; : num(v,2)+&#x27;%&#x27;;
+const dt = v =&gt; v ? new Date(v).toLocaleString(&#x27;pt-BR&#x27;,{timeZone:&#x27;America/Sao_Paulo&#x27;,day:&#x27;2-digit&#x27;,month:&#x27;2-digit&#x27;,year:&#x27;numeric&#x27;,hour:&#x27;2-digit&#x27;,minute:&#x27;2-digit&#x27;})+&#x27; BRT&#x27; : &#x27;—&#x27;;
+const total = (rs,k) =&gt; rs.some(r=&gt;r[k]!=null) ? rs.reduce((s,r)=&gt;s+(r[k]??0),0) : null;
+const rate = (rs,k) =&gt; {const good=rs.filter(r=&gt;r.calls&gt;0 &amp;&amp; r[k]!=null &amp;&amp; r[k]&lt;=r.calls); return good.length ? 100*total(good,k)/total(good,&#x27;calls&#x27;) : null;};
+const weighted = rs =&gt; {const good=rs.filter(r=&gt;r.calls&gt;0 &amp;&amp; r.mean_ms&gt;0); return good.length ? good.reduce((s,r)=&gt;s+r.calls*r.mean_ms,0)/total(good,&#x27;calls&#x27;) : null;};
+const status = (label,level=&#x27;muted&#x27;) =&gt; `&lt;span class=&quot;status ${level}&quot;&gt;${esc(label)}&lt;/span&gt;`;
+const empty = text =&gt; `&lt;div class=&quot;empty&quot;&gt;${esc(text)}&lt;/div&gt;`;
+const labels = {error_rate:&#x27;Taxa de erro elevada&#x27;,rejection_rate:&#x27;Taxa de rejeição elevada&#x27;,mean_latency:&#x27;Média de resposta elevada&#x27;,latency_regression:&#x27;Regressão da média&#x27;,collection:&#x27;Falha na coleta&#x27;,open:&#x27;Aberto&#x27;,recovering:&#x27;Em recuperação&#x27;,resolved:&#x27;Resolvido&#x27;,critical:&#x27;Crítico&#x27;,attention:&#x27;Atenção&#x27;,first_observation:&#x27;Primeira observação&#x27;,valid:&#x27;Delta válido&#x27;,day_changed:&#x27;Dia de referência mudou&#x27;,incomplete_source:&#x27;Origem incompleta&#x27;,unchanged_report:&#x27;Reporte sem mudança&#x27;,invalid_counter:&#x27;Contador inválido&#x27;,counter_reset_or_revision:&#x27;Reset ou revisão&#x27;,inconsistent_delta:&#x27;Delta inconsistente&#x27;,reported_clock_skew:&#x27;Horário declarado divergente (&gt;15 min)&#x27;,request_time_invalid:&#x27;requestTime inválido&#x27;,history_lengths_differ:&#x27;Arrays históricos de comprimentos diferentes&#x27;,uptime_downtime_conflict:&#x27;Uptime 100% com downtime positivo&#x27;,zero_uptime_without_traffic:&#x27;Uptime zero sem tráfego&#x27;,average_tps_above_peak:&#x27;TPS médio superior ao pico&#x27;,counter_above_invocations:&#x27;Erro/rejeição maior que chamadas&#x27;,zero_mean_with_traffic:&#x27;Média zero com chamadas&#x27;,page_metadata_conflict:&#x27;Cobertura do total com páginas excedentes declaradas&#x27;,duplicate_endpoint:&#x27;Identidade repetida na paginação&#x27;,conflicting_endpoint:&#x27;Valores conflitantes para a mesma identidade&#x27;,empty_report:&#x27;Reporte vazio&#x27;,pagination_no_new_identity:&#x27;Paginação sem novas identidades&#x27;,reported_total_reconciled:&#x27;Total de identidades conciliado&#x27;,unknown:&#x27;Cobertura desconhecida&#x27;,unconfirmed:&#x27;Cobertura não confirmada&#x27;};
+function label(k) { return labels[k] || k.replaceAll(&#x27;_&#x27;,&#x27; &#x27;); }
+let page=0, visible=[], selected=&#x27;&#x27;; const size=25, colors=[&#x27;#087f73&#x27;,&#x27;#b86370&#x27;,&#x27;#497dab&#x27;,&#x27;#bd8b36&#x27;,&#x27;#8173ac&#x27;,&#x27;#4b948b&#x27;,&#x27;#b87949&#x27;,&#x27;#7f91a1&#x27;];
+const last=D.runs.at(-1), reports=()=&gt;last.reports.filter(r=&gt;!selected||r.id===selected);
+const scoped=()=&gt;D.latest.filter(r=&gt;!selected||r.reporter_id===selected);
+const fresh=()=&gt;scoped().filter(r=&gt;r.fresh&amp;&amp;r.source_complete);
+const reporterIds=new Set(D.reporters.map(r=&gt;r.id));
+for(const r of D.reporters) $(&#x27;reporter&#x27;).insertAdjacentHTML(&#x27;beforeend&#x27;,`&lt;option value=&quot;${esc(r.id)}&quot;&gt;${esc(r.label)}&lt;/option&gt;`);
+for(const f of [...new Set(D.latest.map(r=&gt;r.family))].sort()) $(&#x27;family&#x27;).insertAdjacentHTML(&#x27;beforeend&#x27;,`&lt;option&gt;${esc(f)}&lt;/option&gt;`);
+function freshness() {
+ const hours=Math.max(0,(Date.now()-Date.parse(D.meta.observed_at))/3600000), failed=reports().filter(r=&gt;!r.complete||!r.records||r.status!==200).length;
+ const old=hours&gt;D.rules.stale_after_hours;
+ $(&#x27;freshness&#x27;).classList.toggle(&#x27;warning&#x27;,old||failed&gt;0);
+ $(&#x27;freshness&#x27;).textContent = `${old?&#x27;Atualização atrasada&#x27;:&#x27;Última coleta&#x27;}: ${dt(D.meta.observed_at)} · há ${num(hours,1)} h. ${failed?failed+&#x27; reporte(s) sem coleta completa; últimas métricas boas preservadas como antigas e excluídas dos indicadores atuais.&#x27;:&#x27;Todos os reportes do recorte tiveram cobertura conciliada.&#x27;} ${old?&#x27;As métricas abaixo são do último ciclo e estão desatualizadas.&#x27;:&#x27;Próximas execuções previstas a cada 2h, no minuto 17 UTC (horário sujeito ao GitHub).&#x27;} `;
+ $(&#x27;snapshot&#x27;).textContent=`Observação: ${dt(D.meta.observed_at)} · ${D.runs.length} ciclo(s) retido(s)`;
+}
+function overview() {
+ const rs=fresh(), validErrors=rs.filter(r=&gt;r.calls&gt;0&amp;&amp;r.errors!=null&amp;&amp;r.errors&lt;=r.calls), src=reports(), ok=src.filter(r=&gt;r.status===200&amp;&amp;r.complete&amp;&amp;r.records).length;
+ const live=D.incidents.filter(i=&gt;i.status!==&#x27;resolved&#x27;&amp;&amp;(!selected||i.reporter===D.reporters.find(r=&gt;r.id===selected)?.label));
+ $(&#x27;nav-count&#x27;).textContent=live.length;
+ const cards=[[&#x27;Fontes observadas&#x27;,`${ok}&lt;span class=&quot;unit&quot;&gt;/ ${src.length}&lt;/span&gt;`,&#x27;reportes com cobertura conciliada&#x27;],[&#x27;Chamadas declaradas&#x27;,num(total(rs,&#x27;calls&#x27;)),&#x27;acumulado parcial do dia · &#x27;+num(rs.length)+&#x27; endpoints&#x27;],[&#x27;Taxa de erro&#x27;,pct(rate(rs,&#x27;errors&#x27;)),num(total(validErrors,&#x27;errors&#x27;))+&#x27; / &#x27;+num(total(validErrors,&#x27;calls&#x27;))+&#x27; chamadas válidas&#x27;],[&#x27;Média ponderada&#x27;,num(weighted(rs),0)+&#x27;&lt;span class=&quot;unit&quot;&gt;ms&lt;/span&gt;&#x27;,&#x27;média declarada × chamadas válidas; não p95&#x27;]];
+ $(&#x27;kpis&#x27;).innerHTML=cards.map(c=&gt;`&lt;article class=&quot;metric-card&quot;&gt;&lt;div class=&quot;metric-top&quot;&gt;${c[0]}&lt;/div&gt;&lt;div class=&quot;metric-number&quot;&gt;${c[1]}&lt;/div&gt;&lt;div class=&quot;metric-note&quot;&gt;${c[2]}&lt;/div&gt;&lt;/article&gt;`).join(&#x27;&#x27;);
+ const ranked=rs.filter(r=&gt;r.errors&gt;0&amp;&amp;r.calls&gt;=r.errors).sort((a,b)=&gt;b.errors-a.errors), top=ranked.slice(0,5), errors=total(ranked,&#x27;errors&#x27;)||0, share=errors?100*(total(top,&#x27;errors&#x27;)||0)/errors:null;
+ const critical=live.filter(i=&gt;i.severity===&#x27;critical&#x27;).length, recurrent=rs.filter(r=&gt;r.recurrent_days&gt;=3).length;
+ $(&#x27;executive-title&#x27;).textContent=critical?`${critical} sinal(is) crítico(s) para investigar.`:live.length?`${live.length} sinal(is) de atenção no recorte.`:ok&lt;src.length?&#x27;A cobertura exige investigação.&#x27;:&#x27;Sem sinais acima dos limiares atuais.&#x27;;
+ $(&#x27;executive-copy&#x27;).textContent=rs.length?`${share==null?&#x27;Sem erros válidos reportados.&#x27;:pct(share)+&#x27; dos erros válidos estão nos cinco endpoints de maior volume de erro.&#x27;} ${recurrent} endpoint(s) têm erro ≥5% em pelo menos três dias anteriores com ≥100 chamadas. Rejeição atual: ${pct(rate(rs,&#x27;rejections&#x27;))}.`:&#x27;Não há métricas completas no ciclo atual. Consulte a saúde da coleta e o contexto anterior na tabela de endpoints.&#x27;;
+ $(&#x27;executive-foot&#x27;).textContent=`${live.filter(i=&gt;i.confirmed).length} sinal(is) confirmado(s) por persistência · critérios analíticos, sem conclusão causal`;
+ $(&#x27;concentration&#x27;).textContent=share==null?&#x27;SEM BASE&#x27;:pct(share)+&#x27; DO TOTAL&#x27;;
+ $(&#x27;ranking&#x27;).innerHTML=top.length?top.map((r,i)=&gt;`&lt;div class=&quot;rank-item&quot;&gt;&lt;span&gt;0${i+1}&lt;/span&gt;&lt;div&gt;&lt;button class=&quot;rank-label&quot; data-entity=&quot;${r.entity_id}&quot; title=&quot;${esc(r.endpoint)}&quot;&gt;${esc(r.reporter)} · ${esc(r.path)}&lt;/button&gt;&lt;div class=&quot;rank-track&quot;&gt;&lt;span style=&quot;width:${100*r.errors/top[0].errors}%&quot;&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;rank-value&quot;&gt;${num(r.errors)}&lt;small&gt;${pct(r.error_pct)} de ${num(r.calls)}&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;`).join(&#x27;&#x27;):empty(&#x27;Sem erros válidos declarados no ciclo atual.&#x27;);
+ $(&#x27;reporter-cards&#x27;).innerHTML=src.map(r=&gt;{const good=r.complete&amp;&amp;r.records&amp;&amp;r.status===200, m=D.report_summary.find(x=&gt;x.reporter_id===r.id);return `&lt;button class=&quot;reporter-card&quot; data-reporter=&quot;${esc(r.id)}&quot;&gt;&lt;span class=&quot;head&quot;&gt;${esc(r.label)} ${status(good?&#x27;HTTP 200&#x27;:&#x27;Falha&#x27;,good?&#x27;good&#x27;:&#x27;critical&#x27;)}&lt;/span&gt;&lt;p&gt;${num(r.records)} identidades · média ${num(m?.mean_ms)} ms&lt;br&gt;Erro ${pct(m?.error_pct)} · ${num(r.probe_ms)} ms no Admin&lt;/p&gt;&lt;/button&gt;`;}).join(&#x27;&#x27;);
+}
+function incidents() {
+ const choice=$(&#x27;incident-status&#x27;).value;
+ const allowed=new Set(D.reporters.filter(r=&gt;!selected||r.id===selected).map(r=&gt;r.label));
+ const rs=D.incidents.filter(i=&gt;allowed.has(i.reporter)&amp;&amp;(choice===&#x27;all&#x27;||i.status!==&#x27;resolved&#x27;)&amp;&amp;(choice!==&#x27;critical&#x27;||i.severity===&#x27;critical&#x27;));
+ rs.sort((a,b)=&gt;(a.severity===&#x27;critical&#x27;?-1:1)-(b.severity===&#x27;critical&#x27;?-1:1)||b.last_seen.localeCompare(a.last_seen));
+ $(&#x27;incident-rows&#x27;).innerHTML=rs.length?rs.map(i=&gt;`&lt;tr&gt;&lt;td&gt;${status(label(i.severity),i.severity)}&lt;small&gt;${esc(label(i.status))} · ${i.confirmed?&#x27;persistência confirmada&#x27;:&#x27;sinal provisório&#x27;}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;&lt;strong&gt;${esc(i.reporter)}&lt;/strong&gt;&lt;small&gt;${esc(label(i.rule))}&lt;/small&gt;${i.endpoint&amp;&amp;D.latest.some(r=&gt;r.entity_id===i.entity_id)?`&lt;button class=&quot;cell-path&quot; data-entity=&quot;${esc(i.entity_id)}&quot;&gt;${esc(i.endpoint)}&lt;/button&gt;`:i.endpoint?`&lt;small&gt;${esc(i.endpoint)} · sem observação atual&lt;/small&gt;`:&#x27;&#x27;}&lt;/td&gt;&lt;td&gt;${esc(i.evidence)}&lt;small&gt;Último sinal: ${dt(i.last_seen)}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${dt(i.opened_at)}&lt;/td&gt;&lt;td&gt;${num(i.samples)} detecções&lt;small&gt;${num(i.consecutive_samples)} consecutivas · recuperação ${num(i.recovery_samples)}/${D.rules.recovery_samples}&lt;/small&gt;&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;):&#x27;&lt;tr&gt;&lt;td colspan=&quot;5&quot;&gt;&#x27;+empty(&#x27;Nenhum incidente neste filtro.&#x27;)+&#x27;&lt;/td&gt;&lt;/tr&gt;&#x27;;
+}
+function chart(target, series, unit, valueFormatter=num) {
+ const all=series.flatMap(s=&gt;s.points).filter(p=&gt;p.y!=null&amp;&amp;Number.isFinite(p.y));
+ if(!all.length) {target.innerHTML=empty(&#x27;Ainda não há amostras válidas para esta série.&#x27;);return;}
+ const W=900,H=235,L=64,R=24,T=18,B=43, times=all.map(p=&gt;Date.parse(p.x)), min=Math.min(...times),max=Math.max(...times), hi=Math.max(1,...all.map(p=&gt;p.y))*1.12;
+ const x=v=&gt;L+(max===min?(W-L-R)/2:(Date.parse(v)-min)/(max-min)*(W-L-R)), y=v=&gt;H-B-v/hi*(H-T-B);
+ let svg=`&lt;svg viewBox=&quot;0 0 ${W} ${H}&quot; role=&quot;img&quot; aria-label=&quot;${esc(unit)} ao longo das observações&quot;&gt;&lt;title&gt;${esc(unit)} · valores detalhados nos pontos&lt;/title&gt;`;
+ for(let i=0;i&lt;4;i++) {const v=hi*i/3;svg+=`&lt;line x1=&quot;${L}&quot; y1=&quot;${y(v)}&quot; x2=&quot;${W-R}&quot; y2=&quot;${y(v)}&quot; stroke=&quot;#e9eef1&quot;/&gt;&lt;text class=&quot;axis&quot; x=&quot;${L-9}&quot; y=&quot;${y(v)+3}&quot; text-anchor=&quot;end&quot;&gt;${esc(valueFormatter(v))}&lt;/text&gt;`;}
+ const ticks=[min,...(max&gt;min?[min+(max-min)/2,max]:[])];
+ ticks.forEach(t=&gt;{svg+=`&lt;text class=&quot;axis&quot; x=&quot;${x(new Date(t).toISOString())}&quot; y=&quot;${H-12}&quot; text-anchor=&quot;middle&quot;&gt;${esc(new Date(t).toLocaleString(&#x27;pt-BR&#x27;,{timeZone:&#x27;America/Sao_Paulo&#x27;,day:&#x27;2-digit&#x27;,month:&#x27;2-digit&#x27;,hour:&#x27;2-digit&#x27;,minute:&#x27;2-digit&#x27;}))}&lt;/text&gt;`;});
+ series.forEach((s,i)=&gt;{const color=colors[i%colors.length];let segments=[],segment=[],prev;
+  for(const p of s.points) {if(p.y==null||!Number.isFinite(p.y)|| (prev &amp;&amp; (Date.parse(p.x)-Date.parse(prev.x)&gt;3.5*3600000 || (p.day&amp;&amp;prev.day&amp;&amp;p.day!==prev.day)))) {if(segment.length)segments.push(segment);segment=[];} if(p.y!=null&amp;&amp;Number.isFinite(p.y))segment.push(p);prev=p;}
+  if(segment.length)segments.push(segment);
+  segments.forEach(ps=&gt;{svg+=`&lt;polyline points=&quot;${ps.map(p=&gt;x(p.x)+&#x27;,&#x27;+y(p.y)).join(&#x27; &#x27;)}&quot; fill=&quot;none&quot; stroke=&quot;${color}&quot; stroke-width=&quot;2&quot;/&gt;`;});
+  for(const p of s.points.filter(p=&gt;p.y!=null&amp;&amp;Number.isFinite(p.y))) svg+=`&lt;circle class=&quot;point&quot; tabindex=&quot;0&quot; cx=&quot;${x(p.x)}&quot; cy=&quot;${y(p.y)}&quot; r=&quot;${all.length&gt;100?2:4}&quot; fill=&quot;${color}&quot;&gt;&lt;title&gt;${esc(s.name)} · ${dt(p.x)} · ${esc(valueFormatter(p.y))} ${esc(unit)}${p.note?&#x27; · &#x27;+esc(p.note):&#x27;&#x27;}&lt;/title&gt;&lt;/circle&gt;`;
+ });
+ target.innerHTML=svg+&#x27;&lt;/svg&gt;&lt;div class=&quot;legend&quot;&gt;&#x27;+series.map((s,i)=&gt;`&lt;span&gt;&lt;i style=&quot;background:${colors[i%colors.length]}&quot;&gt;&lt;/i&gt;${esc(s.name)}&lt;/span&gt;`).join(&#x27;&#x27;)+&#x27;&lt;/div&gt;&#x27;;
+}
+function trends() {
+ const metric=$(&#x27;trend-metric&#x27;).value, unit=metric===&#x27;error_pct&#x27;?&#x27;%&#x27;:metric===&#x27;mean_ms&#x27;?&#x27;ms&#x27;:&#x27;chamadas&#x27;;
+ const ss=D.reporters.filter(r=&gt;!selected||r.id===selected).map(r=&gt;({name:r.label,points:D.runs.map(run=&gt;{const p=D.observation_trends.find(t=&gt;t.run_id===run.run_id&amp;&amp;t.reporter_id===r.id); const source=run.reports.find(s=&gt;s.id===r.id);return {x:source?.observed_at||run.observed_at,y:p?.[metric]??null,day:new Date(source?.observed_at||run.observed_at).toLocaleDateString(&#x27;en-CA&#x27;,{timeZone:&#x27;America/Sao_Paulo&#x27;}),note:p?num(p.calls)+&#x27; chamadas no dia; cobertura pode variar&#x27;:&#x27;sem cobertura&#x27;};})}));
+ $(&#x27;trend-note&#x27;).textContent=D.runs.length&lt;2?&#x27;Primeira observação: a série crescerá nas próximas execuções. Dias anteriores declarados não são usados como coletas nossas.&#x27;:`${D.runs.length} ciclos retidos · linhas interrompidas em ausência, atraso &gt;3,5h ou mudança de dia. Passe sobre um ponto para ler o valor.`;
+ chart($(&#x27;trend-chart&#x27;),ss,unit,v=&gt;num(v,metric===&#x27;error_pct&#x27;?1:0));
+ const ps=D.reporters.filter(r=&gt;!selected||r.id===selected).map(r=&gt;({name:r.label,points:D.runs.map(run=&gt;{const p=run.reports.find(x=&gt;x.id===r.id);return{x:p?.observed_at||run.observed_at,y:p?.probe_ms??null,note:&#x27;HTTP &#x27;+(p?.status||0)};})}));
+ chart($(&#x27;probe-chart&#x27;),ps,&#x27;ms&#x27;,v=&gt;num(v));
+}
+function endpoints() {
+ const query=$(&#x27;search&#x27;).value.trim().toLowerCase(),family=$(&#x27;family&#x27;).value,sort=$(&#x27;sort&#x27;).value;
+ visible=scoped().filter(r=&gt;(!query||(r.endpoint+&#x27; &#x27;+r.reporter).toLowerCase().includes(query))&amp;&amp;(!family||r.family===family));
+ visible.sort((a,b)=&gt;sort===&#x27;path&#x27;?a.path.localeCompare(b.path):(b[sort]??-1)-(a[sort]??-1)||a.path.localeCompare(b.path));
+ page=Math.min(page,Math.max(0,Math.ceil(visible.length/size)-1));
+ $(&#x27;endpoint-count&#x27;).textContent=`${visible.length} ENDPOINTS NO FILTRO`;
+ $(&#x27;endpoint-rows&#x27;).innerHTML=visible.slice(page*size,(page+1)*size).map(r=&gt;`&lt;tr&gt;&lt;td&gt;&lt;div class=&quot;cell-label&quot;&gt;${esc(r.reporter)}&lt;/div&gt;&lt;button class=&quot;cell-path&quot; data-entity=&quot;${r.entity_id}&quot;&gt;${esc(r.path)}&lt;/button&gt;&lt;small&gt;${esc(r.family)}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${num(r.calls)}&lt;/td&gt;&lt;td&gt;${num(r.errors)}&lt;small&gt;${pct(r.error_pct)}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${pct(r.rejection_pct)}&lt;small&gt;${num(r.rejections)} rejeições&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${num(r.mean_ms)}&lt;small&gt;média, não p95&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${pct(r.uptime==null?null:100*r.uptime)}&lt;/td&gt;&lt;td&gt;${r.fresh&amp;&amp;r.source_complete?status(&#x27;Ciclo atual&#x27;,&#x27;good&#x27;):status(&#x27;Métrica antiga / parcial&#x27;,&#x27;attention&#x27;)}&lt;small&gt;${r.quality.length} ocorrência(s) · ${r.recurrent_days} dia(s) com erro ≥5%&lt;/small&gt;&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;)||&#x27;&lt;tr&gt;&lt;td colspan=&quot;7&quot;&gt;&#x27;+empty(&#x27;Nenhum endpoint encontrado.&#x27;)+&#x27;&lt;/td&gt;&lt;/tr&gt;&#x27;;
+ $(&#x27;page-note&#x27;).textContent=visible.length?`${page*size+1}–${Math.min((page+1)*size,visible.length)} de ${visible.length} · clique no endpoint para investigar`:&#x27;Sem resultados&#x27;;
+ $(&#x27;prev&#x27;).disabled=page===0;$(&#x27;next&#x27;).disabled=(page+1)*size&gt;=visible.length;
+}
+function probes() {
+ $(&#x27;probe-rows&#x27;).innerHTML=reports().map(r=&gt;`&lt;tr&gt;&lt;td&gt;&lt;strong&gt;${esc(r.label)}&lt;/strong&gt;&lt;small&gt;${esc(r.cnpj)}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${status(&#x27;HTTP &#x27;+r.status,r.status===200?&#x27;good&#x27;:&#x27;critical&#x27;)}&lt;small&gt;${esc(label(r.coverage))}&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${num(r.records)}&lt;small&gt;${r.probes.length} tentativa(s)&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${dt(r.observed_at)}&lt;/td&gt;&lt;td&gt;${num(r.probe_ms)} ms&lt;small&gt;última tentativa, não tempo do ETL&lt;/small&gt;&lt;/td&gt;&lt;td&gt;${r.issues.length?r.issues.map(k=&gt;esc(label(k))).join(&#x27;&lt;br&gt;&#x27;):&#x27;Sem inconsistência de coleta detectada&#x27;}&lt;small&gt;&lt;a href=&quot;${esc(r.url)}&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;&gt;Origem Admin ↗&lt;/a&gt;&lt;/small&gt;&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;);
+}
+function counts(values) {const out={};for(const v of values)out[v]=(out[v]||0)+1;return Object.entries(out).sort((a,b)=&gt;b[1]-a[1]);}
+function quality() {
+ const rs=scoped(), flags=counts(rs.flatMap(r=&gt;r.quality));
+ $(&#x27;quality-total&#x27;).textContent=`${rs.filter(r=&gt;r.quality.length).length} ENDPOINTS COM OCORRÊNCIAS`;
+ $(&#x27;quality-rules&#x27;).innerHTML=flags.map(([k,n])=&gt;`&lt;div class=&quot;quality-item&quot;&gt;&lt;span&gt;${esc(label(k))}&lt;small&gt;${esc(k)}&lt;/small&gt;&lt;/span&gt;&lt;b&gt;${num(n)}&lt;/b&gt;&lt;/div&gt;`).join(&#x27;&#x27;)||empty(&#x27;Sem inconsistências detectadas no recorte.&#x27;);
+ $(&#x27;interval-rules&#x27;).innerHTML=counts(rs.map(r=&gt;r.interval_state)).map(([k,n])=&gt;`&lt;div class=&quot;quality-item&quot;&gt;&lt;span&gt;${esc(label(k))}&lt;/span&gt;&lt;b&gt;${num(n)}&lt;/b&gt;&lt;/div&gt;`).join(&#x27;&#x27;);
+}
+function detail(id) {
+ const r=D.latest.find(x=&gt;x.entity_id===id);
+ if(!r) return;
+ $(&#x27;detail-title&#x27;).textContent=r.reporter+&#x27; · &#x27;+r.path;
+ const own=D.points.filter(p=&gt;p.entity_id===id), prev=D.reported_history.filter(p=&gt;p.entity_id===id);
+ $(&#x27;detail-body&#x27;).innerHTML=`&lt;p class=&quot;dialog-note&quot;&gt;Observado em ${dt(r.observed_at)} · ${r.fresh&amp;&amp;r.source_complete?&#x27;ciclo atual com cobertura conciliada&#x27;:&#x27;contexto antigo ou parcial; excluído dos KPIs atuais&#x27;}. Dia de referência ${esc(r.day)} (${esc(r.day_basis)}).&lt;/p&gt;&lt;div class=&quot;detail-grid&quot;&gt;${[[&#x27;Chamadas&#x27;,num(r.calls)],[&#x27;Erros&#x27;,pct(r.error_pct)],[&#x27;Média declarada&#x27;,num(r.mean_ms)+&#x27; ms&#x27;],[&#x27;Média histórica de referência&#x27;,num(r.baseline_mean_ms)+&#x27; ms&#x27;]].map(c=&gt;`&lt;div class=&quot;detail-stat&quot;&gt;&lt;small&gt;${c[0]}&lt;/small&gt;${c[1]}&lt;/div&gt;`).join(&#x27;&#x27;)}&lt;/div&gt;&lt;h3&gt;Comparação com a observação anterior&lt;/h3&gt;&lt;p class=&quot;dialog-note&quot;&gt;${esc(label(r.interval_state))}. ${r.interval_state===&#x27;valid&#x27;?`${num(r.interval_calls)} novas chamadas · ${num(r.interval_errors)} erros · taxa ${pct(r.interval_error_pct)}.`:&#x27;Não há intervalo comparável para calcular taxa.&#x27;} Nenhuma média intervalar ou p95 é inferida.&lt;/p&gt;&lt;h3&gt;Taxa de erro nas observações próprias&lt;/h3&gt;&lt;div id=&quot;detail-chart&quot; class=&quot;chart&quot;&gt;&lt;/div&gt;&lt;h3&gt;Dias anteriores declarados pelo banco&lt;/h3&gt;&lt;p class=&quot;dialog-note&quot;&gt;D−1 é ontem segundo a convenção de dia do reporte. Este histórico veio no payload atual e pode ser revisado pela origem; não representa nossas coletas passadas. Recorrência: ${r.recurrent_days} dia(s) com erro ≥5% e ≥100 chamadas.&lt;/p&gt;&lt;div class=&quot;table-wrap&quot;&gt;&lt;table&gt;&lt;thead&gt;&lt;tr&gt;&lt;th&gt;Posição&lt;/th&gt;&lt;th&gt;Chamadas&lt;/th&gt;&lt;th&gt;Erros / taxa&lt;/th&gt;&lt;th&gt;Rejeição&lt;/th&gt;&lt;th&gt;Média (ms)&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;&lt;tbody&gt;${prev.map(p=&gt;`&lt;tr&gt;&lt;td&gt;D−${p.position}&lt;/td&gt;&lt;td&gt;${num(p.calls)}&lt;/td&gt;&lt;td&gt;${num(p.errors)} / ${pct(p.calls&gt;0&amp;&amp;p.errors!=null&amp;&amp;p.errors&lt;=p.calls?100*p.errors/p.calls:null)}&lt;/td&gt;&lt;td&gt;${num(p.rejections)}&lt;/td&gt;&lt;td&gt;${num(p.mean_ms)}&lt;/td&gt;&lt;/tr&gt;`).join(&#x27;&#x27;)||&#x27;&lt;tr&gt;&lt;td colspan=&quot;5&quot;&gt;Sem histórico declarado.&lt;/td&gt;&lt;/tr&gt;&#x27;}&lt;/tbody&gt;&lt;/table&gt;&lt;/div&gt;&lt;h3&gt;Qualidade e proveniência&lt;/h3&gt;&lt;div class=&quot;pill-list&quot;&gt;${r.quality.map(q=&gt;status(label(q),&#x27;attention&#x27;)).join(&#x27;&#x27;)||status(&#x27;Sem flags detectadas&#x27;,&#x27;good&#x27;)}&lt;/div&gt;&lt;div class=&quot;evidence&quot;&gt;Endpoint declarado: &lt;code&gt;${esc(r.endpoint)}&lt;/code&gt;&lt;br&gt;SHA-256 bronze: &lt;code&gt;${esc(r.source_sha)}&lt;/code&gt;&lt;br&gt;Caminho JSON: &lt;code&gt;${esc(r.json_path)}&lt;/code&gt;&lt;br&gt;requestTime bruto: &lt;code&gt;${esc(r.request_time)}&lt;/code&gt;&lt;br&gt;Diferença observada: ${num(r.clock_offset_seconds)} segundos&lt;br&gt;Uptime declarado: ${pct(r.uptime==null?null:r.uptime*100)} · downtime parcial: ${num(r.downtime_seconds)} s&lt;br&gt;TPS médio / pico declarados: ${num(r.average_tps)} / ${num(r.peak_tps)}&lt;/div&gt;`;
+ chart($(&#x27;detail-chart&#x27;),[{name:r.reporter,points:own.map(p=&gt;({x:p.observed_at,y:p.source_complete?p.error_pct:null,day:p.observed_at.slice(0,10),note:num(p.calls)+&#x27; chamadas&#x27;}))}],&#x27;%&#x27;,v=&gt;num(v,1));
+ $(&#x27;detail&#x27;).showModal();$(&#x27;close-detail&#x27;).focus();
+}
+function render() {freshness();overview();incidents();trends();endpoints();probes();quality();}
+$(&#x27;reporter&#x27;).addEventListener(&#x27;change&#x27;,()=&gt;{selected=$(&#x27;reporter&#x27;).value;page=0;render();});
+$(&#x27;incident-status&#x27;).addEventListener(&#x27;change&#x27;,incidents);$(&#x27;trend-metric&#x27;).addEventListener(&#x27;change&#x27;,trends);
+for(const id of [&#x27;search&#x27;,&#x27;family&#x27;,&#x27;sort&#x27;]) $(id).addEventListener(id===&#x27;search&#x27;?&#x27;input&#x27;:&#x27;change&#x27;,()=&gt;{page=0;endpoints();});
+$(&#x27;prev&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{page--;endpoints();});$(&#x27;next&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{page++;endpoints();});
+document.addEventListener(&#x27;click&#x27;,event=&gt;{const entity=event.target.closest(&#x27;[data-entity]&#x27;);if(entity)detail(entity.dataset.entity);const reporter=event.target.closest(&#x27;[data-reporter]&#x27;);if(reporter&amp;&amp;reporterIds.has(reporter.dataset.reporter)){selected=reporter.dataset.reporter;$(&#x27;reporter&#x27;).value=selected;page=0;render();}});
+$(&#x27;close-detail&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;$(&#x27;detail&#x27;).close());$(&#x27;detail&#x27;).addEventListener(&#x27;click&#x27;,e=&gt;{if(e.target===$(&#x27;detail&#x27;)){const r=e.target.getBoundingClientRect();if(e.clientX&lt;r.left||e.clientX&gt;r.right||e.clientY&lt;r.top||e.clientY&gt;r.bottom)e.target.close();}});
+$(&#x27;export&#x27;).addEventListener(&#x27;click&#x27;,()=&gt;{const columns=[&#x27;reporter&#x27;,&#x27;endpoint&#x27;,&#x27;observed_at&#x27;,&#x27;fresh&#x27;,&#x27;source_complete&#x27;,&#x27;day&#x27;,&#x27;calls&#x27;,&#x27;errors&#x27;,&#x27;error_pct&#x27;,&#x27;rejections&#x27;,&#x27;rejection_pct&#x27;,&#x27;mean_ms&#x27;,&#x27;uptime&#x27;,&#x27;interval_state&#x27;,&#x27;interval_calls&#x27;,&#x27;interval_errors&#x27;,&#x27;interval_error_pct&#x27;,&#x27;source_sha&#x27;]; const cell=v=&gt;&#x27;&quot;&#x27;+String(v??&#x27;&#x27;).replace(/^[=+\-@\t\r]/,&quot;&#x27;$&amp;&quot;).replaceAll(&#x27;&quot;&#x27;,&#x27;&quot;&quot;&#x27;)+&#x27;&quot;&#x27;;const csv=&#x27;\ufeff&#x27;+[columns.join(&#x27;;&#x27;),...visible.map(r=&gt;columns.map(k=&gt;cell(r[k])).join(&#x27;;&#x27;))].join(&#x27;\r\n&#x27;);const url=URL.createObjectURL(new Blob([csv],{type:&#x27;text/csv;charset=utf-8;&#x27;}));const a=document.createElement(&#x27;a&#x27;);a.href=url;a.download=&#x27;admin-metrics-endpoints.csv&#x27;;a.click();setTimeout(()=&gt;URL.revokeObjectURL(url),1000);});
+const rules=D.rules;$(&#x27;rule-summary&#x27;).innerHTML=`&lt;ul&gt;&lt;li&gt;Erro ≥${rules.error_attention_pct}% com ≥${num(rules.minimum_calls)} chamadas; crítico ≥${rules.error_critical_pct}% com ≥${num(rules.critical_minimum_calls)}.&lt;/li&gt;&lt;li&gt;Rejeição ≥${rules.rejection_attention_pct}% com ≥${num(rules.minimum_calls)} chamadas, sem inferência de causa.&lt;/li&gt;&lt;li&gt;Média ≥${num(rules.latency_attention_ms)} ms: atenção; ≥${num(rules.latency_critical_ms)} ms: crítico, com amostra mínima.&lt;/li&gt;&lt;li&gt;Regressão ≥${rules.regression_multiplier}× a mediana de pelo menos três médias diárias anteriores válidas.&lt;/li&gt;&lt;li&gt;Falha do Admin: atenção na primeira coleta e crítica na segunda consecutiva. Recuperação: ${rules.recovery_samples} amostras válidas.&lt;/li&gt;&lt;/ul&gt;`;
+$(&#x27;build-info&#x27;).textContent=&#x27;v&#x27;+D.meta.version+&#x27; · &#x27;+D.meta.run_id;
+render();setInterval(freshness,60000);
+const nav=[...document.querySelectorAll(&#x27;.nav-item&#x27;)],sections=nav.map(a=&gt;document.querySelector(a.getAttribute(&#x27;href&#x27;)));
+function activeSection(){const edge=window.innerWidth&lt;=900?150:90;let active=sections[0];for(const s of sections)if(s.getBoundingClientRect().top&lt;=edge)active=s;for(const a of nav){const yes=a.hash===&#x27;#&#x27;+active.id;a.classList.toggle(&#x27;active&#x27;,yes);if(yes)a.setAttribute(&#x27;aria-current&#x27;,&#x27;location&#x27;);else a.removeAttribute(&#x27;aria-current&#x27;);}}
+document.addEventListener(&#x27;scroll&#x27;,activeSection,{passive:true});window.addEventListener(&#x27;resize&#x27;,activeSection);activeSection();
+})();
+</code></pre></details><details><summary>scripts/cloud_pipeline.py · Restore, candidato, confirmação e retenção remotos</summary><pre><code>&quot;&quot;&quot;GitHub lifecycle: restore approved, prepare draft, deploy, confirm, retain two.&quot;&quot;&quot;
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+import tempfile
+
+from admin_metrics.archive import pack, restore
+from admin_metrics.storage import write
+
+ROOT=Path(&#x27;data&#x27;)
+
+
+def gh(*args):
+    return subprocess.run([&#x27;gh&#x27;,*args],check=True,text=True,capture_output=True).stdout
+
+
+def releases():
+    pages=json.loads(gh(&#x27;api&#x27;,&#x27;--paginate&#x27;,&#x27;--slurp&#x27;,&#x27;repos/{owner}/{repo}/releases?per_page=100&#x27;))
+    return [r for page in pages for r in page]
+
+
+def approved(items):
+    return sorted([r for r in items if r[&#x27;tag_name&#x27;].startswith(&#x27;state-&#x27;) and not r[&#x27;draft&#x27;] and not r[&#x27;prerelease&#x27;]],key=lambda r:(r[&#x27;published_at&#x27;],r[&#x27;id&#x27;]),reverse=True)
+
+
+def download(tag):
+    with tempfile.TemporaryDirectory(prefix=&#x27;admin-restore-&#x27;) as temporary:
+        for pattern in (&#x27;state.zip&#x27;,&#x27;SHA256SUMS&#x27;):
+            gh(&#x27;release&#x27;,&#x27;download&#x27;,tag,&#x27;--pattern&#x27;,pattern,&#x27;--dir&#x27;,temporary)
+        return restore(Path(temporary)/&#x27;state.zip&#x27;,Path(temporary)/&#x27;SHA256SUMS&#x27;,ROOT)
+
+
+def prepare(refresh=False):
+    history=approved(releases())
+    if history:
+        download(history[0][&#x27;tag_name&#x27;])
+    from admin_metrics.pipeline import run
+    payload=run(ROOT,Path(&#x27;site&#x27;),refresh=refresh or not history)
+    # A presentation-only deploy must not create a fake observation or duplicate state.
+    if not refresh and history:
+        return &#x27;&#x27;
+    tag=&#x27;state-&#x27;+os.environ[&#x27;GITHUB_RUN_ID&#x27;]+&#x27;-&#x27;+os.environ.get(&#x27;GITHUB_RUN_ATTEMPT&#x27;,&#x27;1&#x27;)
+    destination=Path(&#x27;.runtime/package&#x27;); destination.mkdir(parents=True,exist_ok=True)
+    manifest=pack(ROOT,destination/&#x27;state.zip&#x27;)
+    body={&#x27;data_run_id&#x27;:manifest[&#x27;run_id&#x27;],&#x27;workflow_run_id&#x27;:os.environ[&#x27;GITHUB_RUN_ID&#x27;],
+          &#x27;source_sha&#x27;:os.environ[&#x27;GITHUB_SHA&#x27;],&#x27;purpose&#x27;:&#x27;approved-monitor-state&#x27;}
+    write(destination/&#x27;release-body.json&#x27;,body)
+    gh(&#x27;release&#x27;,&#x27;create&#x27;,tag,&#x27;--draft&#x27;,&#x27;--target&#x27;,os.environ[&#x27;GITHUB_SHA&#x27;],&#x27;--title&#x27;,&#x27;Admin Metrics · &#x27;+tag,&#x27;--notes-file&#x27;,str(destination/&#x27;release-body.json&#x27;))
+    output=os.environ.get(&#x27;GITHUB_OUTPUT&#x27;)
+    if output:
+        with open(output,&#x27;a&#x27;) as stream:stream.write(&#x27;candidate_tag=&#x27;+tag+&#x27;\n&#x27;)
+    gh(&#x27;release&#x27;,&#x27;upload&#x27;,tag,str(destination/&#x27;state.zip&#x27;),str(destination/&#x27;SHA256SUMS&#x27;))
+    summary=os.environ.get(&#x27;GITHUB_STEP_SUMMARY&#x27;)
+    if summary:
+        with open(summary,&#x27;a&#x27;,encoding=&#x27;utf-8&#x27;) as stream:
+            stream.write(&#x27;## Observação Admin\n\nRun: `&#x27;+payload[&#x27;meta&#x27;][&#x27;run_id&#x27;]+&#x27;`\n\n&#x27;)
+            for report in payload[&#x27;runs&#x27;][-1][&#x27;reports&#x27;]:
+                stream.write(f&quot;- {report[&#x27;label&#x27;]}: HTTP {report[&#x27;status&#x27;]}, {report[&#x27;records&#x27;]} identidades, issues: {report[&#x27;issues&#x27;]}\n&quot;)
+    return tag
+
+
+def promote(tag):
+    release=json.loads(gh(&#x27;release&#x27;,&#x27;view&#x27;,tag,&#x27;--json&#x27;,&#x27;body,isDraft&#x27;))
+    body=json.loads(release[&#x27;body&#x27;])
+    if not tag.startswith(&#x27;state-&#x27;) or body.get(&#x27;purpose&#x27;)!=&#x27;approved-monitor-state&#x27;:
+        raise ValueError(&#x27;Release fora do ciclo operacional&#x27;)
+    jobs=json.loads(gh(&#x27;api&#x27;,f&quot;repos/{{owner}}/{{repo}}/actions/runs/{body[&#x27;workflow_run_id&#x27;]}/jobs?per_page=100&quot;))[&#x27;jobs&#x27;]
+    proof=next((j for j in jobs if j[&#x27;name&#x27;]==&#x27;deploy&#x27; and j[&#x27;status&#x27;]==&#x27;completed&#x27; and j[&#x27;conclusion&#x27;]==&#x27;success&#x27;),None)
+    if not proof:
+        raise ValueError(&#x27;Não há recibo de deploy concluído com sucesso para este candidato&#x27;)
+    receipt={&#x27;data_run_id&#x27;:body[&#x27;data_run_id&#x27;],&#x27;workflow_run_id&#x27;:body[&#x27;workflow_run_id&#x27;],
+             &#x27;deploy_job_id&#x27;:proof[&#x27;id&#x27;],&#x27;completed_at&#x27;:proof[&#x27;completed_at&#x27;],&#x27;source_sha&#x27;:body[&#x27;source_sha&#x27;]}
+    with tempfile.TemporaryDirectory() as temporary:
+        path=Path(temporary)/&#x27;deployment-receipt.json&#x27;;write(path,receipt)
+        gh(&#x27;release&#x27;,&#x27;upload&#x27;,tag,str(path),&#x27;--clobber&#x27;)
+    gh(&#x27;release&#x27;,&#x27;edit&#x27;,tag,&#x27;--draft=false&#x27;,&#x27;--latest=false&#x27;)
+    for old in approved(releases())[2:]:
+        gh(&#x27;release&#x27;,&#x27;delete&#x27;,old[&#x27;tag_name&#x27;],&#x27;--yes&#x27;,&#x27;--cleanup-tag&#x27;)
+
+
+def discard(tag):
+    record=json.loads(gh(&#x27;release&#x27;,&#x27;view&#x27;,tag,&#x27;--json&#x27;,&#x27;isDraft&#x27;))
+    if not tag.startswith(&#x27;state-&#x27;) or not record[&#x27;isDraft&#x27;]:
+        raise ValueError(&#x27;Somente candidatos draft podem ser descartados&#x27;)
+    gh(&#x27;release&#x27;,&#x27;delete&#x27;,tag,&#x27;--yes&#x27;,&#x27;--cleanup-tag&#x27;)
+
+
+if __name__==&#x27;__main__&#x27;:
+    parser=argparse.ArgumentParser()
+    parser.add_argument(&#x27;command&#x27;,choices=[&#x27;prepare&#x27;,&#x27;promote&#x27;,&#x27;discard&#x27;,&#x27;restore&#x27;])
+    parser.add_argument(&#x27;--refresh&#x27;,action=&#x27;store_true&#x27;);parser.add_argument(&#x27;--tag&#x27;)
+    args=parser.parse_args()
+    if args.command==&#x27;prepare&#x27;:prepare(args.refresh)
+    elif args.command==&#x27;promote&#x27;:promote(args.tag)
+    elif args.command==&#x27;discard&#x27;:discard(args.tag)
+    else:download(args.tag)
+</code></pre></details></section>
+<section id="operacao" class="doc-section"><div class="number">09 / OPERAÇÃO E RECUPERAÇÃO</div><h2>Atualização remota com estado recuperável.</h2><h3>Execução local</h3><pre><code>python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements-dev.lock
+.venv/Scripts/python.exe -m pip install --no-deps -e .
+.venv/Scripts/python.exe -m admin_metrics.cli collect
+.venv/Scripts/python.exe -m http.server 8766 --bind 127.0.0.1 --directory site</code></pre><p>Abra http://127.0.0.1:8766. Linux/macOS: use <code>.venv/bin/python</code>. <code>build</code> no lugar de <code>collect</code> republica o estado sem nova amostra. Parâmetros: <code>--root data --output site --config config</code>. Não execute escritores simultâneos no mesmo root. O lock abandonado exige verificar o processo antes de removê-lo manualmente.</p><h3>Acionamento no GitHub</h3><p>Actions → “Monitorar Admin e publicar Pages” → Run workflow. <strong>refresh_data=true</strong> consulta fontes, atualiza histórico e publica. Desmarcado, republica o estado aprovado. Push em main executa testes e republica sem coletar; se ainda não houver estado, o bootstrap coleta. O cron é <code>17 */2 * * *</code> UTC, a cada duas horas; por exemplo, 00:17 UTC corresponde a 21:17 do dia anterior em Brasília.</p><p>Agendamentos dependem da plataforma: podem atrasar, e repos públicos inativos podem ter schedule desabilitado. Verifique Actions e a idade no painel. Consulte <a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule">documentação oficial de schedule</a> e <a href="https://docs.github.com/en/billing/concepts/product-billing/github-actions">cobrança GitHub Actions</a>. Não usa runner de maior porte pago. DuckDB roda no mesmo processo Python, sem máquina ou licença adicional contratada pelo projeto.</p><h3>Retenção e integridade</h3><p>Cada pacote <code>state-&lt;run&gt;</code> contém state.json, manifest.json e bronze atual/anterior, acompanhado de SHA256SUMS. Restore verifica checksum externo, hashes internos, referências recentes, nomes permitidos, duplicatas e limites de expansão; não extrai caminhos arbitrários. Uma falha de download/integridade bloqueia o ETL, em vez de iniciar histórico vazio. Releases aprovadas são ordenadas pelo instante de publicação; após confirmar a nova, conservar só as duas mais recentes desse prefixo.</p><h3>Procedimento de recuperação</h3><ol><li>Consulte o run do Actions, logs e ID publicado no rodapé/dashboard.json. Identifique se a falha foi coleta, build, upload, deploy ou promoção.</li><li>Falha de coleta é um dado: execute novamente com refresh. Últimas métricas boas continuam como contexto antigo.</li><li>Se o estado atual estiver corrompido, baixe explicitamente o pacote aprovado anterior e SHA256SUMS; use <code>python scripts/cloud_pipeline.py restore --tag state-…</code> em diretório de dados vazio. O comando não troca automaticamente o atual remoto.</li><li>Depois de validar, use build para revisar o artefato. Corrija o estado remoto somente com ação explícita/revisada e evidência da restauração; não apague o anterior antes da confirmação.</li><li>Deploy bem-sucedido com candidato ainda draft: verifique no Actions o job deploy e o dashboard.json publicado correspondendo ao manifest run_id. Então confirme com <code>python scripts/cloud_pipeline.py promote --tag state-…</code>. O comando exige o recibo de deploy criado somente após sucesso do job.</li><li>Workflow interrompido antes do deploy: o draft não é considerado estado aprovado. Após verificar que não há execução ativa, remova o candidato residual; novas execuções não o usam no restore.</li></ol><h3>Verificações de desenvolvimento</h3><pre><code>.venv/Scripts/python.exe -m pytest -q
+node --check src/admin_metrics/web/app.js</code></pre><p>O CI roda Windows/Linux com Python 3.11/3.12. O workflow de publicação também testa antes de coletar. Mudanças em regras exigem revisar comparabilidade histórica; o estado existente não é recalculado silenciosamente com os novos limiares.</p></section>
+<section id="evidencias" class="doc-section"><div class="number">10 / EVIDÊNCIAS E LIMITES</div><h2>O que esta publicação observou.</h2><p>Instante UTC do ciclo: <code>2026-11-10T18:37:28+00:00</code>. Execução: <code>initial-local-20261110</code>. Os números abaixo são gerados do estado real, não copiados da análise preliminar.</p><div class="table-scroll"><table><thead><tr><th>Reporte</th><th>HTTP</th><th>Identidades</th><th>Cobertura</th><th>Diagnóstico</th></tr></thead><tbody><tr><td>Santander CCVM</td><td>200</td><td>23</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>Aymoré</td><td>200</td><td>27</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>Getnet</td><td>200</td><td>15</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>Hyundai Capital</td><td>200</td><td>22</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>RCI · Nissan</td><td>200</td><td>16</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>Santander</td><td>200</td><td>112</td><td>reported_total_reconciled</td><td>page_metadata_conflict</td></tr><tr><td>RCI · Renault</td><td>200</td><td>16</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr><tr><td>Toro</td><td>200</td><td>45</td><td>reported_total_reconciled</td><td>Sem flags de coleta</td></tr></tbody></table></div><p>Na conferência inicial, o Santander principal trouxe 112 identidades na primeira página, declarou totalPages=2 e repetiu as identidades em uma segunda consulta independente. O coletor de produção encerra assim que cobre totalRecords e registra a divergência de metadata. Também foi observada diferença próxima de três horas entre requestTime e Date; isso é uma divergência observada, sem correção global presumida.</p><h3>Limitações e leituras que não são permitidas</h3><ul><li>Não há medição sintética direta de todos os serviços, nem prova de disponibilidade contínua a partir de coletas a cada duas horas.</li><li>Não existe detalhamento por status de erro no contrato. Rejeição não prova 429; 403 do Admin não identifica sua causa nem prova falha dos serviços.</li><li>Média não é p95. Os limiares configurados não são classificação regulatória.</li><li>Ausência de endpoint no reporte não prova ausência de oferta. Identidades e cobertura podem mudar entre ciclos.</li><li>Dias parciais, janelas e semântica de consolidação dependem da origem. Não inferimos janela fixa a partir de um reporte vazio.</li><li>Contagens entre reportes são agregados operacionais, sem deduplicação de transações entre instituições.</li><li>Bronze antigo expira: hashes de observações antigas continuam disponíveis, mas reprocessamento integral de mais de dois ciclos exige retenção adicional.</li><li>Single node, um escritor, sem autenticação corporativa. Dados e documentação são públicos.</li></ul><h3>Fontes primárias</h3><ul><li><a href="https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml">Especificação oficial Admin 2.0.1</a>.</li><li><a href="https://data.directory.openbankingbrasil.org.br/participants">Diretório de participantes Open Finance</a>.</li><li><a href="https://openfinancebrasil.atlassian.net/wiki/spaces/OF/pages/429588501">Informações gerais Admin no Confluence</a> — referência da análise preliminar; acesso não confirmado durante a conferência, sem alegação de SLA baseada nessa página.</li><li><a href="https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule">Eventos e limites de agendamento GitHub</a>.</li><li><a href="https://duckdb.org/docs/stable/">Documentação oficial DuckDB</a>.</li></ul></section><footer>ADMIN METRICS · OBSERVATORY · HTML ÚNICO AUTOCONTIDO · 1.0.0</footer></main><script>
+const input=document.getElementById('search'),sections=[...document.querySelectorAll('.doc-section')],links=[...document.querySelectorAll('nav a')];
+input.addEventListener('input',()=>{const q=input.value.trim().toLocaleLowerCase('pt-BR');let n=0;for(const s of sections){const yes=!q||s.textContent.toLocaleLowerCase('pt-BR').includes(q);s.classList.toggle('search-hidden',!yes);links.find(a=>a.hash==='#'+s.id).hidden=!yes;if(yes)n++;}document.getElementById('no-results').hidden=n!==0;});
+document.getElementById('print').addEventListener('click',()=>window.print());
+document.addEventListener('scroll',()=>{let active=sections.find(s=>!s.classList.contains('search-hidden'));for(const s of sections)if(!s.classList.contains('search-hidden')&&s.getBoundingClientRect().top<100)active=s;for(const a of links)a.classList.toggle('active',a.hash==='#'+active?.id);},{passive:true});
+</script></body></html>

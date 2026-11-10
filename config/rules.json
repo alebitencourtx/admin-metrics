@@ -1,0 +1,13 @@
+{
+  "retention_days": 30,
+  "error_attention_pct": 5,
+  "error_critical_pct": 20,
+  "minimum_calls": 100,
+  "critical_minimum_calls": 1000,
+  "rejection_attention_pct": 5,
+  "latency_attention_ms": 2000,
+  "latency_critical_ms": 4000,
+  "regression_multiplier": 2,
+  "recovery_samples": 2,
+  "stale_after_hours": 3
+}

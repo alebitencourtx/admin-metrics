@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "santander-admin-metrics"
+version = "1.0.0"
+requires-python = ">=3.11"
+dependencies = ["httpx[http2]>=0.28,<1", "truststore>=0.10,<1", "duckdb>=1.4,<2", "pyarrow>=18,<24", "tzdata>=2025.2"]
+[project.scripts]
+admin-metrics = "admin_metrics.cli:main"
+[tool.setuptools.packages.find]
+where = ["src"]
+[tool.setuptools.package-data]
+admin_metrics = ["web/*", "*.sql", "*.html"]
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+asyncio_default_fixture_loop_scope = "function"

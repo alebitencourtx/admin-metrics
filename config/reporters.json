@@ -1,0 +1,58 @@
+[
+  {
+    "id": "ccvm",
+    "label": "Santander CCVM",
+    "company": "SANTANDER CCVM S.A.",
+    "cnpj": "51014223000149",
+    "url": "https://ccvm.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "financiamentos",
+    "label": "Aymoré",
+    "company": "AYMORE CFI S.A.",
+    "cnpj": "07707650000110",
+    "url": "https://financiamentos.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "getnet",
+    "label": "Getnet",
+    "company": "GETNET ADQUIRENCIA E SERVICOS PARA MEIOS DE PAGAMENTO S A",
+    "cnpj": "10440482000154",
+    "url": "https://getnet.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "hyundai",
+    "label": "Hyundai Capital",
+    "company": "BANCO HYUNDAI CAPITAL BRASIL",
+    "cnpj": "30172491000119",
+    "url": "https://hyundai.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "nissan",
+    "label": "RCI · Nissan",
+    "company": "BCO RCI BRASIL S.A.",
+    "cnpj": "62307848000115",
+    "url": "https://nissan.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "openbanking",
+    "label": "Santander",
+    "company": "BCO SANTANDER (BRASIL) S.A.",
+    "cnpj": "90400888000142",
+    "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "renault",
+    "label": "RCI · Renault",
+    "company": "BCO RCI BRASIL S.A.",
+    "cnpj": "62307848000115",
+    "url": "https://renault.api.santander.com.br/open-banking/admin/v2/metrics"
+  },
+  {
+    "id": "toro",
+    "label": "Toro",
+    "company": "Santander CTVM S.A.",
+    "cnpj": "29162769000198",
+    "url": "https://toro.api.santander.com.br/open-banking/admin/v2/metrics"
+  }
+]

@@ -1,0 +1,99 @@
+{
+  "source": "https://data.directory.openbankingbrasil.org.br/participants",
+  "verified_at": "2026-11-10T18:37:29.833755+00:00",
+  "sha256": "c7f7c6459f53133b37acf29bb06aa99766968541cfb60da8a70799da8e164c2b",
+  "bytes": 4486521,
+  "matches": [
+    {
+      "url": "https://ccvm.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "51014223000149",
+      "company": "SANTANDER CCVM S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://ccvm.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "51014223000149",
+      "company": "SANTANDER CCVM S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://toro.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "29162769000198",
+      "company": "Santander CTVM S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://financiamentos.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "07707650000110",
+      "company": "AYMORE CFI S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://openbanking.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "90400888000142",
+      "company": "BCO SANTANDER (BRASIL) S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://getnet.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "10440482000154",
+      "company": "GETNET ADQUIRENCIA E SERVICOS PARA MEIOS DE PAGAMENTO S A",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://hyundai.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "30172491000119",
+      "company": "BANCO HYUNDAI CAPITAL BRASIL",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://nissan.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "62307848000115",
+      "company": "BCO RCI BRASIL S.A.",
+      "version": "2.0.1"
+    },
+    {
+      "url": "https://renault.api.santander.com.br/open-banking/admin/v2/metrics",
+      "cnpj": "62307848000115",
+      "company": "BCO RCI BRASIL S.A.",
+      "version": "2.0.1"
+    }
+  ],
+  "caveat": "Vínculo por API e CNPJ; não comprova controle societário."
+}

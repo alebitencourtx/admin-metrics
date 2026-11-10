@@ -1,0 +1,97 @@
+name: Monitorar Admin e publicar Pages
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+    inputs:
+      refresh_data:
+        description: 'Coletar uma nova observação (desmarque para somente republicar)'
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: admin-state-and-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pages: read
+    outputs:
+      candidate_tag: ${{ steps.prepare.outputs.candidate_tag }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements-dev.lock
+      - run: python -m pip install --no-deps -e .
+      - run: python -m pytest -q
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check src/admin_metrics/web/app.js
+      - name: Restaurar, observar e validar
+        id: prepare
+        env:
+          REFRESH_DATA: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.refresh_data) }}
+        run: |
+          if [ "$REFRESH_DATA" = "true" ]; then
+            python scripts/cloud_pipeline.py prepare --refresh
+          else
+            python scripts/cloud_pipeline.py prepare
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+      - name: Descartar candidato sem deploy
+        if: ${{ failure() && steps.prepare.outputs.candidate_tag != '' }}
+        env:
+          CANDIDATE_TAG: ${{ steps.prepare.outputs.candidate_tag }}
+        run: python scripts/cloud_pipeline.py discard --tag "$CANDIDATE_TAG"
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publicar dashboard e documentação
+        id: deployment
+        uses: actions/deploy-pages@v4
+  confirm:
+    needs: [build, deploy]
+    if: ${{ always() && needs.build.result == 'success' && needs.build.outputs.candidate_tag != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PYTHONPATH: src
+      CANDIDATE_TAG: ${{ needs.build.outputs.candidate_tag }}
+      DEPLOY_RESULT: ${{ needs.deploy.result }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirmar estado e conservar atual e anterior
+        if: ${{ env.DEPLOY_RESULT == 'success' }}
+        run: python scripts/cloud_pipeline.py promote --tag "$CANDIDATE_TAG"
+      - name: Descartar candidato após falha do deploy
+        if: ${{ env.DEPLOY_RESULT != 'success' }}
+        run: python scripts/cloud_pipeline.py discard --tag "$CANDIDATE_TAG"
