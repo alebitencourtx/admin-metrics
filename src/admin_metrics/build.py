@@ -58,7 +58,7 @@ def build(state, root, output, rules, reporters):
                    latest=latest, runs=state['runs'], incidents=state['incidents'], reported_history=history,
                    rules=rules, reporters=reporters)
     # Full observation points for endpoint drill-down, not repeated daily sums.
-    payload['points'] = [{k: r.get(k) for k in ('entity_id', 'observed_at', 'calls', 'errors', 'error_pct', 'mean_ms', 'source_complete', 'interval_state', 'interval_error_pct')}
+    payload['points'] = [{k: r.get(k) for k in ('entity_id', 'observed_at', 'day', 'calls', 'errors', 'error_pct', 'mean_ms', 'source_complete', 'interval_state', 'interval_error_pct')}
                          for r in state['observations']]
     from .documentation import generate
     with tempfile.TemporaryDirectory(dir=output.parent, prefix='.admin-stage-') as temporary:

@@ -120,8 +120,14 @@ def normalize(report, run_id):
 
 def interval(current, previous):
     result = {'interval_calls': None, 'interval_errors': None, 'interval_rejections': None,
-              'interval_error_pct': None, 'interval_rejection_pct': None, 'interval_state': 'first_observation'}
+              'interval_error_pct': None, 'interval_rejection_pct': None, 'interval_state': 'first_observation',
+              'interval_from': previous['observed_at'] if previous else None, 'interval_to': current['observed_at'],
+              'interval_seconds': None}
     if not previous:
+        return result
+    result['interval_seconds'] = (stamp(current['observed_at']) - stamp(previous['observed_at'])).total_seconds()
+    if result['interval_seconds'] <= 0:
+        result['interval_state'] = 'observation_time_not_increasing'
         return result
     if previous['day'] != current['day']:
         result['interval_state'] = 'day_changed'
@@ -179,7 +185,7 @@ def update_incidents(state, run, rows, rules):
     for row in rows:
         if not row['source_complete']:
             continue
-        if row['interval_state'] in ('counter_reset_or_revision', 'inconsistent_delta', 'invalid_counter'):
+        if row['interval_state'] in ('counter_reset_or_revision', 'inconsistent_delta', 'invalid_counter', 'observation_time_not_increasing'):
             continue
         # Absence of a signal is recovery only when that rule was evaluable.
         if (row['calls'] or 0) >= rules['minimum_calls']:

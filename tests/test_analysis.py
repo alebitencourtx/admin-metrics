@@ -33,16 +33,18 @@ def test_quality_history_and_baseline(tmp_path,reporter):
 @pytest.mark.parametrize('change,state',[(dict(day='2026-11-11'),'day_changed'),(dict(calls=900),'counter_reset_or_revision'),(dict(source_complete=False),'incomplete_source'),(dict(calls=None),'invalid_counter'),(dict(errors=2000),'invalid_counter'),(dict(calls=1001,errors=102),'inconsistent_delta'),(dict(calls=1100,errors=105),'valid')])
 def test_deltas_reject_resets_days_and_impossible_counters(tmp_path,reporter,change,state):
     previous=normalize(report(reporter,tmp_path),'r')[0]
-    current={**previous,**change,'fingerprint':'new'}
+    current={**previous,**change,'fingerprint':'new','observed_at':'2026-11-10T19:00:00+00:00'}
     delta=interval(current,previous)
     assert delta['interval_state']==state
     assert delta['interval_calls']==(100 if state=='valid' else None)
     assert delta['interval_error_pct']==(5 if state=='valid' else None)
+    assert delta['interval_seconds']==3600
 
 
 def test_unchanged_is_not_interval_traffic(tmp_path,reporter):
     row=normalize(report(reporter,tmp_path),'r')[0]
-    assert interval(row,row)['interval_state']=='unchanged_report'
+    assert interval({**row,'observed_at':'2026-11-10T19:00:00+00:00'},row)['interval_state']=='unchanged_report'
+    assert interval(row,row)['interval_state']=='observation_time_not_increasing'
 
 
 def step(state, reporter, root, rules, n, raw=None, status=200, complete=True):

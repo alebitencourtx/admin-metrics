@@ -5,7 +5,7 @@ from pathlib import Path
 import uuid
 
 from .analysis import apply
-from .archive import validate
+from .archive import validate, HEX
 from .build import build
 from .collect import collect
 from .storage import load, lock, now, write, sha, encoded
@@ -33,6 +33,6 @@ def run(root=Path('data'), output=Path('site'), config=Path('config'), refresh=T
         keep = {p['source_sha'] for r in state['runs'][-2:] for report in r['reports'] for p in report['probes'] if p['source_sha']}
         # Logical retention; package excludes older objects. Local GC removes only known hash files.
         for path in (root / 'bronze').glob('*.json'):
-            if path.stem not in keep and len(path.stem) == 64:
+            if path.stem not in keep and HEX.fullmatch(path.stem):
                 path.unlink()
         return payload

@@ -9,4 +9,14 @@
 - Navegador: panorama, filtro Santander, busca recurring-payments, detalhe com D−1…D−6, exportação CSV, navegação ativa, manual com busca/estado vazio e layout móvel a 390 px sem overflow horizontal de página.
 - Ensaio sintético local: 360 ciclos × 276 registros = 99.360 observações; build Arrow/DuckDB/Parquet/HTML em 1,573 s, payload 26.136.648 bytes. Dados altamente repetitivos derivados da primeira coleta para testar a escala, sem publicação; não é benchmark de tráfego, variabilidade ou rede. Não estabelece SLA.
 
-As execuções remotas, o estado aprovado e as URLs publicadas serão conferidos após o primeiro deploy. O diretório `artifacts/benchmark` é ignorado e não integra o site público.
+O diretório `artifacts/benchmark` é ignorado e não integra o site público.
+
+## Primeira execução remota verificada
+
+- Actions [42880395554](https://github.com/alebitencourtx/admin-metrics/actions/runs/42880395554): build, deploy e confirm concluídos com sucesso. Oito HTTP 200, 276 identidades, observação `20261110T185746Z-8b6176b9`.
+- CI [42880395657](https://github.com/alebitencourtx/admin-metrics/actions/runs/42880395657): quatro combinações Windows/Linux × Python 3.11/3.12 aprovadas, 44 testes em cada.
+- Release `state-42880395554-1`: ZIP, SHA256SUMS e recibo de deploy publicados após confirmação.
+- Pages novo e documentação retornaram HTTP 200; o site OpenData anterior também continuou respondendo HTTP 200.
+- Workflow remoto está `active`; agenda versionada `17 */2 * * *` UTC e acionamento manual disponíveis.
+
+O workflow é best effort. O sucesso da primeira execução não demonstra disponibilidade futura nem pontualidade garantida da agenda.
