@@ -27,6 +27,12 @@ function freshness() {
  $('freshness').textContent = `${old?'Atualização atrasada':'Última coleta'}: ${dt(D.meta.observed_at)} · há ${num(hours,1)} h. ${failed?failed+' reporte(s) sem coleta completa; últimas métricas boas preservadas como antigas e excluídas dos indicadores atuais.':'Todos os reportes do recorte tiveram cobertura conciliada.'} ${old?'As métricas abaixo são do último ciclo e estão desatualizadas.':'Próximas execuções previstas a cada 2h, no minuto 17 UTC (horário sujeito ao GitHub).'} `;
  $('snapshot').textContent=`Observação: ${dt(D.meta.observed_at)} · ${D.runs.length} ciclo(s) retido(s)`;
 }
+function endpointTitle(r) {
+ const families={'automatic-payments':'Pagamentos automáticos','credit-cards-accounts':'Cartões de crédito',accounts:'Contas',financings:'Financiamentos',loans:'Empréstimos',customers:'Cadastro',consents:'Consentimentos','variable-incomes':'Renda variável'};
+ const endings={limits:'Limites',balances:'Saldos','transactions-current':'Transações atuais',transactions:'Transações','recurring-payments':'Pagamentos recorrentes','recurring-consents':'Consentimentos recorrentes',payments:'Pagamentos','scheduled-instalments':'Parcelas programadas',warranties:'Garantias'};
+ const tail=r.path.split('/').at(-1), family=families[r.family]||r.family;
+ return family+(endings[tail]?' / '+endings[tail]:'');
+}
 function overview() {
  const rs=fresh(), validErrors=rs.filter(r=>r.calls>0&&r.errors!=null&&r.errors<=r.calls), src=reports(), ok=src.filter(r=>r.status===200&&r.complete&&r.records).length;
  const live=D.incidents.filter(i=>i.status!=='resolved'&&(!selected||i.reporter===D.reporters.find(r=>r.id===selected)?.label));
@@ -35,11 +41,11 @@ function overview() {
  $('kpis').innerHTML=cards.map(c=>`<article class="metric-card"><div class="metric-top">${c[0]}</div><div class="metric-number">${c[1]}</div><div class="metric-note">${c[2]}</div></article>`).join('');
  const ranked=rs.filter(r=>r.errors>0&&r.calls>=r.errors).sort((a,b)=>b.errors-a.errors), top=ranked.slice(0,5), errors=total(ranked,'errors')||0, share=errors?100*(total(top,'errors')||0)/errors:null;
  const critical=live.filter(i=>i.severity==='critical').length, recurrent=rs.filter(r=>r.recurrent_days>=3).length;
- $('executive-title').textContent=critical?`${critical} sinal(is) crítico(s) para investigar.`:live.length?`${live.length} sinal(is) de atenção no recorte.`:ok<src.length?'A cobertura exige investigação.':'Sem sinais acima dos limiares atuais.';
- $('executive-copy').textContent=rs.length?`${share==null?'Sem erros válidos reportados.':pct(share)+' dos erros válidos estão nos cinco endpoints de maior volume de erro.'} ${recurrent} endpoint(s) têm erro ≥5% em pelo menos três dias anteriores com ≥100 chamadas. Rejeição atual: ${pct(rate(rs,'rejections'))}.`:'Não há métricas completas no ciclo atual. Consulte a saúde da coleta e o contexto anterior na tabela de endpoints.';
+ $('executive-title').textContent=critical?`${critical} ${critical===1?'sinal crítico':'sinais críticos'} para investigar.`:live.length?`${live.length} ${live.length===1?'sinal':'sinais'} de atenção no recorte.`:ok<src.length?'A cobertura exige investigação.':'Sem sinais acima dos limiares atuais.';
+ $('executive-copy').innerHTML=rs.length?`<span class="executive-insight">${share==null?'Sem erros válidos reportados.':'<strong>'+pct(share)+'</strong> dos erros válidos estão nos cinco endpoints do ranking.'}</span><span class="executive-insight"><strong>${recurrent} endpoints</strong> têm erro ≥5% em pelo menos três dias anteriores, com ≥100 chamadas por dia.</span><span class="executive-insight">Rejeição atual: <strong>${pct(rate(rs,'rejections'))}</strong>.</span>`:'Não há métricas completas no ciclo atual. Consulte a saúde da coleta e o contexto anterior na tabela de endpoints.';
  $('executive-foot').textContent=`${live.filter(i=>i.confirmed).length} sinal(is) confirmado(s) por persistência · critérios analíticos, sem conclusão causal`;
  $('concentration').textContent=share==null?'SEM BASE':pct(share)+' DO TOTAL';
- $('ranking').innerHTML=top.length?top.map((r,i)=>`<div class="rank-item"><span>0${i+1}</span><div><button class="rank-label" data-entity="${r.entity_id}" title="${esc(r.endpoint)}">${esc(r.reporter)} · ${esc(r.path)}</button><div class="rank-track"><span style="width:${100*r.errors/top[0].errors}%"></span></div></div><div class="rank-value">${num(r.errors)}<small>${pct(r.error_pct)} de ${num(r.calls)}</small></div></div>`).join(''):empty('Sem erros válidos declarados no ciclo atual.');
+ $('ranking').innerHTML=top.length?top.map((r,i)=>`<div class="rank-item"><span>0${i+1}</span><div><button class="rank-label" data-entity="${r.entity_id}" title="${esc(r.endpoint)}"><span class="rank-reporter">${esc(r.reporter)} · ${esc(endpointTitle(r))}</span><span class="rank-path">${esc(r.path)}</span></button><div class="rank-track"><span style="width:${100*r.errors/top[0].errors}%"></span></div></div><div class="rank-value">${num(r.errors)}<small>${pct(r.error_pct)} de ${num(r.calls)}</small></div></div>`).join(''):empty('Sem erros válidos declarados no ciclo atual.');
  $('reporter-cards').innerHTML=src.map(r=>{const good=r.complete&&r.records&&r.status===200, m=D.report_summary.find(x=>x.reporter_id===r.id);return `<button class="reporter-card" data-reporter="${esc(r.id)}"><span class="head">${esc(r.label)} ${status(good?'HTTP 200':'Falha',good?'good':'critical')}</span><p>${num(r.records)} identidades · média ${num(m?.mean_ms)} ms<br>Erro ${pct(m?.error_pct)} · ${num(r.probe_ms)} ms no Admin</p></button>`;}).join('');
 }
 function incidents() {
@@ -52,12 +58,12 @@ function incidents() {
 function chart(target, series, unit, valueFormatter=num) {
  const all=series.flatMap(s=>s.points).filter(p=>p.y!=null&&Number.isFinite(p.y));
  if(!all.length) {target.innerHTML=empty('Ainda não há amostras válidas para esta série.');return;}
- const W=900,H=235,L=64,R=24,T=18,B=43, times=all.map(p=>Date.parse(p.x)), min=Math.min(...times),max=Math.max(...times), hi=Math.max(1,...all.map(p=>p.y))*1.12;
+ const W=Math.max(320,target.clientWidth||900),H=250,L=85,R=24,T=18,B=46, times=all.map(p=>Date.parse(p.x)), min=Math.min(...times),max=Math.max(...times), hi=Math.max(1,...all.map(p=>p.y))*1.12;
  const x=v=>L+(max===min?(W-L-R)/2:(Date.parse(v)-min)/(max-min)*(W-L-R)), y=v=>H-B-v/hi*(H-T-B);
  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(unit)} ao longo das observações"><title>${esc(unit)} · valores detalhados nos pontos</title>`;
  for(let i=0;i<4;i++) {const v=hi*i/3;svg+=`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="#e9eef1"/><text class="axis" x="${L-9}" y="${y(v)+3}" text-anchor="end">${esc(valueFormatter(v))}</text>`;}
- const ticks=[min,...(max>min?[min+(max-min)/2,max]:[])];
- ticks.forEach(t=>{svg+=`<text class="axis" x="${x(new Date(t).toISOString())}" y="${H-12}" text-anchor="middle">${esc(new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</text>`;});
+ const ticks=[min,...(max>min?(W>=550?[min+(max-min)/2,max]:[max]):[])];
+ ticks.forEach(t=>{svg+=`<text class="axis" x="${x(new Date(t).toISOString())}" y="${H-12}" text-anchor="${max===min?'middle':t===min?'start':t===max?'end':'middle'}">${esc(new Date(t).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}))}</text>`;});
  series.forEach((s,i)=>{const color=colors[i%colors.length];let segments=[],segment=[],prev;
   for(const p of s.points) {if(p.y==null||!Number.isFinite(p.y)|| (prev && (Date.parse(p.x)-Date.parse(prev.x)>3.5*3600000 || (p.day&&prev.day&&p.day!==prev.day)))) {if(segment.length)segments.push(segment);segment=[];} if(p.y!=null&&Number.isFinite(p.y))segment.push(p);prev=p;}
   if(segment.length)segments.push(segment);
@@ -96,7 +102,7 @@ function quality() {
 }
 function reportedChart(target, points, metric, unit) {
  const values=[...points].reverse().map(p=>({position:p.position,value:metric==='error_pct'?(p.calls>0&&p.errors!=null&&p.errors<=p.calls?100*p.errors/p.calls:null):p.mean_ms,calls:p.calls}));
- const max=Math.max(1,...values.map(p=>p.value||0)), W=420,H=175,B=35,T=22,step=(W-40)/Math.max(1,values.length);
+ const max=Math.max(1,...values.map(p=>p.value||0)), W=Math.max(320,target.clientWidth||420),H=195,B=35,T=28,step=(W-40)/Math.max(1,values.length);
  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(metric==='error_pct'?'Taxa de erro':'Média declarada')} nos dias anteriores"><title>Dias anteriores declarados pelo banco</title>`;
  values.forEach((p,i)=>{const x=20+i*step,bar=p.value==null?0:(H-B-T)*p.value/max;svg+=`<rect x="${x+step*.22}" y="${H-B-bar}" width="${step*.56}" height="${bar}" rx="3" fill="${metric==='error_pct'?'#b86370':'#087f73'}"><title>D−${p.position}: ${num(p.value,metric==='error_pct'?1:0)} ${unit} · ${num(p.calls)} chamadas</title></rect><text x="${x+step/2}" y="${H-B-bar-6}" text-anchor="middle" class="axis">${esc(num(p.value,metric==='error_pct'?1:0))}</text><text x="${x+step/2}" y="${H-12}" text-anchor="middle" class="axis">D−${p.position}</text>`;});
  target.innerHTML=values.length?svg+'</svg>':empty('Sem histórico diário declarado.');
@@ -107,9 +113,10 @@ function detail(id) {
  $('detail-title').textContent=r.reporter+' · '+r.path;
  const own=D.points.filter(p=>p.entity_id===id), prev=D.reported_history.filter(p=>p.entity_id===id);
  $('detail-body').innerHTML=`<p class="dialog-note">Observado em ${dt(r.observed_at)} · ${r.fresh&&r.source_complete?'ciclo atual com cobertura conciliada':'contexto antigo ou parcial; excluído dos KPIs atuais'}. Dia de referência ${esc(r.day)} (${esc(r.day_basis)}).</p><div class="detail-grid">${[['Chamadas',num(r.calls)],['Erros',pct(r.error_pct)],['Média declarada',num(r.mean_ms)+' ms'],['Média histórica de referência',num(r.baseline_mean_ms)+' ms']].map(c=>`<div class="detail-stat"><small>${c[0]}</small>${c[1]}</div>`).join('')}</div><h3>Comparação com a observação anterior</h3><p class="dialog-note">${esc(label(r.interval_state))}. ${r.interval_from?'De '+dt(r.interval_from)+' até '+dt(r.interval_to)+'. ':''}${r.interval_state==='valid'?`${num(r.interval_calls)} novas chamadas · ${num(r.interval_errors)} erros · taxa ${pct(r.interval_error_pct)}.`:'Não há intervalo comparável para calcular taxa.'} Nenhuma média intervalar ou p95 é inferida.</p><h3>Taxa de erro nas observações próprias</h3><div id="detail-chart" class="chart"></div><h3>Dias anteriores declarados pelo banco</h3><p class="dialog-note">D−1 é ontem segundo a convenção de dia do reporte. Este histórico veio no payload atual e pode ser revisado pela origem; não representa nossas coletas passadas. Recorrência: ${r.recurrent_days} dia(s) com erro ≥5% e ≥100 chamadas.</p><div class="two-column"><div><h3>Taxa de erro declarada (%)</h3><div id="reported-errors"></div></div><div><h3>Média declarada (ms)</h3><div id="reported-mean"></div></div></div><div class="table-wrap"><table><thead><tr><th>Posição</th><th>Chamadas</th><th>Erros / taxa</th><th>Rejeição</th><th>Média (ms)</th></tr></thead><tbody>${prev.map(p=>`<tr><td>D−${p.position}</td><td>${num(p.calls)}</td><td>${num(p.errors)} / ${pct(p.calls>0&&p.errors!=null&&p.errors<=p.calls?100*p.errors/p.calls:null)}</td><td>${num(p.rejections)}</td><td>${num(p.mean_ms)}</td></tr>`).join('')||'<tr><td colspan="5">Sem histórico declarado.</td></tr>'}</tbody></table></div><h3>Qualidade e proveniência</h3><div class="pill-list">${r.quality.map(q=>status(label(q),'attention')).join('')||status('Sem flags detectadas','good')}</div><div class="evidence">Endpoint declarado: <code>${esc(r.endpoint)}</code><br>SHA-256 bronze: <code>${esc(r.source_sha)}</code><br>Caminho JSON: <code>${esc(r.json_path)}</code><br>requestTime bruto: <code>${esc(r.request_time)}</code><br>Diferença observada: ${num(r.clock_offset_seconds)} segundos<br>Uptime declarado: ${pct(r.uptime==null?null:r.uptime*100)} · downtime parcial: ${num(r.downtime_seconds)} s<br>TPS médio / pico declarados: ${num(r.average_tps)} / ${num(r.peak_tps)}</div>`;
+ $('detail').showModal();
  chart($('detail-chart'),[{name:r.reporter,points:own.map(p=>({x:p.observed_at,y:p.source_complete?p.error_pct:null,day:p.day,note:num(p.calls)+' chamadas'}))}],'%',v=>num(v,1));
  reportedChart($('reported-errors'),prev,'error_pct','%');reportedChart($('reported-mean'),prev,'mean_ms','ms');
- $('detail').showModal();$('close-detail').focus();
+ $('close-detail').focus();
 }
 function render() {freshness();overview();incidents();trends();endpoints();probes();quality();}
 $('reporter').addEventListener('change',()=>{selected=$('reporter').value;page=0;render();});
@@ -124,5 +131,5 @@ $('build-info').textContent='v'+D.meta.version+' · '+D.meta.run_id;
 render();setInterval(freshness,60000);
 const nav=[...document.querySelectorAll('.nav-item')],sections=nav.map(a=>document.querySelector(a.getAttribute('href')));
 function activeSection(){const edge=window.innerWidth<=900?150:90;let active=sections[0];for(const s of sections)if(s.getBoundingClientRect().top<=edge)active=s;for(const a of nav){const yes=a.hash==='#'+active.id;a.classList.toggle('active',yes);if(yes)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current');}}
-document.addEventListener('scroll',activeSection,{passive:true});window.addEventListener('resize',activeSection);activeSection();
+document.addEventListener('scroll',activeSection,{passive:true});let resizeTimer;window.addEventListener('resize',()=>{activeSection();clearTimeout(resizeTimer);resizeTimer=setTimeout(trends,150);});activeSection();
 })();

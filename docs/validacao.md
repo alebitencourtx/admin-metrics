@@ -20,3 +20,11 @@ O diretório `artifacts/benchmark` é ignorado e não integra o site público.
 - Workflow remoto está `active`; agenda versionada `17 */2 * * *` UTC e acionamento manual disponíveis.
 
 O workflow é best effort. O sucesso da primeira execução não demonstra disponibilidade futura nem pontualidade garantida da agenda.
+
+## Restore e segunda execução remota
+
+- Republicação por push [42880998560](https://github.com/alebitencourtx/admin-metrics/actions/runs/42880998560): sucesso, sem nova observação.
+- Coleta manual [42881001169](https://github.com/alebitencourtx/admin-metrics/actions/runs/42881001169): restore do estado aprovado, nova coleta, deploy e confirmação concluídos com sucesso.
+- Duas Releases aprovadas: `state-42881001169-1` e `state-42880395554-1`, com recibos de deploy. O pacote atual foi baixado, verificado e reconstruído localmente: 2 ciclos, 552 observações e 16 objetos bronze.
+- As 276 entidades permaneceram sem mudança entre essas duas observações próximas; todos os intervalos foram corretamente classificados como `unchanged_report`, sem inventar tráfego. Essas execuções manuais não representam amostras espaçadas em duas horas.
+- Revisão de leitura solicitada pelo usuário: fontes auxiliares de 13–14 px, contraste reforçado, títulos semânticos no ranking, caminhos com quebra de linha, resumo executivo dividido em destaques e gráficos com dimensões adaptadas à largura real. Preview conferido em desktop e em 390 px, sem overflow horizontal da página.
