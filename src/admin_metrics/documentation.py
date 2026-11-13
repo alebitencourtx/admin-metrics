@@ -14,7 +14,7 @@ FIELD_HELP = {
     'run_id': 'Identidade de execução UTC + sufixo aleatório; não é a data de referência do banco.',
     'entity_id': 'SHA-256 truncado a 24 caracteres de reporter_id + endpoint. Chave técnica da entidade reportada.',
     'observed_at': 'Instante UTC de início da observação da fonte; cada tentativa também guarda seu próprio instante.',
-    'day': 'Dia analítico por HTTP Date em America/Sao_Paulo, com fallback para a coleta; não comprova o fuso de consolidação da origem.',
+    'day': 'Dia analítico pelo HTTP Date da página que produziu a linha, em America/Sao_Paulo, com fallback para a coleta; páginas que cruzam o dia marcam a captura incompleta e não comprovam o fuso de consolidação da origem.',
     'reporter_id': 'Identidade do host no catálogo; Nissan e Renault permanecem distintos mesmo com CNPJ igual.',
     'reporter': 'Rótulo operacional da fonte, e não prova de controle societário.',
     'endpoint': 'URL/URI descrita pelo banco. Nunca é chamada pelo monitor.',

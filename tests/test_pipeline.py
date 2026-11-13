@@ -52,6 +52,43 @@ def test_end_to_end_eight_sources_marts_archive_and_standalone_manual(tmp_path):
     assert run(dest,tmp_path/'replay',refresh=False)['meta']['run_id']==payload['meta']['run_id']
 
 
+def test_rebuild_tolerates_probe_without_source_sha(tmp_path):
+    root=tmp_path/'data';site=tmp_path/'site'
+    run(root,site,transport=transport())
+    state=load(root)
+    del state['runs'][-1]['reports'][0]['probes'][0]['source_sha']
+    write(root/'state.json',state)
+    payload=run(root,site,refresh=False,transport=transport())
+    assert payload['meta']['run_id']==state['runs'][-1]['run_id']
+
+
+def test_archive_rejects_unknown_model_version(tmp_path):
+    root=tmp_path/'data';run(root,tmp_path/'site',transport=transport())
+    state=load(root);state['runs'][-1]['model_version']=99
+    write(root/'state.json',state)
+    with pytest.raises(ValueError,match='Modelo'):
+        pack(root,tmp_path/'rejected.zip')
+
+
+def test_restore_rolls_back_files_when_state_commit_fails(tmp_path,monkeypatch):
+    import admin_metrics.archive as archive
+    root=tmp_path/'data';run(root,tmp_path/'site',transport=transport())
+    package=tmp_path/'state.zip';pack(root,package)
+    destination=tmp_path/'restored'
+    original=archive.atomic
+    def failing(path,raw):
+        if Path(path).name=='state.json':
+            raise OSError('simulated state commit failure')
+        return original(path,raw)
+    monkeypatch.setattr(archive,'atomic',failing)
+    with pytest.raises(OSError):
+        restore(package,tmp_path/'SHA256SUMS',destination)
+    assert not (destination/'state.json').exists()
+    assert not list((destination/'bronze').glob('*'))
+    archive.atomic=original
+    assert restore(package,tmp_path/'SHA256SUMS',destination)
+
+
 def test_partial_failure_keeps_last_good_but_excludes_it_from_current_marts(tmp_path):
     root=tmp_path/'data';site=tmp_path/'site';first=run(root,site,transport=transport())
     bad=httpx.MockTransport(lambda request:httpx.Response(403,text='Forbidden'))
@@ -70,6 +107,15 @@ def test_failed_build_preserves_published_index_and_state(tmp_path,monkeypatch):
     monkeypatch.setattr(doc,'generate',fail)
     with pytest.raises(RuntimeError):run(root,site,transport=transport())
     assert (root/'state.json').read_bytes()==state and (site/'index.html').read_bytes()==index
+
+
+def test_build_prunes_previous_content_addressed_assets(tmp_path):
+    root=tmp_path/'data';site=tmp_path/'site'
+    run(root,site,transport=transport())
+    first={p.name for p in (site/'assets').iterdir() if p.is_dir()}
+    run(root,site,transport=transport())
+    second={p.name for p in (site/'assets').iterdir() if p.is_dir()}
+    assert len(second)==1 and first!=second
 
 
 def test_bronze_retains_two_cycles_and_rebuild_adds_no_observation(tmp_path):

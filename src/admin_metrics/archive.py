@@ -1,10 +1,13 @@
 """Bounded, checksummed state transport. Never extract arbitrary ZIP paths."""
 import json
+import os
 from pathlib import Path
 import re
+import uuid
 import zipfile
 
-from .storage import atomic, encoded, load, sha
+from .analysis import SUPPORTED_MODEL_VERSIONS
+from .storage import atomic, encoded, load, sha, sha_file
 
 HEX = re.compile(r'^[0-9a-f]{64}$')
 MAX_ARCHIVE = 300 * 1024**2
@@ -34,6 +37,10 @@ def validate(state):
         raise ValueError('Contrato de estado inválido')
     if not state['runs']:
         raise ValueError('Estado sem execuções')
+    for run in state['runs']:
+        model = run.get('model_version')
+        if model is not None and (type(model) is not int or model not in SUPPORTED_MODEL_VERSIONS):
+            raise ValueError('Modelo de estado incompatível: ' + str(model))
     run_ids = [r['run_id'] for r in state['runs']]
     runs = set(run_ids)
     if len(run_ids) != len(runs):
@@ -65,12 +72,17 @@ def pack(root, output):
     files['manifest.json']=encoded(manifest)
     validate_entries({name: len(raw) for name, raw in files.items()})
     output.parent.mkdir(parents=True,exist_ok=True)
-    with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
-        for name,raw in sorted(files.items()):
-            archive.writestr(name,raw)
-    if output.stat().st_size>MAX_ARCHIVE:
-        raise ValueError('Arquivo excede limite')
-    atomic(output.parent/'SHA256SUMS',(sha(output.read_bytes())+'  '+output.name+'\n').encode())
+    temporary = output.with_name('.' + output.name + '.' + uuid.uuid4().hex)
+    try:
+        with zipfile.ZipFile(temporary,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
+            for name,raw in sorted(files.items()):
+                archive.writestr(name,raw)
+        if temporary.stat().st_size>MAX_ARCHIVE:
+            raise ValueError('Arquivo excede limite')
+        os.replace(temporary, output)
+    finally:
+        temporary.unlink(missing_ok=True)
+    atomic(output.parent/'SHA256SUMS',(sha_file(output)+'  '+output.name+'\n').encode())
     return manifest
 
 
@@ -81,7 +93,7 @@ def restore(package, checksum, root):
     if package.stat().st_size>MAX_ARCHIVE:
         raise ValueError('Arquivo excede limite')
     fields=checksum.read_text().strip().split()
-    if len(fields)!=2 or fields[1]!=package.name or sha(package.read_bytes())!=fields[0]:
+    if len(fields)!=2 or fields[1]!=package.name or sha_file(package)!=fields[0]:
         raise ValueError('Checksum externo inválido')
     with zipfile.ZipFile(package) as archive:
         items=archive.infolist()
@@ -106,9 +118,18 @@ def restore(package, checksum, root):
             raise ValueError('Referências bronze não conciliadas')
         if any(sha(files['bronze/'+s+'.json'])!=s for s in recent_objects(state)):
             raise ValueError('Hash de origem divergente')
-    # All checks precede mutation; the state pointer is committed last.
-    for name,raw in files.items():
-        if name!='state.json':
-            atomic(root/name,raw)
-    atomic(root/'state.json',files['state.json'])
+    # All checks precede mutation; the state pointer is committed last and
+    # files written in this attempt are rolled back if the commit fails.
+    written=[]
+    try:
+        for name,raw in files.items():
+            if name!='state.json':
+                target=root/name
+                atomic(target,raw)
+                written.append(target)
+        atomic(root/'state.json',files['state.json'])
+    except Exception:
+        for path in reversed(written):
+            path.unlink(missing_ok=True)
+        raise
     return manifest

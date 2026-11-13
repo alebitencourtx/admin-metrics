@@ -1,7 +1,9 @@
 import httpx
 import pytest
 
-from admin_metrics.collect import capture,validate_reporter,delay
+from admin_metrics.analysis import apply, normalize
+from admin_metrics.collect import capture,validate_reporter,validate_reporters,delay
+from admin_metrics.storage import empty_state
 from conftest import record
 
 
@@ -142,3 +144,77 @@ async def test_bootstrap_empty_is_not_retried_without_previous_valid_source(tmp_
         return httpx.Response(200, json={'data': [], 'meta': {'totalRecords': 0}})
     result = (await collect([reporter], tmp_path, httpx.MockTransport(handler)))[0]
     assert len(requests) == 1 and result['empty_retry_count'] == 0
+
+
+@pytest.mark.asyncio
+async def test_pages_use_their_own_http_date_for_day(tmp_path, reporter):
+    pages = {
+        1: {'data': [record(endpoint='https://a.example/open-banking/accounts/v2/accounts')],
+            'meta': {'totalRecords': 2, 'totalPages': 2}},
+        2: {'data': [record(endpoint='https://b.example/open-banking/accounts/v2/accounts')],
+            'meta': {'totalRecords': 2, 'totalPages': 2}},
+    }
+    dates = {1: 'Tue, 10 Nov 2026 02:59:00 GMT', 2: 'Tue, 10 Nov 2026 03:01:00 GMT'}
+    def handler(request):
+        page = int(request.url.params['page'])
+        return httpx.Response(200, json=pages[page], headers={'Date': dates[page]})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await capture(client, reporter, tmp_path, retries=0)
+    rows = normalize(result, 'run')
+    assert [row['day'] for row in rows] == ['2026-11-09', '2026-11-10']
+    assert all(row['day_basis'] == 'HTTP Date / America_Sao_Paulo' for row in rows)
+
+
+@pytest.mark.asyncio
+async def test_pages_across_midnight_make_capture_incomplete(tmp_path, reporter, rules):
+    pages = {
+        1: {'data': [record(endpoint='https://a.example/open-banking/accounts/v2/accounts')],
+            'meta': {'totalRecords': 2, 'totalPages': 2}},
+        2: {'data': [record(endpoint='https://b.example/open-banking/accounts/v2/accounts')],
+            'meta': {'totalRecords': 2, 'totalPages': 2}},
+    }
+    dates = {1: 'Tue, 10 Nov 2026 02:59:00 GMT', 2: 'Tue, 10 Nov 2026 03:01:00 GMT'}
+    def handler(request):
+        page = int(request.url.params['page'])
+        return httpx.Response(200, json=pages[page], headers={'Date': dates[page]})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await capture(client, reporter, tmp_path, retries=0)
+    state = apply(empty_state(), [result], rules, result['observed_at'], 'mixed')
+    stored = state['runs'][0]['reports'][0]
+    assert stored['complete'] is False and stored['coverage'] == 'mixed_reference_day'
+    assert 'page_day_changed' in stored['issues']
+    assert all(not row['source_complete'] for row in state['observations'])
+    assert all('page_day_changed' in row['quality'] for row in state['observations'])
+
+
+@pytest.mark.asyncio
+async def test_record_limit_is_effective(tmp_path, reporter):
+    def handler(request):
+        page = int(request.url.params['page'])
+        rows = [record(endpoint=f'https://e{page}-{index}.example/open-banking/accounts/v2/accounts')
+                for index in range(1000)]
+        return httpx.Response(200, json={'data': rows,
+                                         'meta': {'totalRecords': 50000, 'totalPages': 50}})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await capture(client, reporter, tmp_path, retries=0)
+    assert len(result['rows']) == 10000
+    assert result['complete'] is False and result['coverage'] == 'record_limit'
+    assert 'record_limit' in result['issues']
+
+
+def test_reporter_catalog_requires_identity_fields(reporter):
+    assert validate_reporters([reporter]) == [reporter]
+    for key in ('id', 'label', 'company', 'cnpj', 'url'):
+        bad = {**reporter}
+        del bad[key]
+        with pytest.raises(ValueError):
+            validate_reporters([bad])
+    with pytest.raises(ValueError):
+        validate_reporters([reporter, reporter])
+    with pytest.raises(ValueError):
+        validate_reporters([{**reporter, 'cnpj': '123'}])
+
+
+def test_invalid_reporter_url_is_structural(reporter):
+    with pytest.raises(ValueError):
+        validate_reporters([{**reporter, 'url': 'https://evil.example/open-banking/admin/v2/metrics'}])

@@ -37,9 +37,9 @@ O painel é estático: mostra resultados publicados, não andamento ao vivo ante
 
 - Reporte é filtro global; também reduz colunas do monitor. Cartões de fonte aplicam esse filtro.
 - Estado de incidente afeta a lista de incidentes. Métrica afeta a tendência.
-- Busca, família e ordenação afetam tabela de endpoints e CSV, não todo o painel.
-- Ranking abre a evidência do ciclo usado naquele panorama. A tabela abre o último contexto disponível do endpoint; datas tornam a diferença explícita.
-- Detalhe separa observações próprias de D−1/D−2/D−3 declarados pelo banco. O estado preserva até sete posições para baseline/recorrência.
+- Busca, família e ordenação afetam tabela de endpoints e CSV, não todo o painel. A busca ignora acentos e os filtros são refletidos na URL para compartilhamento.
+- Ranking abre a evidência do ciclo usado naquele panorama. A tabela abre o último contexto disponível do endpoint; datas tornam a diferença explícita. Se o panorama preservado estiver fora da janela de 72h, o detalhe informa que não há série própria publicada nessa janela.
+- Detalhe separa observações próprias de D−1/D−2/D−3 declarados pelo banco. O estado preserva até sete posições para baseline/recorrência. Incidentes resolvidos mostram o instante de resolução.
 - CSV exporta todas as linhas filtradas, não só a página de 25; usa UTF-8/BOM, `;`, aspas e proteção de prefixos de fórmula. Campos `reporter_id`, `fresh`, `source_complete` e proveniência permitem interpretar contexto.
 
 Gráficos não inventam pontos em runs vazios. Lacunas maiores que 1,5h, ausência e mudança de dia interrompem linhas. Se ainda não há 72h de coleta, o período não observado fica vazio.

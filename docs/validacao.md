@@ -17,6 +17,17 @@ Revisão do índice de evidências: **13/11/2026**. Números, tags, horários e 
 
 Os avisos de depreciação das actions e migração da imagem Ubuntu observados no CI não foram tratados como falha dos testes. O verde do workflow indica processamento/publicação, não sucesso de todas as fontes.
 
+## Correções de robustez · 13/11/2026
+
+- **107 testes Python e 14 testes Node** aprovados localmente após as correções.
+- Dia analítico passou a usar o `HTTP Date` da página que produziu cada linha; páginas que cruzam o dia tornam a captura incompleta (`page_day_changed`/`mixed_reference_day`).
+- Limite de 10.000 identidades agora é efetivo e registra `record_limit`; o rebuild tolera probe legado sem `source_sha`.
+- `coverage_reconciled` passa a `false` quando registros inválidos são descartados na normalização.
+- Restore remove bronzes gravados na tentativa que falhou antes do `state.json`; só Releases com `purpose`, IDs e assets esperados são selecionadas.
+- Catálogo valida `id`, `label`, `company`, `cnpj` e URL; uptime booleano é rejeitado; estado com `model_version` desconhecido é bloqueado.
+- Dashboard: busca sem acentos, filtros na URL, `resolved_at` visível, aviso de panorama fora da janela de 72h, fechamento do diálogo de execução no backdrop e rótulo próprio para reporte HTTP 200 inválido.
+- Não houve coleta real nesta revisão; os cenários novos usam `MockTransport` e diretórios temporários.
+
 ## Cronologia histórica
 
 ## Antes da implantação

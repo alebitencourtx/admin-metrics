@@ -59,13 +59,13 @@ Dois pacotes não significam duas observações: o pacote atual carrega até 30 
 
 Saúde da coleta e sucesso da publicação são independentes. Uma resposta vazia/503 é um dado operacional; o pipeline a registra e publica diagnóstico. Corrupção, referências inválidas, configuração inválida ou falha de build são bloqueantes.
 
-O panorama não agrega silenciosamente `latest_rows` de ciclos diferentes. Para cada recorte (`all` ou uma fonte), busca em `observations` o último run com todas as fontes exigidas utilizáveis, contagens conciliadas e um único `day`. Se a coleta atual é parcial ou cruza dias de referência incompatíveis, preserva o ciclo anterior. Sem ciclo válido na retenção, informa indisponibilidade. A preservação não cria pontos ou timestamps novos.
+O panorama não agrega silenciosamente `latest_rows` de ciclos diferentes. Para cada recorte (`all` ou uma fonte), busca em `observations` o último run com todas as fontes exigidas utilizáveis, contagens conciliadas e um único `day`. O dia vem do `HTTP Date` da página que produziu cada linha; uma captura cujas páginas cruzam o dia fica incompleta. Se a coleta atual é parcial ou cruza dias de referência incompatíveis, preserva o ciclo anterior. Sem ciclo válido na retenção, informa indisponibilidade. A preservação não cria pontos ou timestamps novos.
 
 ## Publicação e integridade
 
-1. Restaurar a última Release aprovada, com checksum externo, manifesto, hashes, nomes/limites e referências validados.
+1. Restaurar a última Release aprovada, com checksum externo, manifesto, hashes, nomes/limites, `purpose`/IDs e assets esperados validados; falha de escrita antes do ponteiro final remove os bronzes daquela tentativa.
 2. Sob lock `.writer.lock`, coletar/aplicar quando solicitado, validar o estado e gerar os artefatos.
-3. Gravar `state.json` apenas depois de concluir o build; remover localmente somente bronzes de nomes SHA válidos fora dos dois últimos ciclos.
+3. Gravar `state.json` apenas depois de concluir o build; validar envelope/modelo conhecido e remover localmente somente bronzes de nomes SHA válidos fora dos dois últimos ciclos.
 4. Em coleta nova, criar candidata draft com ZIP, checksum e identidade do run.
 5. Publicar um artefato Pages completo. Assets ficam em `assets/<hash>/`; a URL de entrada continua na raiz.
 6. `promote` exige job `deploy` concluído com sucesso no workflow correspondente, grava recibo, publica a Release e remove aprovadas além das duas recentes.

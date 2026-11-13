@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function dashboard({mutate=()=>{}, now='2026-11-12T18:10:00+00:00'}={}) {
+function dashboard({mutate=()=>{}, now='2026-11-12T18:10:00+00:00', url=''}={}) {
   const elements = new Map();
   function element(id) {
     if (!elements.has(id)) elements.set(id, {
@@ -45,8 +45,10 @@ function dashboard({mutate=()=>{}, now='2026-11-12T18:10:00+00:00'}={}) {
   const document = {getElementById:element, querySelectorAll:()=>[],
     addEventListener(name, callback){events[name] = callback;}};
   const window = {ADMIN_DATA:data, innerWidth:1200, addEventListener(){}};
+  const location = {search:url, pathname:'/', hash:''};
+  const history = {replaceState(){}};
   class Clock extends Date {static now(){return Date.parse(now);}}
-  const context = {window, document, Date:Clock, setInterval(){}, setTimeout(){}, clearTimeout(){}, console};
+  const context = {window, document, location, history, Date:Clock, setInterval(){}, setTimeout(){}, clearTimeout(){}, console};
   vm.runInNewContext(fs.readFileSync('src/admin_metrics/web/app.js', 'utf8'), context);
   return {element, events, data};
 }
@@ -162,4 +164,42 @@ test('execution monitor paginates without dropping previous extraction evidence'
   element('execution-next').listeners.click();
   assert.match(element('execution-page-note').textContent,/25–25 de 25/);
   assert.equal(element('execution-next').disabled,true);
+});
+
+test('endpoint search folds accents', () => {
+  const {element}=dashboard({mutate:data=>{data.latest[0].reporter='Aymoré';}});
+  element('search').value='aymore';
+  element('search').listeners.input();
+  assert.match(element('endpoint-rows').innerHTML,/Aymoré/);
+});
+
+test('filters initialize from the URL', () => {
+  const {element}=dashboard({url:'?reporter=ccvm&q=accounts&sort=mean_ms'});
+  assert.equal(element('reporter').value,'ccvm');
+  assert.equal(element('search').value,'accounts');
+  assert.equal(element('sort').value,'mean_ms');
+});
+
+test('resolved incidents expose the resolution time', () => {
+  const {element}=dashboard({mutate:data=>{
+    Object.assign(data.incidents[0],{status:'resolved',severity:'attention',
+      resolved_at:'2026-11-12T19:00:00+00:00'});
+  }});
+  assert.match(element('incident-rows').innerHTML,/resolvido/);
+});
+
+test('preserved panorama outside the 72h window explains the empty own series', () => {
+  const {element,events}=dashboard({mutate:data=>{
+    const previous={calls:[1000,1000,1000],errors:[100,100,100],
+      rejections:[0,0,0],mean_ms:[300,300,300]};
+    data.latest[0].previous=previous;
+    data.panoramas.all.run_id='old';
+    data.panoramas.all.rows[0].previous=previous;
+    data.panoramas.ccvm=data.panoramas.all;
+    data.latest[0].fresh=false;
+    data.points=[];
+  }});
+  events.click({target:{closest(selector){return selector==='[data-entity]'
+    ? {dataset:{entity:'abc',contextRun:'old'}} : null;}}});
+  assert.match(element('detail-chart').innerHTML,/fora da janela de 72h/);
 });

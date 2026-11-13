@@ -12,6 +12,8 @@ from .health import outcome, collection_health
 
 FIELDS = {'invocations': 'calls', 'errors': 'errors', 'rejections': 'rejections',
           'averageResponse': 'mean_ms', 'averageTps': 'average_tps', 'peakTps': 'peak_tps'}
+MODEL_VERSION = 3
+SUPPORTED_MODEL_VERSIONS = frozenset({1, 2, 3})
 
 
 def stamp(value):
@@ -36,17 +38,25 @@ def normalize(report, run_id, rules=None):
     rules = rules or DEFAULT_RULES
     rows = []
     acquired = stamp(report['observed_at'])
-    date_valid = True
-    try:
-        reference = parsedate_to_datetime(report['http_date'])
-    except (ValueError, TypeError, OverflowError):
-        reference = acquired
-        date_valid = False
-    if reference.tzinfo is None:
-        reference = acquired
-        date_valid = False
-    day = reference.astimezone(ZoneInfo('America/Sao_Paulo')).date().isoformat()
+
+    def day_for(item):
+        if isinstance(item, dict) and 'http_date' in item:
+            value = item.get('http_date')
+        else:
+            value = report.get('http_date')
+        basis = 'HTTP Date / America_Sao_Paulo'
+        try:
+            reference = parsedate_to_datetime(value)
+        except (ValueError, TypeError, OverflowError):
+            reference = acquired
+            basis = 'observed_at / America_Sao_Paulo'
+        if reference is None or reference.tzinfo is None:
+            reference = acquired
+            basis = 'observed_at / America_Sao_Paulo'
+        return reference.astimezone(ZoneInfo('America/Sao_Paulo')).date().isoformat(), basis
+
     for item in report['rows']:
+        day, day_basis = day_for(item)
         raw = item['record']
         flags = []
         endpoint = raw['endpoint']
@@ -56,7 +66,7 @@ def normalize(report, run_id, rules=None):
         path = parsed.path if parsed.path else endpoint
         family = path.split('/open-banking/', 1)[-1].split('/')[0]
         row = {'run_id': run_id, 'observed_at': report['observed_at'], 'day': day,
-               'day_basis': 'HTTP Date / America_Sao_Paulo' if date_valid else 'observed_at / America_Sao_Paulo', 'reporter_id': report['id'], 'reporter': report['label'],
+               'day_basis': day_basis, 'reporter_id': report['id'], 'reporter': report['label'],
                'entity_id': sha(encoded([report['id'], endpoint]))[:24], 'endpoint': endpoint, 'path': path,
                'family': family, 'source_sha': item['source_sha'], 'json_path': item['json_path'],
                'request_time': raw.get('requestTime'), 'source_complete': report['complete'], 'previous': {}}
@@ -88,8 +98,11 @@ def normalize(report, run_id, rules=None):
         uptime = availability.get('uptime') if isinstance(availability.get('uptime'), dict) else {}
         downtime = availability.get('downtime') if isinstance(availability.get('downtime'), dict) else {}
         for source, target in [('uptimeRate', 'uptime'), ('generalUptimeRate', 'general_uptime')]:
+            raw_uptime = uptime.get(source)
             try:
-                value = float(uptime.get(source))
+                if isinstance(raw_uptime, bool):
+                    raise TypeError('boolean_uptime')
+                value = float(raw_uptime)
                 row[target] = value if math.isfinite(value) and 0 <= value <= 1 else None
             except (ValueError, TypeError):
                 row[target] = None
@@ -281,7 +294,7 @@ def apply(state, reports, rules, observed_at, run_id):
     validate_rules(rules)
     if any(r['run_id'] == run_id for r in state['runs']):
         raise ValueError('Execução já aplicada')
-    run = {'run_id': run_id, 'observed_at': observed_at, 'reports': [], 'rules': dict(rules), 'model_version': 3}
+    run = {'run_id': run_id, 'observed_at': observed_at, 'reports': [], 'rules': dict(rules), 'model_version': MODEL_VERSION}
     previous = {r['entity_id']: r for r in state['observations']}
     current = []
     latest = {r['entity_id']: r for r in state['latest_rows']}
@@ -289,21 +302,31 @@ def apply(state, reports, rules, observed_at, run_id):
         valid_rows = [item for item in report['rows'] if isinstance(item.get('record'), dict)
                       and endpoint_parts(item['record'].get('endpoint')) is not None]
         if len(valid_rows) != len(report['rows']):
-            report = {**report, 'rows': valid_rows, 'complete': False, 'coverage': 'invalid_records',
+            report = {**report, 'rows': valid_rows, 'complete': False, 'coverage_reconciled': False,
+                      'coverage': 'invalid_records',
                       'issues': sorted(set(report['issues']) | {'invalid_endpoint_record'})}
+        normalized = normalize(report, run_id, rules)
+        if len({row['day'] for row in normalized}) > 1:
+            report = {**report, 'complete': False, 'coverage': 'mixed_reference_day',
+                      'issues': sorted(set(report['issues']) | {'page_day_changed'})}
+            for row in normalized:
+                row['source_complete'] = False
+                row['quality'] = sorted(set(row['quality']) | {'page_day_changed'})
         run['reports'].append({k: report[k] for k in ('id', 'label', 'url', 'cnpj', 'observed_at', 'status', 'complete', 'coverage', 'issues', 'probes', 'probe_ms')})
         run['reports'][-1]['records'] = len(report['rows'])
         run['reports'][-1].update(coverage_reconciled=report.get('coverage_reconciled', report['complete']),
                                  data_status=outcome(report), usable=outcome(report) == 'valid',
                                  empty_retry_count=report.get('empty_retry_count', 0))
-        normalized = normalize(report, run_id, rules)
         for row in normalized:
             row.update(interval(row, previous.get(row['entity_id'])))
         current.extend(normalized)
         if report['complete'] and normalized:
             latest = {key: row for key, row in latest.items() if row['reporter_id'] != report['id']}
             latest.update({r['entity_id']: r for r in normalized})
-        elif not any(r['reporter_id'] == report['id'] for r in latest.values()):
+        elif normalized and not any(r['reporter_id'] == report['id'] and r['source_complete'] for r in latest.values()):
+            # A source that never completed keeps the most recent usable partial context,
+            # not the first partial capture forever.
+            latest = {key: row for key, row in latest.items() if row['reporter_id'] != report['id']}
             latest.update({r['entity_id']: r for r in normalized})
     state['latest_rows'] = list(latest.values())
     run['collection_health'] = collection_health(run['reports'])

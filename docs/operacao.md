@@ -70,7 +70,7 @@ gh release download $tag --repo alebitencourtx/admin-metrics --pattern state.zip
 .\.venv\Scripts\python.exe -m http.server 8766 --bind 127.0.0.1 --directory .runtime/recovered-site
 ```
 
-O restore verifica checksum externo, hashes internos, nomes permitidos, duplicatas, limites, run do manifesto e bronze recente. O ponteiro `state.json` é escrito por último. Esses comandos locais não escolhem outro estado como atual no GitHub.
+O restore verifica checksum externo, hashes internos, nomes permitidos, duplicatas, limites, run do manifesto e bronze recente. O ponteiro `state.json` é escrito por último; se a gravação falhar, os bronzes criados naquela tentativa são removidos para permitir nova tentativa em diretório limpo. Só Releases com `purpose=approved-monitor-state`, IDs válidos e os assets `state.zip`/`SHA256SUMS` são consideradas aprovadas. Esses comandos locais não escolhem outro estado como atual no GitHub.
 
 O helper `python scripts/cloud_pipeline.py restore --tag ...` restaura em **`data/` fixo**, também vazio, e usa `GH_REPO`. Não tem opção `--root`; para outro destino use o procedimento Python acima.
 

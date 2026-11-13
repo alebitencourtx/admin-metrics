@@ -21,20 +21,53 @@ def releases():
     return [r for page in pages for r in page]
 
 
+def release_body(release):
+    if not isinstance(release, dict):
+        return None
+    try:
+        body = json.loads(release.get('body') or '{}')
+    except (ValueError, TypeError):
+        return None
+    return body if isinstance(body, dict) else None
+
+
+def owns_release(release):
+    if not isinstance(release, dict):
+        return False
+    tag = release.get('tag_name')
+    if not isinstance(tag, str) or not tag.startswith('state-') or release.get('draft') or release.get('prerelease'):
+        return False
+    body = release_body(release)
+    if not body or body.get('purpose') != 'approved-monitor-state':
+        return False
+    workflow = str(body.get('workflow_run_id', ''))
+    data_run_id = body.get('data_run_id')
+    if not workflow.isdigit() or not isinstance(data_run_id, str) or not data_run_id:
+        return False
+    assets = release.get('assets')
+    if isinstance(assets, list):
+        names = {asset.get('name') for asset in assets if isinstance(asset, dict)}
+        if not {'state.zip', 'SHA256SUMS'} <= names:
+            return False
+    return True
+
+
 def approved(items):
-    return sorted([r for r in items if r['tag_name'].startswith('state-') and not r['draft'] and not r['prerelease']],key=lambda r:(r['published_at'],r['id']),reverse=True)
+    return sorted([r for r in items if owns_release(r)],
+                  key=lambda r: (r.get('published_at') or '', r.get('id') or 0), reverse=True)
 
 
 def execution_links(items, repository):
     links = {}
     for release in items:
-        try:
-            body = json.loads(release.get('body', ''))
-            workflow = str(body.get('workflow_run_id', ''))
-            if body.get('purpose') == 'approved-monitor-state' and workflow.isdigit() and body.get('data_run_id'):
-                links[body['data_run_id']] = 'https://github.com/' + repository + '/actions/runs/' + workflow
-        except (ValueError, TypeError, AttributeError):
+        body = release_body(release)
+        if not body:
             continue
+        workflow = str(body.get('workflow_run_id', ''))
+        data_run_id = body.get('data_run_id')
+        if (body.get('purpose') == 'approved-monitor-state' and workflow.isdigit()
+                and isinstance(data_run_id, str) and data_run_id):
+            links[data_run_id] = 'https://github.com/' + repository + '/actions/runs/' + workflow
     return links
 
 

@@ -9,7 +9,7 @@ Observatório executivo dos oito reportes Admin Santander, com atualização rem
 
 ## Documentação atualizada
 
-Revisão Markdown: **13/11/2026**. Pacote **1.2.0**, modelo de captura **3**, envelope de estado **1**; código de referência `38a1faf`.
+Revisão Markdown: **13/11/2026**. Pacote **1.2.0**, modelo de captura **3**, envelope de estado **1**; base de código `38a1faf` com as correções de robustez desta revisão.
 
 Os guias locais completos estão no [índice Markdown](docs/README.md): [arquitetura](docs/arquitetura.md), [contratos e regras](docs/dados-e-regras.md), [dashboard e monitor](docs/dashboard.md) e [operação/recuperação](docs/operacao.md).
 
@@ -73,7 +73,7 @@ node --test tests/test_dashboard.cjs
 
 As taxas agregadas usam numeradores e denominadores válidos correspondentes. Média ponderada usa somente linhas com média e chamadas positivas. Últimas métricas boas ficam identificadas por fonte. Os marts do ciclo atual excluem linhas antigas; o panorama executivo preserva o último ciclo completo com um único dia de referência, explicitamente rotulado como anterior. Filtro por fonte escolhe o último ciclo válido daquele recorte, sem misturar ciclos no agregado.
 
-Deltas comparam contadores cumulativos da mesma entidade/dia com cobertura completa. Não se somam snapshots; resets/revisões suspendem comparação. Dia de referência usa HTTP Date em America/Sao_Paulo, ou UTC da aquisição convertido se Date não for interpretável. Essa convenção analítica não comprova o fuso de consolidação da origem.
+Deltas comparam contadores cumulativos da mesma entidade/dia com cobertura completa. Não se somam snapshots; resets/revisões suspendem comparação. Dia de referência usa o HTTP Date da própria página em America/Sao_Paulo, ou UTC da aquisição convertido se Date não for interpretável. Se páginas de uma mesma captura cruzarem o dia, a captura é marcada incompleta e não alimenta os KPIs. Essa convenção analítica não comprova o fuso de consolidação da origem.
 
 ## Coleta a cada hora
 

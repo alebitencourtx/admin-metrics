@@ -19,6 +19,14 @@ def sha(raw):
     return hashlib.sha256(raw).hexdigest()
 
 
+def sha_file(path, chunk_size=1024 * 1024):
+    digest = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for chunk in iter(lambda: stream.read(chunk_size), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def atomic(path, raw):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)

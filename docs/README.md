@@ -1,6 +1,6 @@
 # Documentação Markdown do Admin Metrics
 
-Revisão: **13/11/2026**. Implementação documentada: pacote **1.2.0**, checkout de código **38a1faf**, modelo das novas capturas **3**, envelope de estado **1**. As notas operacionais abaixo descrevem o que existe; evidências de execuções específicas têm identificação e data próprias.
+Revisão: **13/11/2026**. Implementação documentada: pacote **1.2.0**, base de código **38a1faf** com as correções de robustez desta revisão, modelo das novas capturas **3**, envelope de estado **1**. As notas operacionais abaixo descrevem o que existe; evidências de execuções específicas têm identificação e data próprias.
 
 | Documento | Conteúdo |
 |---|---|

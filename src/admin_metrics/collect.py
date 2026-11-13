@@ -15,6 +15,10 @@ from .storage import now, put, sha, encoded
 from .contracts import endpoint_parts
 from .health import outcome
 
+MAX_PAGES = 20
+MAX_RECORDS = 10000
+MAX_BODY_BYTES = 16 * 1024 * 1024
+
 
 def validate_reporter(reporter):
     url = urlsplit(reporter['url'])
@@ -23,6 +27,26 @@ def validate_reporter(reporter):
             or url.username or url.password or url.query or url.fragment
             or url.path != '/open-banking/admin/v2/metrics'):
         raise ValueError('URL fora do catálogo permitido: ' + reporter['id'])
+
+
+def validate_reporters(reporters):
+    if not isinstance(reporters, list) or not reporters:
+        raise ValueError('Catálogo vazio ou inválido')
+    seen = set()
+    for reporter in reporters:
+        if not isinstance(reporter, dict):
+            raise ValueError('Catálogo com reporte inválido')
+        for key in ('id', 'label', 'company', 'cnpj', 'url'):
+            value = reporter.get(key)
+            if not isinstance(value, str) or not value.strip():
+                raise ValueError('Catálogo incompleto: ' + key)
+        if reporter['id'] in seen:
+            raise ValueError('Catálogo com identificador duplicado: ' + reporter['id'])
+        if len(reporter['cnpj']) != 14 or not reporter['cnpj'].isdigit():
+            raise ValueError('CNPJ inválido no catálogo: ' + reporter['id'])
+        seen.add(reporter['id'])
+        validate_reporter(reporter)
+    return reporters
 
 
 def delay(value, attempt):
@@ -51,7 +75,7 @@ async def fetch(client, reporter, root, page, retries=2):
                 raw = bytearray()
                 async for part in response.aiter_bytes():
                     raw.extend(part)
-                    if len(raw) > 16 * 1024 * 1024:
+                    if len(raw) > MAX_BODY_BYTES:
                         raise ValueError('response_size_limit')
                 raw = bytes(raw)
                 probe['source_sha'] = put(root, raw)
@@ -74,11 +98,12 @@ async def fetch(client, reporter, root, page, retries=2):
         return raw, probes
 
 
-async def capture(client, reporter, root, max_pages=20, retries=2):
+async def capture(client, reporter, root, max_pages=MAX_PAGES, retries=2):
     validate_reporter(reporter)
     result = {**reporter, 'observed_at': now(), 'probes': [], 'issues': [], 'rows': [],
               'complete': False, 'coverage_reconciled': False, 'coverage': 'unknown', 'status': 0, 'http_date': None}
     unique = {}
+    limit_reached = False
     for page in range(1, max_pages + 1):
         raw, probes = await fetch(client, reporter, root, page, retries)
         result['probes'].extend(probes)
@@ -114,10 +139,16 @@ async def capture(client, reporter, root, max_pages=20, retries=2):
                         result['issues'].append('conflicting_endpoint')
                         unique[key]['ambiguous'] = True
                     continue
-                unique[key] = {'record': row, 'source_sha': last['source_sha'], 'json_path': f'$.data[{index}]'}
+                if len(unique) >= MAX_RECORDS:
+                    result['issues'].append('record_limit')
+                    result['coverage'] = 'record_limit'
+                    limit_reached = True
+                    break
+                unique[key] = {'record': row, 'source_sha': last['source_sha'],
+                               'json_path': f'$.data[{index}]', 'http_date': last['http_date']}
                 added += 1
-            if len(unique) > 10000:
-                raise ValueError('record_limit')
+            if limit_reached:
+                break
             if total is not None and len(unique) >= total:
                 result['coverage_reconciled'] = len(unique) == total
                 result['complete'] = bool(unique) and result['coverage_reconciled'] and not {'invalid_endpoint_record', 'conflicting_endpoint'}.intersection(result['issues'])

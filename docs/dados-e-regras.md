@@ -12,7 +12,7 @@ O GET usa `page=N&page-size=1000&period=ALL`. O corpo esperado contém `data[]` 
 | Timeout por operação HTTP | 20 s |
 | Páginas por captura/fonte | 20 |
 | Corpo por resposta, após descompressão | 16 MiB |
-| Identidades por fonte | 10.000 |
+| Identidades por fonte | 10.000; ao atingir o teto, a captura fica incompleta e registra `record_limit` |
 | Tentativas HTTP por página | Até 3 |
 | Retry-After / espera HTTP | Até 15 s |
 | Recapturas após vazio de fonte antes válida | Até 2; esperas configuradas de 10 s e 30 s |
@@ -66,7 +66,7 @@ Essas são relações lógicas do JSON; não são todas constraints SQL. `entity
 | `collection_health.status` | `healthy` se todas as fontes são utilizáveis; `partial` se algumas; `unavailable` se nenhuma |
 | `collection_health.sources[].status` | Enum de resultado da fonte, não número HTTP |
 
-HTTP 200 + `data=[]` + `totalRecords=0` resulta, nas novas capturas, em `coverage_reconciled=true`, `complete=false`, `usable=false`, `data_status=empty`. Falha HTTP com corpo de erro não é resposta vazia de métricas. Modelos antigos são interpretados de modo compatível; não são recalculados retroativamente.
+HTTP 200 + `data=[]` + `totalRecords=0` resulta, nas novas capturas, em `coverage_reconciled=true`, `complete=false`, `usable=false`, `data_status=empty`. Falha HTTP com corpo de erro não é resposta vazia de métricas. Quando a normalização descarta registros inválidos, `coverage_reconciled` passa a `false`; quando as páginas cruzam o dia de referência, a cobertura fica `mixed_reference_day`, a captura fica incompleta e cada linha recebe `page_day_changed`. Modelos antigos são interpretados de modo compatível; não são recalculados retroativamente.
 
 ## Métricas normalizadas
 
@@ -79,9 +79,9 @@ HTTP 200 + `data=[]` + `totalRecords=0` resulta, nas novas capturas, em `coverag
 | `averageTps.currentDay` | `average_tps` |
 | `peakTps.currentDay` | `peak_tps` |
 
-Esses campos exigem inteiros int64 não negativos; booleanos e valores incompatíveis ficam nulos com flags. Uptime é convertido para razão finita em [0,1]; downtime permanece em segundos. `request_time`, `source_sha`, `json_path` e `clock_offset_seconds` preservam proveniência. `fresh` significa mesmo run da última tentativa, não dados recentes pelo relógio.
+Esses campos exigem inteiros int64 não negativos; booleanos e valores incompatíveis ficam nulos com flags. Uptime é convertido para razão finita em [0,1]; booleanos, `NaN`/`Infinity` e valores fora do intervalo ficam nulos. Downtime permanece em segundos. `request_time`, `source_sha`, `json_path` e `clock_offset_seconds` preservam proveniência. `fresh` significa mesmo run da última tentativa, não dados recentes pelo relógio.
 
-Dia analítico: HTTP Date convertido para America/Sao_Paulo; fallback para o instante da coleta. Essa convenção não comprova o fuso de consolidação do banco. Divergência de `requestTime` é sinalizada, sem correção silenciosa.
+Dia analítico: HTTP Date da página que produziu a linha, convertido para America/Sao_Paulo; fallback para o instante da coleta. Se páginas do mesmo reporte cruzam o dia, a captura é incompleta e sinalizada. Essa convenção não comprova o fuso de consolidação do banco. Divergência de `requestTime` é sinalizada, sem correção silenciosa.
 
 ## Fórmulas e comparabilidade
 
@@ -96,7 +96,7 @@ Dia analítico: HTTP Date convertido para America/Sao_Paulo; fallback para o ins
 
 ## Configuração vigente
 
-Os valores são os de [config/rules.json](../config/rules.json); tipos, finitude, limites e relações entre limiares são validados antes de coletar.
+Os valores são os de [config/rules.json](../config/rules.json); tipos, finitude, limites e relações entre limiares são validados antes de coletar. O catálogo [config/reporters.json](../config/reporters.json) exige `id`, `label`, `company`, `cnpj` de 14 dígitos e URL Admin válida, além de IDs únicos. O envelope de estado é versão 1; `model_version` aceita modelos conhecidos (1, 2 e 3) e um valor desconhecido bloqueia pack/restore.
 
 | Parâmetro | Valor |
 |---|---:|

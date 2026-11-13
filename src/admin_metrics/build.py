@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from datetime import timedelta
@@ -115,4 +116,12 @@ def build(state, root, output, rules, reporters):
         atomic(output / 'dashboard.json', raw)
         atomic(output / '.nojekyll', b'')
         atomic(output / 'index.html', html.encode())
+        # Assets are content-addressed; old builds are no longer referenced by
+        # the entry page and can be removed locally without touching the current.
+        assets_root = output / 'assets'
+        if assets_root.is_dir():
+            for path in assets_root.iterdir():
+                if (path.is_dir() and path.name != asset_id
+                        and re.fullmatch(r'[0-9a-f]{20}', path.name)):
+                    shutil.rmtree(path, ignore_errors=True)
     return payload

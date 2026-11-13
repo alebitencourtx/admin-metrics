@@ -31,6 +31,15 @@ def test_quality_history_and_baseline(tmp_path,reporter):
     assert {'average_tps_above_peak','history_lengths_differ','uptime_downtime_conflict','mean_ms_history_value_invalid'}<=set(row['quality'])
 
 
+def test_boolean_uptime_is_invalid(tmp_path,reporter):
+    raw=record()
+    raw['availability']={'uptime':{'uptimeRate':True,'generalUptimeRate':True},
+                         'downtime':{'partialDowntime':0,'generalDowntime':0,'scheduledOutage':0}}
+    row=normalize(report(reporter,tmp_path,[raw]),'r')[0]
+    assert row['uptime'] is None and row['general_uptime'] is None
+    assert {'uptime_invalid','general_uptime_invalid'}<=set(row['quality'])
+
+
 @pytest.mark.parametrize('change,state',[(dict(day='2026-11-11'),'day_changed'),(dict(calls=900),'counter_reset_or_revision'),(dict(source_complete=False),'incomplete_source'),(dict(calls=None),'invalid_counter'),(dict(errors=2000),'invalid_counter'),(dict(calls=1001,errors=102),'inconsistent_delta'),(dict(calls=1100,errors=105),'valid')])
 def test_deltas_reject_resets_days_and_impossible_counters(tmp_path,reporter,change,state):
     previous=normalize(report(reporter,tmp_path),'r')[0]
@@ -89,6 +98,17 @@ def test_collection_streak_resets_and_preserves_last_good(tmp_path,reporter,rule
     assert incident['severity']=='attention' and incident['consecutive_samples']==1
 
 
+def test_partial_context_is_refreshed_when_source_never_completes(tmp_path,reporter,rules):
+    state=empty_state()
+    step(state,reporter,tmp_path,rules,0,record(1000,0),status=403,complete=False)
+    first=deepcopy(state['latest_rows'])
+    assert first and not first[0]['source_complete']
+    step(state,reporter,tmp_path,rules,1,record(2000,0),status=403,complete=False)
+    assert len(state['latest_rows'])==1
+    assert state['latest_rows'][0]['calls']==2000
+    assert state['latest_rows'][0]['source_complete'] is False
+
+
 def test_history_retention_and_run_idempotency(tmp_path,reporter,rules):
     state=empty_state();step(state,reporter,tmp_path,rules,0)
     source=report(reporter,tmp_path,observed='2026-12-15T12:00:00+00:00')
@@ -135,6 +155,7 @@ def test_malformed_reported_uri_does_not_abort_other_sources(tmp_path, reporter,
     validate(state)
     assert len(state['observations']) == 1
     assert state['runs'][0]['reports'][0]['complete'] is False
+    assert state['runs'][0]['reports'][0]['coverage_reconciled'] is False
     assert 'invalid_endpoint_record' in state['runs'][0]['reports'][0]['issues']
     assert any(i['rule'] == 'collection' and i['reporter_id'] == reporter['id'] for i in state['incidents'])
 
