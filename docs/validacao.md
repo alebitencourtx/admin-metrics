@@ -1,5 +1,24 @@
 # Evidências de validação
 
+Revisão do índice de evidências: **13/11/2026**. Números, tags, horários e tempos abaixo pertencem às execuções identificadas; não são um painel ao vivo. A retenção pode remover Releases históricas citadas. Documentos vigentes: [dados/regras](dados-e-regras.md), [dashboard](dashboard.md) e [operação](operacao.md).
+
+## Última versão de código validada: 1.2.0
+
+| Evidência | Referência |
+|---|---|
+| Commit | `38a1faf63002ff78da7dd9f566b593aac0d9455f` |
+| CI | [43362739900](https://github.com/alebitencourtx/admin-metrics/actions/runs/43362739900): quatro combinações Windows/Linux × Python 3.11/3.12 aprovadas; 95 testes Python e dez Node |
+| Republicação por push | [43362740559](https://github.com/alebitencourtx/admin-metrics/actions/runs/43362740559): build/deploy aprovados, sem nova observação |
+| Nova coleta e confirmação | [43362828874](https://github.com/alebitencourtx/admin-metrics/actions/runs/43362828874): build/deploy/confirm aprovados; saúde `unavailable` corretamente sinalizada |
+| Dados dessa coleta | Run `20261113T040226Z-890eadd0`, início 13/11 às 01h02 BRT; 12 ciclos e 2.759 observações retidos |
+| Resultado de origem | Sete Admins HTTP 200 vazios, cada um com duas recapturas/três probes; Nissan 503 com três tentativas HTTP |
+| Preservação | Panorama conjunto `20261113T005910Z-1cdc203e`, dia 12/11, 279 endpoints; nenhum ponto inventado no ciclo vazio |
+| Pacote conferido | `state-43362828874-1`: checksum e contrato validados; modelo 3. Na conferência, backup `state-43359450248-1` |
+
+Os avisos de depreciação das actions e migração da imagem Ubuntu observados no CI não foram tratados como falha dos testes. O verde do workflow indica processamento/publicação, não sucesso de todas as fontes.
+
+## Cronologia histórica
+
 ## Antes da implantação
 
 - Migração do projeto anterior: repositório íntegro, remote preservado e 67 testes aprovados após reinstalar o pacote editável na nova pasta.
@@ -17,7 +36,7 @@ O diretório `artifacts/benchmark` é ignorado e não integra o site público.
 - CI [42880395657](https://github.com/alebitencourtx/admin-metrics/actions/runs/42880395657): quatro combinações Windows/Linux × Python 3.11/3.12 aprovadas, 44 testes em cada.
 - Release `state-42880395554-1`: ZIP, SHA256SUMS e recibo de deploy publicados após confirmação.
 - Pages novo e documentação retornaram HTTP 200; o site OpenData anterior também continuou respondendo HTTP 200.
-- Workflow remoto está `active`; agenda versionada `17 */2 * * *` UTC e acionamento manual disponíveis.
+- Na implantação inicial de 10/11, o workflow estava `active` com cron `17 */2 * * *` UTC. Essa agenda foi substituída pelo cron horário em 12/11; acionamento manual permanece disponível.
 
 O workflow é best effort. O sucesso da primeira execução não demonstra disponibilidade futura nem pontualidade garantida da agenda.
 

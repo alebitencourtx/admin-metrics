@@ -9,6 +9,10 @@ Observatório executivo dos oito reportes Admin Santander, com atualização rem
 
 ## Documentação atualizada
 
+Revisão Markdown: **13/11/2026**. Pacote **1.2.0**, modelo de captura **3**, envelope de estado **1**; código de referência `38a1faf`.
+
+Os guias locais completos estão no [índice Markdown](docs/README.md): [arquitetura](docs/arquitetura.md), [contratos e regras](docs/dados-e-regras.md), [dashboard e monitor](docs/dashboard.md) e [operação/recuperação](docs/operacao.md).
+
 A referência completa é o [HTML único publicado](https://alebitencourtx.github.io/admin-metrics/documentacao.html), com [índice das fontes e manutenção](docs/README.md). Além de arquitetura, fluxo, ER e uso das oito seções, inclui dicionário JSON/Arrow/SQL, schemas reais do DuckDB, todos os estados de intervalo, exemplos de interpretação, regras fixas versus configuráveis, recuperação e cópias dos workflows/configurações.
 
 O checkout local fica em `teste-opendata/admin-metrics/`, ao lado de `observatory-opendata/`. São repositórios e ambientes independentes. A agenda deste monitor não atualiza o OpenData.
@@ -63,7 +67,7 @@ node --test tests/test_dashboard.cjs
 - Rejeição ≥5% com ≥100 chamadas: atenção, sem inferir causa.
 - Média ≥2.000 ms: atenção; ≥4.000 ms: crítico, com amostra mínima de 100 chamadas.
 - Regressão: ≥2× a mediana de pelo menos três médias diárias anteriores positivas.
-- Recorrência contextual: ≥3 dias anteriores com erro ≥5% e ≥100 chamadas/dia.
+- Recorrência contextual: ≥3 posições dentre até sete dias anteriores declarados com erro ≥5% e ≥100 chamadas/dia; o detalhe visual mostra somente D−1 a D−3.
 - Falha de coleta: atenção na primeira, crítico na segunda consecutiva.
 - Recuperação: duas amostras avaliáveis consecutivas. Falha, ausência, baixa amostra ou métrica inválida não resolvem a regra afetada. Reset suspende regras de contadores; latência válida continua sendo avaliada.
 
@@ -75,7 +79,7 @@ Deltas comparam contadores cumulativos da mesma entidade/dia com cobertura compl
 
 Cron **`17 * * * *` UTC** no GitHub Actions. Não depende da máquina local. Em **Actions → Monitorar Admin e publicar Pages → Run workflow**, mantenha `refresh_data` marcado para coletar, ou desmarque para republicar o estado aprovado. Push republica sem criar observação; somente no bootstrap sem estado é feita uma coleta inicial.
 
-GitHub Actions agenda por melhor esforço: pode atrasar e pode desabilitar schedule de repositórios públicos inativos. O navegador avisa após duas horas sem coleta. O workflow usa runner Linux padrão em repositório público; DuckDB é embutido no Python e não exige servidor contratado.
+GitHub Actions agenda por melhor esforço: pode atrasar e pode desabilitar schedule de repositórios públicos inativos. O navegador avisa após duas horas sem dados válidos do panorama; uma tentativa vazia recente não renova essa idade. O workflow usa runner Linux padrão em repositório público; DuckDB é embutido no Python e não exige servidor contratado.
 
 ## Estado, retenção e recuperação
 
@@ -92,9 +96,9 @@ python scripts/cloud_pipeline.py restore --tag state-<run>-<tentativa>
 python -m admin_metrics.cli build
 ```
 
-O restore não sobrescreve estado existente nem troca automaticamente o atual remoto. Nunca apague o pacote anterior antes de verificar a recuperação. Procedimento completo e confirmação de candidato após falha estão na documentação HTML.
+O restore não sobrescreve estado existente nem troca automaticamente o atual remoto. Nunca apague o pacote anterior antes de verificar a recuperação. Procedimento completo em Markdown, inclusive restore para outro root e confirmação de candidata após falha, está no [runbook](docs/operacao.md).
 
-O dashboard e os arquivos públicos de consumo contêm os **últimos 3 dias (72 horas)**. O eixo permanece nessa janela mesmo quando ainda há poucas coletas; lacunas ficam vazias. O estado nas Releases e o warehouse preservam os 30 dias. Não é possível preencher retroativamente os horários que não foram coletados.
+As séries de observação e o monitor no payload público contêm os **últimos 3 dias (72 horas)**. O payload também carrega contexto anterior de endpoints, incidentes ativos e panoramas preservados quando necessários; não é um corte integral de todos os seus campos em três dias. O eixo permanece nessa janela mesmo quando ainda há poucas coletas; lacunas ficam vazias. O estado nas Releases e o warehouse preservam os 30 dias. Não é possível preencher retroativamente os horários que não foram coletados.
 
 ## Continuidade quando a origem falha
 

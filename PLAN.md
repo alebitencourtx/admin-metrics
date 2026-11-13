@@ -1,6 +1,23 @@
-# Admin Metrics · Plano de solução e implantação
+# Admin Metrics · Plano original e situação implementada
 
-Data: 10/11/2026. Plano produzido antes da implementação e do deploy.
+Plano original de **10/11/2026**, anterior à implantação. Quadro de situação revisto em **13/11/2026** para a implementação **1.2.0** (`38a1faf`). O texto original abaixo é um registro de decisões daquela data, e não a especificação operacional vigente.
+
+| Decisão original | Situação implementada |
+|---|---|
+| Coleta a cada duas horas | Substituída por cron horário `17 * * * *` UTC; pontualidade continua best effort |
+| Histórico de 30 dias / cerca de 360 ciclos | Estado de 30 dias / cerca de 720 ciclos previstos com frequência horária; gráfico e monitor de 72h |
+| Preservar últimas boas por fonte | Implementado; panorama usa um ciclo completo e um só dia por recorte, sem misturar ciclos |
+| Vazio e falha observáveis | Implementado com status próprio, cobertura separada de usabilidade, retentativas 10/30 s e saúde no Actions |
+| Sete seções | Oito: acrescentado monitor de execuções por API, com detalhe e vínculo comprovado do Actions |
+| Primeira duplicata como evidência | Conflito torna a captura incompleta e a exclui dos KPIs do ciclo atual |
+| CI, testes e publicação | 95 testes Python e dez Node; CI Windows/Linux × Python 3.11/3.12 e coleta/deploy/promoção verificados |
+| Dois repositórios e projeto original preservado | Implantado; OpenData e Admin têm estado, runtime e publicação independentes |
+
+Guias vigentes: [índice](docs/README.md), [contratos/regras](docs/dados-e-regras.md), [operação](docs/operacao.md), [uso do painel](docs/dashboard.md), [evidências](docs/validacao.md).
+
+Pendências condicionais: garantia de agenda, alertas externos, auditoria regulatória, SSO/RBAC e operação contínua não estão implementados. Não há Cloudflare ou outro agendador externo. Fontes vazias/503 são diagnosticadas; não se declara corrigida a infraestrutura da instituição.
+
+## Registro original de 10/11/2026
 
 ## Objetivo e organização
 
