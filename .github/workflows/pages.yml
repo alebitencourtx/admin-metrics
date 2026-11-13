@@ -24,6 +24,7 @@ jobs:
       pages: read
     outputs:
       candidate_tag: ${{ steps.prepare.outputs.candidate_tag }}
+      collection_status: ${{ steps.prepare.outputs.collection_status }}
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}

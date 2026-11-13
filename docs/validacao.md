@@ -43,3 +43,16 @@ O workflow é best effort. O sucesso da primeira execução não demonstra dispo
 - Navegador: tendências de 72h com lacunas reais, filtro CCVM com incidentes, detalhe D−1/D−2/D−3, manual aberto pelo link da navegação, três diagramas e busca sem acentos. Sem erros de console nas páginas verificadas.
 
 Os horários não coletados antes da correção não são preenchidos. Uma janela de três dias não comprova três dias completos de amostragem; o painel informa desde quando existem observações.
+
+## Continuidade e monitor de extrações · 13/11/2026
+
+- v1.2.0 / modelo de captura 3: HTTP 200 vazio tem cobertura conciliada independente de usabilidade; as novas capturas ficam complete=false/usable=false/data_status=empty. Runs legados são interpretados sem inventar métricas ou recalcular incidentes passados.
+- Última tentativa e últimos dados válidos separados. Panorama derivado de um único ciclo completo e um único dia por recorte; preservado durante falha parcial/total, sem repetir pontos ou misturar ciclos.
+- Retentativas de vazio para fonte antes válida: 10 e 30 segundos, com concorrência liberada durante espera, todos os probes/bronzes preservados e uma aplicação analítica por ciclo.
+- Monitor dos três dias, matriz execução × API, páginas de 12, filtros globais e detalhe de resposta, horários, registros, tentativas, duração, bytes e SHA. Link do Actions novo registrado; links antigos enriquecidos somente pelos metadados comprovados de Releases aprovadas.
+- Actions: output/resumo de saúde e warning para coleta parcial/indisponível; diagnóstico continua publicável, distinguindo conclusão do pipeline da disponibilidade das métricas.
+- 95 testes Python e dez testes Node passaram localmente, incluindo falha total, parcial, recuperação, mudança de dia, fontes com dias divergentes, resposta vazia, retentativas, relógio recente/antigo, interpolação do aviso, monitor e paginação.
+- Replay do pacote state-43359450248-1: 11 ciclos e 2.759 observações preservados; a tentativa 00h31 BRT tinha sete HTTP 200 vazios e Nissan 503. O panorama coerente selecionado foi 12/11 às 21h59 (279 endpoints, 106.602.207 chamadas declaradas), enquanto saúde permaneceu 0/8. Fontes individuais saudáveis na coleta anterior usam o ciclo de 23h57.
+- Navegador sem erros de console: aviso com dados antigos explícitos, matriz com a transição 7/8 → 0/8, detalhe HTTP 200 vazio com SHA, e ranking abrindo a evidência do ciclo preservado. Página sem overflow horizontal global; matriz tem rolagem própria.
+
+O monitor é estático e muda após publicação; não informa andamento de um job antes do deploy. Histórico de até 30 dias limita a busca do panorama preservado. Sem ciclo válido retido, o painel informa indisponibilidade, sem converter ausência em zero.

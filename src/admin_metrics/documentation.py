@@ -8,7 +8,7 @@ from pathlib import Path
 from .storage import atomic, sha
 
 HERE = Path(__file__).parent
-DOC_REVISION = '2026-11-12.1'
+DOC_REVISION = '2026-11-13.1'
 
 FIELD_HELP = {
     'run_id': 'Identidade de execução UTC + sufixo aleatório; não é a data de referência do banco.',
@@ -54,6 +54,7 @@ OBSERVATION_EXTRAS = [
 ]
 
 PROBE_FIELDS = [
+    ('capture_attempt / data_status','inteiro / enum','Captura a partir de 1 e resultado da resposta; identifica repetições após vazio separadas do retry HTTP. Campos ausentes em runs legados.'),
     ('page / attempt','inteiro','Página solicitada e tentativa a partir de 1.'),
     ('observed_at','UTC','Início da tentativa HTTP, distinto do início do ciclo e da fonte.'),
     ('url','URL','Admin e parâmetros solicitados. Redirecionamentos não são seguidos.'),
@@ -115,7 +116,7 @@ def generate(payload, output, warehouse=None):
     sources = table(['Reporte', 'Empresa / CNPJ', 'URL Admin'], [(r['label'], r['company']+' / '+r['cnpj'], r['url']) for r in payload['reporters']])
     rules = table(['Parâmetro', 'Valor configurado'], payload['rules'].items())
     evidence = table(['Reporte', 'HTTP', 'Identidades', 'Cobertura', 'Diagnóstico'], [(r['label'],r['status'],r['records'],r['coverage'], ', '.join(r['issues']) or 'Sem flags de coleta') for r in payload['runs'][-1]['reports']])
-    modules = [('collect.py','HTTP, limites, retry, paginação e bronze'), ('contracts.py','Validação segura das URIs declaradas'), ('rules.py','Configuração tipada e limites compartilhados'), ('analysis.py','Contratos, deltas, histórico e incidentes'), ('storage.py','Hash, escrita atômica e exclusão mútua'), ('build.py','Arrow, DuckDB, Parquet e publicação estática'), ('marts.sql','Definições únicas de agregação SQL'), ('pipeline.py','Coleta, build e commit de estado'), ('archive.py','Pacote limitado, integridade e restore seguro'), ('cli.py','Operação local padronizada'), ('documentation.py','Este manual autocontido'), ('web/app.js','Filtros, gráficos, navegação, detalhes e exportação'), ('scripts/cloud_pipeline.py','Restore, candidato, confirmação e retenção remotos')]
+    modules = [('collect.py','HTTP, limites, retry, paginação e bronze'), ('contracts.py','Validação segura das URIs declaradas'), ('health.py','Saúde da coleta independente da publicação'), ('panorama.py','Último ciclo completo e dia coerente por recorte'), ('rules.py','Configuração tipada e limites compartilhados'), ('analysis.py','Contratos, deltas, histórico e incidentes'), ('storage.py','Hash, escrita atômica e exclusão mútua'), ('build.py','Arrow, DuckDB, Parquet e publicação estática'), ('marts.sql','Definições únicas de agregação SQL'), ('pipeline.py','Coleta, build e commit de estado'), ('archive.py','Pacote limitado, integridade e restore seguro'), ('cli.py','Operação local padronizada'), ('documentation.py','Este manual autocontido'), ('web/app.js','Filtros, gráficos, navegação, detalhes e exportação'), ('scripts/cloud_pipeline.py','Restore, candidato, confirmação e retenção remotos')]
     code = ''
     for name, desc in modules:
         path = HERE/name

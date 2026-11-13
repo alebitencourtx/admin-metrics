@@ -25,6 +25,19 @@ def approved(items):
     return sorted([r for r in items if r['tag_name'].startswith('state-') and not r['draft'] and not r['prerelease']],key=lambda r:(r['published_at'],r['id']),reverse=True)
 
 
+def execution_links(items, repository):
+    links = {}
+    for release in items:
+        try:
+            body = json.loads(release.get('body', ''))
+            workflow = str(body.get('workflow_run_id', ''))
+            if body.get('purpose') == 'approved-monitor-state' and workflow.isdigit() and body.get('data_run_id'):
+                links[body['data_run_id']] = 'https://github.com/' + repository + '/actions/runs/' + workflow
+        except (ValueError, TypeError, AttributeError):
+            continue
+    return links
+
+
 def download(tag):
     with tempfile.TemporaryDirectory(prefix='admin-restore-') as temporary:
         for pattern in ('state.zip','SHA256SUMS'):
@@ -32,12 +45,36 @@ def download(tag):
         return restore(Path(temporary)/'state.zip',Path(temporary)/'SHA256SUMS',ROOT)
 
 
+def summarize_health(payload, refresh):
+    health = payload['collection_health']
+    labels = {'healthy': 'SAUDÁVEL', 'partial': 'DEGRADADA', 'unavailable': 'SEM DADOS VÁLIDOS'}
+    status = health['status']
+    output = os.environ.get('GITHUB_OUTPUT')
+    if output:
+        with open(output, 'a', encoding='utf-8') as stream:
+            stream.write('collection_status=' + status + '\n')
+    if status != 'healthy':
+        print(f"::warning title=Saúde da coleta::{labels[status]}: {health['valid_sources']}/{health['total_sources']} fontes com dados válidos. Publicação do diagnóstico continua; métricas anteriores não são novas observações.", flush=True)
+    summary = os.environ.get('GITHUB_STEP_SUMMARY')
+    if summary:
+        with open(summary, 'a', encoding='utf-8') as stream:
+            stream.write('## Saúde da coleta: ' + labels[status] + '\n\n')
+            stream.write(('Nova tentativa de coleta.' if refresh else 'Republicação; nenhuma nova tentativa de coleta.') + '\n\n')
+            stream.write(f"Fontes válidas: **{health['valid_sources']}/{health['total_sources']}**. Última tentativa: `{health['last_attempt_at']}`. Último panorama completo válido: `{health['last_valid_at']}`.\n\n")
+            stream.write('Sucesso deste workflow indica processamento/publicação; a saúde dos dados é o resultado acima.\n\n')
+            for report in payload['runs'][-1]['reports']:
+                stream.write(f"- {report['label']}: HTTP {report['status']}, {report['records']} identidades, issues: {report['issues']}\n")
+
+
 def prepare(refresh=False):
     history=approved(releases())
     if history:
         download(history[0]['tag_name'])
     from admin_metrics.pipeline import run
-    payload=run(ROOT,Path('site'),refresh=refresh or not history)
+    execution_url = 'https://github.com/' + os.environ['GH_REPO'] + '/actions/runs/' + os.environ['GITHUB_RUN_ID']
+    payload=run(ROOT,Path('site'),refresh=refresh or not history,execution_url=execution_url,
+                execution_links=execution_links(history, os.environ['GH_REPO']))
+    summarize_health(payload, refresh or not history)
     # A presentation-only deploy must not create a fake observation or duplicate state.
     if not refresh and history:
         return ''
@@ -52,12 +89,6 @@ def prepare(refresh=False):
     if output:
         with open(output,'a') as stream:stream.write('candidate_tag='+tag+'\n')
     gh('release','upload',tag,str(destination/'state.zip'),str(destination/'SHA256SUMS'))
-    summary=os.environ.get('GITHUB_STEP_SUMMARY')
-    if summary:
-        with open(summary,'a',encoding='utf-8') as stream:
-            stream.write('## Observação Admin\n\nRun: `'+payload['meta']['run_id']+'`\n\n')
-            for report in payload['runs'][-1]['reports']:
-                stream.write(f"- {report['label']}: HTTP {report['status']}, {report['records']} identidades, issues: {report['issues']}\n")
     return tag
 
 

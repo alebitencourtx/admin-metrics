@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function dashboard() {
+function dashboard({mutate=()=>{}, now='2026-11-12T18:10:00+00:00'}={}) {
   const elements = new Map();
   function element(id) {
     if (!elements.has(id)) elements.set(id, {
@@ -37,11 +37,16 @@ function dashboard() {
       rule:'error_rate', status:'open', severity:'critical', last_seen:endpoint.observed_at,
       opened_at:endpoint.observed_at, samples:2, consecutive_samples:2, recovery_samples:0}],
   };
+  const snapshot={run_id:'new',observed_at:endpoint.observed_at,day:endpoint.day,rows:[{...endpoint}]};
+  data.panoramas={all:snapshot,ccvm:snapshot};
+  data.collection_health={status:'healthy',valid_sources:1,total_sources:1,last_attempt_at:endpoint.observed_at,last_valid_at:endpoint.observed_at,sources:[{id:'ccvm',status:'valid',last_attempt_at:endpoint.observed_at,last_valid_at:endpoint.observed_at}]};
+  mutate(data);
   const events = {};
   const document = {getElementById:element, querySelectorAll:()=>[],
     addEventListener(name, callback){events[name] = callback;}};
   const window = {ADMIN_DATA:data, innerWidth:1200, addEventListener(){}};
-  const context = {window, document, setInterval(){}, setTimeout(){}, clearTimeout(){}, console};
+  class Clock extends Date {static now(){return Date.parse(now);}}
+  const context = {window, document, Date:Clock, setInterval(){}, setTimeout(){}, clearTimeout(){}, console};
   vm.runInNewContext(fs.readFileSync('src/admin_metrics/web/app.js', 'utf8'), context);
   return {element, events, data};
 }
@@ -75,4 +80,86 @@ test('endpoint detail uses the same three-day observation window', () => {
   assert.match(element('detail-chart').innerHTML, /12\/11/);
   assert.match(element('reported-errors').innerHTML, /D−3/);
   assert.doesNotMatch(element('reported-errors').innerHTML, /D−4/);
+});
+
+function failedCollection(data, kind='empty') {
+  data.panoramas.all.run_id = 'old';
+  data.panoramas.ccvm = data.panoramas.all;
+  data.panoramas.all.rows.forEach(r=>r.fresh=false);
+  data.latest.forEach(r=>r.fresh=false);
+  const source=data.runs.at(-1).reports[0];
+  Object.assign(source,{status:kind==='empty'?200:503,records:0,complete:false,issues:[kind==='empty'?'empty_report':'http_503']});
+  Object.assign(data.collection_health,{status:'unavailable',valid_sources:0});
+  data.collection_health.sources[0].status=kind;
+}
+
+test('recent successful attempt renders concrete schedule without placeholders', () => {
+  const {element}=dashboard();
+  assert.match(element('freshness').textContent,/cada 1h, no minuto 17 UTC/);
+  assert.doesNotMatch(element('freshness').textContent,/\$\{/);
+  assert.match(element('freshness').textContent,/1\/1 fontes com dados válidos/);
+});
+
+test('fresh attempt with empty data keeps previous KPIs and identifies their reference day', () => {
+  const {element}=dashboard({mutate:failedCollection});
+  assert.match(element('kpis').innerHTML,/1[.\s]?000/);
+  assert.match(element('kpis').innerHTML,/0<span class="unit">\/ 1/);
+  assert.match(element('panorama-context').textContent,/DADOS ANTERIORES.*2026-11-12/);
+  assert.match(element('freshness').textContent,/HTTP 200 sem dados/);
+  assert.match(element('freshness').textContent,/Última tentativa:.*Últimos dados válidos/);
+  assert.match(element('panorama-note').textContent,/sem combinar fontes/);
+  assert.doesNotMatch(element('freshness').textContent,/\$\{/);
+});
+
+test('HTTP failure has a distinct diagnosis and preserves panorama', () => {
+  const {element}=dashboard({mutate:data=>failedCollection(data,'http_error')});
+  assert.match(element('freshness').textContent,/Falha HTTP/);
+  assert.doesNotMatch(element('freshness').textContent,/HTTP 200 sem dados/);
+  assert.match(element('kpis').innerHTML,/1[.\s]?000/);
+});
+
+test('data age remains stale even when the latest attempt is recent', () => {
+  const {element}=dashboard({now:'2026-11-13T03:31:00+00:00',mutate:data=>{
+    failedCollection(data);
+    data.collection_health.last_attempt_at='2026-11-13T03:30:00+00:00';
+  }});
+  assert.match(element('freshness').textContent,/há 9,5 h/);
+  assert.match(element('freshness').textContent,/Dados válidos desatualizados/);
+  assert.match(element('freshness').textContent,/00:30/);
+});
+
+test('no prior valid cycle leaves metrics unavailable rather than inventing zero traffic', () => {
+  const {element}=dashboard({mutate:data=>{failedCollection(data);data.panoramas={};}});
+  assert.match(element('freshness').textContent,/Nenhum ciclo completo disponível/);
+  assert.match(element('panorama-context').textContent,/SEM PANORAMA VÁLIDO/);
+  assert.match(element('kpis').innerHTML,/—/);
+});
+
+
+test('execution monitor differentiates empty response from HTTP error and opens evidence', () => {
+  const {element,events}=dashboard({mutate:data=>{
+    failedCollection(data,'http_error');
+    data.runs[0].execution_url='https://github.com/alebitencourtx/admin-metrics/actions/runs/123';
+    data.runs[0].reports[0].probes=[{page:1,attempt:1,capture_attempt:1,status:503,error:'http_503',duration_ms:17,bytes:280}];
+  }});
+  assert.match(element('execution-rows').innerHTML,/HTTP 503/);
+  assert.match(element('execution-rows').innerHTML,/0\/1 com dados/);
+  events.click({target:{closest(selector){return selector==='[data-execution]'?{dataset:{execution:'new',executionReporter:'ccvm'}}:null;}}});
+  assert.equal(element('execution-detail').open,true);
+  assert.match(element('execution-body').innerHTML,/http_503/);
+  assert.match(element('execution-body').innerHTML,/actions\/runs\/123/);
+  const empty=dashboard({mutate:failedCollection});
+  assert.match(empty.element('execution-rows').innerHTML,/HTTP 200 · vazio/);
+});
+
+test('execution monitor paginates without dropping previous extraction evidence', () => {
+  const {element}=dashboard({mutate:data=>{
+    data.runs=Array.from({length:25},(_,i)=>({...data.runs[0],run_id:'r'+i}));
+  }});
+  assert.match(element('execution-page-note').textContent,/1–12 de 25/);
+  element('execution-next').listeners.click();
+  assert.match(element('execution-page-note').textContent,/13–24 de 25/);
+  element('execution-next').listeners.click();
+  assert.match(element('execution-page-note').textContent,/25–25 de 25/);
+  assert.equal(element('execution-next').disabled,true);
 });

@@ -18,5 +18,9 @@
   "reported_history_days": 7,
   "clock_skew_seconds": 900,
   "stale_after_hours": 2,
-  "chart_gap_hours": 1.5
+  "chart_gap_hours": 1.5,
+  "empty_retry_delays_seconds": [
+    10,
+    30
+  ]
 }

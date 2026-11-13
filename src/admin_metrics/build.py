@@ -11,6 +11,8 @@ from . import __version__
 from .storage import atomic, encoded, sha
 from .analysis import stamp
 from .rules import schedule_cron
+from .panorama import presentation
+from .health import outcome
 
 HERE = Path(__file__).parent
 SCHEMA = pa.schema([(k, pa.string()) for k in ('run_id', 'entity_id', 'observed_at', 'day', 'reporter_id', 'reporter', 'endpoint', 'path', 'family')]
@@ -50,7 +52,9 @@ def build(state, root, output, rules, reporters):
     # The previousDays arrays remain separate from our measured observation series.
     window_end = max(stamp(r['observed_at']) for r in (run, *run['reports']))
     window_start = window_end - timedelta(days=rules['dashboard_history_days'])
-    visible_runs = [r for r in state['runs'] if stamp(r['observed_at']) >= window_start]
+    visible_runs = [{**r, 'reports': [{**report, 'data_status': outcome(report), 'usable': outcome(report) == 'valid'}
+                                     for report in r['reports']]}
+                    for r in state['runs'] if stamp(r['observed_at']) >= window_start]
     visible_ids = {r['run_id'] for r in visible_runs}
     observations = [r for r in state['observations'] if r['run_id'] in visible_ids]
     payload['observation_trends'] = [r for r in payload['observation_trends'] if r['run_id'] in visible_ids]
@@ -82,6 +86,9 @@ def build(state, root, output, rules, reporters):
                          'partial_day': True, 'stale_after_hours': rules['stale_after_hours']},
                    latest=latest, runs=visible_runs, incidents=incidents, reported_history=history,
                    rules=rules, reporters=reporters)
+    context = presentation(state, reporters)
+    payload['panoramas'] = context['snapshots']
+    payload['collection_health'] = context['health']
     # Full observation points for endpoint drill-down, not repeated daily sums.
     payload['points'] = [{k: r.get(k) for k in ('entity_id', 'observed_at', 'day', 'calls', 'errors', 'error_pct', 'mean_ms', 'source_complete', 'interval_state', 'interval_error_pct')}
                          for r in observations]

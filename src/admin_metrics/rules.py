@@ -12,6 +12,7 @@ DEFAULT_RULES = {
     'baseline_minimum_days': 3, 'recurrent_minimum_days': 3,
     'reported_history_days': 7, 'clock_skew_seconds': 900,
     'stale_after_hours': 2, 'chart_gap_hours': 1.5,
+    'empty_retry_delays_seconds': [10, 30],
 }
 
 
@@ -21,6 +22,10 @@ def validate_rules(rules):
     fractions = {'error_attention_pct', 'error_critical_pct', 'rejection_attention_pct',
                  'regression_multiplier', 'stale_after_hours', 'chart_gap_hours'}
     for key, value in rules.items():
+        if key == 'empty_retry_delays_seconds':
+            if not isinstance(value, list) or len(value) > 2 or any(type(v) is not int or not 1 <= v <= 60 for v in value):
+                raise ValueError('Regra inválida: ' + key)
+            continue
         if (type(value) not in (int, float) or not math.isfinite(value)
                 or (key not in fractions and type(value) is not int)
                 or value < 0 or (key != 'schedule_minute' and value == 0)):

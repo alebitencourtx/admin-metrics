@@ -101,3 +101,44 @@ async def test_invalid_endpoint_is_source_quality_failure(tmp_path, reporter, en
         result = await capture(client, reporter, tmp_path)
     assert not result['complete'] and len(result['rows']) == 1
     assert 'invalid_endpoint_record' in result['issues']
+
+
+@pytest.mark.asyncio
+async def test_reconciled_empty_response_is_not_usable(tmp_path, reporter):
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda _: httpx.Response(200, json={
+            'data': [], 'meta': {'totalRecords': 0, 'totalPages': 0}}))) as client:
+        result = await capture(client, reporter, tmp_path)
+    assert result['coverage_reconciled'] and not result['complete'] and not result['usable']
+    assert result['data_status'] == 'empty' and result['coverage'] == 'empty_response'
+
+
+@pytest.mark.parametrize('recover', [False, True])
+@pytest.mark.asyncio
+async def test_empty_retries_preserve_every_attempt_without_new_observations(tmp_path, reporter, monkeypatch, recover):
+    import admin_metrics.collect as module
+    waits, requests = [], []
+    async def sleep(seconds): waits.append(seconds)
+    monkeypatch.setattr(module.asyncio, 'sleep', sleep)
+    def handler(request):
+        requests.append(request)
+        rows = [record()] if recover and len(requests) == 2 else []
+        return httpx.Response(200, json={'data': rows, 'meta': {'totalRecords': len(rows), 'totalPages': bool(rows)*1}})
+    reports = await module.collect([reporter], tmp_path, httpx.MockTransport(handler), {reporter['id']}, [10,30])
+    result = reports[0]
+    assert len(requests) == (2 if recover else 3)
+    assert waits == ([10] if recover else [10,30])
+    assert [p['capture_attempt'] for p in result['probes']] == list(range(1, len(requests)+1))
+    assert result['usable'] is recover
+    assert result['data_status'] == ('valid' if recover else 'empty')
+    if recover: assert 'empty_response_recovered' in result['issues']
+
+
+@pytest.mark.asyncio
+async def test_bootstrap_empty_is_not_retried_without_previous_valid_source(tmp_path, reporter):
+    from admin_metrics.collect import collect
+    requests = []
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(200, json={'data': [], 'meta': {'totalRecords': 0}})
+    result = (await collect([reporter], tmp_path, httpx.MockTransport(handler)))[0]
+    assert len(requests) == 1 and result['empty_retry_count'] == 0

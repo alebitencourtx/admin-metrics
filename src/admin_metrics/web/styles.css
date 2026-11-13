@@ -274,3 +274,14 @@ main{padding:0}
 .workspace{font-size:13px;line-height:1.5}.workspace small{font-size:12px}.sidebar-bottom p{font-size:12px}.executive-card h3{font-weight:600}.executive-card strong{color:white;font-weight:650}.executive-insight{display:block;margin-top:18px}.executive-insight:first-child{margin-top:0}
 .skip{left:10px;top:0;white-space:nowrap;transform:translateY(-200%)}
 .skip:focus{top:10px;transform:none}
+
+/* Extraction monitor: source outcomes remain readable in a scrollable matrix. */
+.execution-table th,.execution-table td{min-width:155px;vertical-align:top}
+.execution-table td:first-child{min-width:245px}
+.execution-cell{display:block;width:100%;padding:4px 0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit}
+.execution-cell small{display:block;margin-top:8px;line-height:1.5}
+.execution-cell:focus-visible{outline:3px solid #087f73;outline-offset:3px;border-radius:6px}
+#execution-detail{width:min(1100px,94vw)}
+.execution-table th:first-child,.execution-table td:first-child{position:sticky;left:0;background:#fff;z-index:1}
+#execucoes .table-wrap{max-height:640px;overflow:auto}.execution-table thead th{position:sticky;top:0;background:#fff;z-index:2}.execution-table thead th:first-child{z-index:3}
+#execucoes .pagination{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 0 0}#execucoes .pagination>div{display:flex;gap:8px;flex-wrap:wrap}

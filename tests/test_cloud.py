@@ -32,3 +32,24 @@ def test_promotion_retains_two_owned_states_only(monkeypatch):
     m.promote('state-77-1')
     assert ('release','delete','state-1','--yes','--cleanup-tag') in calls
     assert not any('unrelated' in c for c in calls)
+
+
+def test_summary_distinguishes_unavailable_collection_from_publication(tmp_path, monkeypatch, capsys):
+    m = module()
+    summary, output = tmp_path/'summary.md', tmp_path/'output'
+    monkeypatch.setenv('GITHUB_STEP_SUMMARY', str(summary))
+    monkeypatch.setenv('GITHUB_OUTPUT', str(output))
+    payload = {'collection_health': {'status':'unavailable', 'valid_sources':0, 'total_sources':8,
+                'last_attempt_at':'now', 'last_valid_at':'yesterday'}, 'runs':[{'reports':[]}]}
+    m.summarize_health(payload, True)
+    assert 'SEM DADOS VÁLIDOS' in summary.read_text(encoding='utf-8')
+    assert '0/8' in summary.read_text(encoding='utf-8')
+    assert 'collection_status=unavailable' in output.read_text()
+    assert '::warning' in capsys.readouterr().out
+
+
+def test_execution_links_use_owned_release_receipts_not_guessed_timestamps():
+    m = module()
+    releases = [{'body': json.dumps({'purpose':'approved-monitor-state', 'data_run_id':'observation', 'workflow_run_id':'123'})},
+                {'body':'not JSON'}, {'body':'{}'}]
+    assert m.execution_links(releases, 'owner/repo') == {'observation':'https://github.com/owner/repo/actions/runs/123'}

@@ -14,6 +14,8 @@ from admin_metrics.rules import DEFAULT_RULES, schedule_cron, validate_rules
     {'regression_multiplier': 1}, {'chart_gap_hours': float('nan')},
     {'dashboard_history_days': 31}, {'baseline_minimum_days': 8},
     {'schedule_interval_hours': 5}, {'schedule_minute': 60}, {'typo': 1},
+    {'empty_retry_delays_seconds': [-1]}, {'empty_retry_delays_seconds': [10,20,30]},
+    {'empty_retry_delays_seconds': '10'},
 ])
 def test_invalid_rules_fail_before_collection(change):
     with pytest.raises(ValueError):

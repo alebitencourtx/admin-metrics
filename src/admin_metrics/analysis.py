@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from .storage import sha, encoded
 from .contracts import endpoint_parts
 from .rules import DEFAULT_RULES, validate_rules
+from .health import outcome, collection_health
 
 FIELDS = {'invocations': 'calls', 'errors': 'errors', 'rejections': 'rejections',
           'averageResponse': 'mean_ms', 'averageTps': 'average_tps', 'peakTps': 'peak_tps'}
@@ -280,7 +281,7 @@ def apply(state, reports, rules, observed_at, run_id):
     validate_rules(rules)
     if any(r['run_id'] == run_id for r in state['runs']):
         raise ValueError('Execução já aplicada')
-    run = {'run_id': run_id, 'observed_at': observed_at, 'reports': [], 'rules': dict(rules), 'model_version': 2}
+    run = {'run_id': run_id, 'observed_at': observed_at, 'reports': [], 'rules': dict(rules), 'model_version': 3}
     previous = {r['entity_id']: r for r in state['observations']}
     current = []
     latest = {r['entity_id']: r for r in state['latest_rows']}
@@ -292,6 +293,9 @@ def apply(state, reports, rules, observed_at, run_id):
                       'issues': sorted(set(report['issues']) | {'invalid_endpoint_record'})}
         run['reports'].append({k: report[k] for k in ('id', 'label', 'url', 'cnpj', 'observed_at', 'status', 'complete', 'coverage', 'issues', 'probes', 'probe_ms')})
         run['reports'][-1]['records'] = len(report['rows'])
+        run['reports'][-1].update(coverage_reconciled=report.get('coverage_reconciled', report['complete']),
+                                 data_status=outcome(report), usable=outcome(report) == 'valid',
+                                 empty_retry_count=report.get('empty_retry_count', 0))
         normalized = normalize(report, run_id, rules)
         for row in normalized:
             row.update(interval(row, previous.get(row['entity_id'])))
@@ -302,6 +306,7 @@ def apply(state, reports, rules, observed_at, run_id):
         elif not any(r['reporter_id'] == report['id'] for r in latest.values()):
             latest.update({r['entity_id']: r for r in normalized})
     state['latest_rows'] = list(latest.values())
+    run['collection_health'] = collection_health(run['reports'])
     update_incidents(state, run, current, rules)
     state['observations'].extend(current)
     state['runs'].append(run)
