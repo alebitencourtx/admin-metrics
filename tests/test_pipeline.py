@@ -3,6 +3,7 @@ from html.parser import HTMLParser
 import json
 from pathlib import Path
 import zipfile
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -10,7 +11,9 @@ import pytest
 from admin_metrics.archive import pack,restore,validate
 from admin_metrics.pipeline import run
 from admin_metrics.storage import empty_state,write,sha,load,lock
-from conftest import record
+from conftest import record, report
+from admin_metrics.analysis import apply
+from admin_metrics.build import build
 
 
 class Inventory(HTMLParser):
@@ -102,3 +105,55 @@ def test_exclusive_writer_and_state_contract(tmp_path):
             with lock(tmp_path):pass
     assert not (tmp_path/'.writer.lock').exists()
     with pytest.raises(ValueError):validate(empty_state())
+
+
+@pytest.mark.parametrize('kind', ['state', 'object', 'entries', 'expanded'])
+def test_pack_and_restore_enforce_identical_limits(tmp_path, monkeypatch, kind):
+    import admin_metrics.archive as archive
+    root = tmp_path/'data'
+    run(root, tmp_path/'site', transport=transport())
+    package = tmp_path/'state.zip'
+    pack(root, package)
+    limits = {'state': ('MAX_STATE', 1), 'object': ('MAX_OBJECT', 1),
+              'entries': ('MAX_ENTRIES', 1), 'expanded': ('MAX_EXPANDED', 1)}
+    key, value = limits[kind]
+    monkeypatch.setattr(archive, key, value)
+    with pytest.raises(ValueError, match='limites|Limites'):
+        restore(package, tmp_path/'SHA256SUMS', tmp_path/'restored')
+    with pytest.raises(ValueError, match='limites|Limites'):
+        pack(root, tmp_path/'rejected'/'state.zip')
+    assert not (tmp_path/'rejected'/'SHA256SUMS').exists()
+
+
+def test_thirty_day_hourly_retention_and_three_day_static_history(tmp_path, reporter, rules):
+    state = empty_state()
+    origin = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
+    # Cross the actual 30-day boundary, with source capture starting after the run.
+    for n in range(31*24+1):
+        instant = origin + timedelta(hours=n)
+        captured = (instant + timedelta(seconds=3)).isoformat()
+        source = report(reporter, tmp_path, [record((n % 24+1)*1000, 0)], observed=captured)
+        apply(state, [source], rules, instant.isoformat(), 'hour-'+str(n))
+        validate(state)
+    assert len(state['runs']) == len(state['observations']) == 721
+    payload = build(state, tmp_path/'gold', tmp_path/'site', rules, [reporter])
+    assert payload['meta']['retained_runs'] == 721
+    assert payload['meta']['dashboard_history_days'] == 3
+    assert len(payload['runs']) == len(payload['points']) == 72
+    assert {r['run_id'] for r in payload['observation_trends']} == {r['run_id'] for r in payload['runs']}
+    assert len(payload['reported_history']) == 3
+    assert datetime.fromisoformat(payload['meta']['history_window_end']) - datetime.fromisoformat(payload['meta']['history_window_start']) == timedelta(days=3)
+    # The reduced Pages payload must not reduce the persistent state.
+    assert len(state['runs']) == 721
+
+
+def test_conflicting_payload_keeps_previous_metrics_out_of_current_kpis(tmp_path):
+    root = tmp_path/'data'
+    first = run(root, tmp_path/'site', transport=transport())
+    conflict = httpx.MockTransport(lambda _: httpx.Response(200, json={
+        'data': [record(errors=0), record(errors=900)], 'meta': {'totalRecords': 1}}))
+    current = run(root, tmp_path/'site', transport=conflict)
+    assert current['report_summary'] == []
+    assert all(not row['fresh'] for row in current['latest'])
+    assert all(row['run_id'] == first['meta']['run_id'] for row in current['latest'])
+    assert all(not row['source_complete'] for row in load(root)['observations'][-8:])

@@ -8,13 +8,14 @@ from .analysis import apply
 from .archive import validate, HEX
 from .build import build
 from .collect import collect
+from .rules import validate_rules
 from .storage import load, lock, now, write, sha, encoded
 
 
 def run(root=Path('data'), output=Path('site'), config=Path('config'), refresh=True, transport=None):
     root = Path(root)
     reporters = json.loads((config / 'reporters.json').read_bytes())
-    rules = json.loads((config / 'rules.json').read_bytes())
+    rules = validate_rules(json.loads((config / 'rules.json').read_bytes()))
     if len({r['id'] for r in reporters}) != len(reporters) or not reporters:
         raise ValueError('Catálogo vazio ou duplicado')
     with lock(root):

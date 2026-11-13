@@ -5,6 +5,7 @@ import pytest
 from admin_metrics.analysis import apply, normalize, interval, signals
 from admin_metrics.storage import empty_state
 from conftest import record,report
+from admin_metrics.archive import validate
 
 
 @pytest.mark.parametrize('calls,errors,expected',[(0,0,None),(10,20,None),(100,None,None),(True,2,None),(100,-1,None),(100,5,5.0),(2**65,1,None)])
@@ -94,3 +95,78 @@ def test_history_retention_and_run_idempotency(tmp_path,reporter,rules):
     apply(state,[source],rules,source['observed_at'],'future')
     assert len(state['runs'])==len(state['observations'])==1
     with pytest.raises(ValueError,match='já aplicada'):apply(state,[source],rules,source['observed_at'],'future')
+
+
+@pytest.mark.parametrize('raw', [record(1000, 0, mean=9000), record(11000, None, mean=9000), record(10001, 2, mean=9000)])
+def test_counter_discontinuity_does_not_suppress_valid_latency(tmp_path, reporter, rules, raw):
+    state = empty_state()
+    step(state, reporter, tmp_path, rules, 0, record(10000, 0, mean=100))
+    step(state, reporter, tmp_path, rules, 1, raw)
+    assert state['observations'][-1]['interval_state'] in {'counter_reset_or_revision', 'invalid_counter', 'inconsistent_delta'}
+    incident = next(i for i in state['incidents'] if i['rule'] == 'mean_latency')
+    assert incident['severity'] == 'critical' and incident['reporter_id'] == reporter['id']
+
+
+def test_reset_can_recover_latency_but_cannot_recover_error_incident(tmp_path, reporter, rules):
+    state = empty_state()
+    step(state, reporter, tmp_path, rules, 0, record(10000, 3000, mean=9000))
+    step(state, reporter, tmp_path, rules, 1, record(1000, 0, mean=100))
+    incidents = {i['rule']: i for i in state['incidents']}
+    assert incidents['mean_latency']['status'] == 'recovering'
+    assert incidents['error_rate']['status'] == 'open' and incidents['error_rate']['recovery_samples'] == 0
+
+
+@pytest.mark.parametrize('offset,expected', [(0, 2), (1, 1)])
+def test_retention_removes_whole_runs_at_seconds_boundary(tmp_path, reporter, rules, offset, expected):
+    state = empty_state()
+    old = report(reporter, tmp_path, observed='2026-10-13T10:00:03+00:00')
+    apply(state, [old], rules, '2026-10-13T10:00:00+00:00', 'old')
+    new = report(reporter, tmp_path, observed='2026-11-12T10:00:05+00:00')
+    apply(state, [new], rules, f'2026-11-12T10:00:0{offset}+00:00', 'new')
+    validate(state)
+    assert len(state['runs']) == len(state['observations']) == expected
+    assert {r['run_id'] for r in state['observations']} <= {r['run_id'] for r in state['runs']}
+
+
+def test_malformed_reported_uri_does_not_abort_other_sources(tmp_path, reporter, rules):
+    bad = report(reporter, tmp_path, [record(endpoint='https://[invalid')])
+    good = report({**reporter, 'id': 'other', 'label': 'Other'}, tmp_path)
+    state = apply(empty_state(), [bad, good], rules, good['observed_at'], 'r')
+    validate(state)
+    assert len(state['observations']) == 1
+    assert state['runs'][0]['reports'][0]['complete'] is False
+    assert 'invalid_endpoint_record' in state['runs'][0]['reports'][0]['issues']
+    assert any(i['rule'] == 'collection' and i['reporter_id'] == reporter['id'] for i in state['incidents'])
+
+
+def test_renaming_source_migrates_legacy_incident_identity(tmp_path, reporter, rules):
+    state = empty_state()
+    step(state, reporter, tmp_path, rules, 0)
+    incident = state['incidents'][0]
+    incident.pop('reporter_id')  # Existing production archives before the identity fix.
+    step(state, {**reporter, 'label': 'Nome atualizado'}, tmp_path, rules, 1)
+    assert incident['reporter_id'] == reporter['id']
+    assert incident['reporter'] == 'Nome atualizado' and incident['samples'] == 2
+
+
+def test_normalizer_and_confirmation_use_configured_thresholds(tmp_path, reporter, rules):
+    custom = {**rules, 'minimum_calls': 2000, 'critical_minimum_calls': 2000,
+              'baseline_minimum_days': 4, 'confirmation_samples': 3}
+    row = normalize(report(reporter, tmp_path), 'r', custom)[0]
+    assert row['baseline_mean_ms'] is None and row['recurrent_days'] == 0
+    state = empty_state()
+    for n in range(3):
+        step(state, reporter, tmp_path, custom, n, record(3000, 1000))
+        assert state['incidents'][0]['confirmed'] is (n == 2)
+
+
+def test_rejection_reset_does_not_hide_a_valid_error_signal(tmp_path, reporter, rules):
+    state = empty_state()
+    first = record(1000, 100); first['rejections']['currentDay'] = 100
+    step(state, reporter, tmp_path, rules, 0, first)
+    step(state, reporter, tmp_path, rules, 1, record(1100, 110))
+    row = state['observations'][-1]
+    assert row['interval_state'] == row['interval_rejection_state'] == 'counter_reset_or_revision'
+    assert row['interval_error_state'] == 'valid'
+    assert next(i for i in state['incidents'] if i['rule'] == 'error_rate')['samples'] == 2
+    assert next(i for i in state['incidents'] if i['rule'] == 'rejection_rate')['recovery_samples'] == 0

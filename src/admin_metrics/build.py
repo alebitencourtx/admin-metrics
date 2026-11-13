@@ -2,12 +2,15 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+from datetime import timedelta
 
 import duckdb
 import pyarrow as pa
 
 from . import __version__
 from .storage import atomic, encoded, sha
+from .analysis import stamp
+from .rules import schedule_cron
 
 HERE = Path(__file__).parent
 SCHEMA = pa.schema([(k, pa.string()) for k in ('run_id', 'entity_id', 'observed_at', 'day', 'reporter_id', 'reporter', 'endpoint', 'path', 'family')]
@@ -45,21 +48,43 @@ def build(state, root, output, rules, reporters):
     finally:
         db.close()
     # The previousDays arrays remain separate from our measured observation series.
+    window_end = max(stamp(r['observed_at']) for r in (run, *run['reports']))
+    window_start = window_end - timedelta(days=rules['dashboard_history_days'])
+    visible_runs = [r for r in state['runs'] if stamp(r['observed_at']) >= window_start]
+    visible_ids = {r['run_id'] for r in visible_runs}
+    observations = [r for r in state['observations'] if r['run_id'] in visible_ids]
+    payload['observation_trends'] = [r for r in payload['observation_trends'] if r['run_id'] in visible_ids]
     history = []
     for row in latest:
-        for i, calls in enumerate(row['previous']['calls']):
+        for i, calls in enumerate(row['previous']['calls'][:rules['dashboard_history_days']]):
             def value(key):
                 return row['previous'][key][i] if i < len(row['previous'][key]) else None
             history.append({'entity_id': row['entity_id'], 'reporter_id': row['reporter_id'], 'position': i + 1,
                             'calls': calls, 'errors': value('errors'), 'rejections': value('rejections'), 'mean_ms': value('mean_ms')})
+    names = {r['id']: r['label'] for r in reporters}
+    entities = {r['entity_id']: r['reporter_id'] for r in (*state['observations'], *state['latest_rows'])}
+    old_names = {r['label']: r['id'] for cycle in state['runs'] for r in cycle['reports']}
+    incidents = []
+    for item in state['incidents']:
+        if item['status'] == 'resolved' and stamp(item['resolved_at']) < window_start:
+            continue
+        identity = (item.get('reporter_id') or entities.get(item['entity_id'])
+                    or (item['entity_id'][7:] if item['entity_id'].startswith('source:') else None)
+                    or old_names.get(item['reporter']))
+        incidents.append({**item, 'reporter_id': identity, 'reporter': names.get(identity, item['reporter'])})
     payload.update(meta={'version': __version__, 'run_id': run['run_id'], 'observed_at': run['observed_at'],
-                         'history_days': rules['retention_days'], 'schedule': '17 */2 * * * UTC',
+                         'history_days': rules['retention_days'], 'dashboard_history_days': rules['dashboard_history_days'],
+                         'history_window_start': window_start.isoformat(timespec='seconds'),
+                         'history_window_end': window_end.isoformat(timespec='seconds'),
+                         'retained_runs': len(state['runs']), 'retained_observations': len(state['observations']),
+                         'history_first_observed_at': state['runs'][0]['observed_at'],
+                         'schedule': schedule_cron(rules) + ' UTC',
                          'partial_day': True, 'stale_after_hours': rules['stale_after_hours']},
-                   latest=latest, runs=state['runs'], incidents=state['incidents'], reported_history=history,
+                   latest=latest, runs=visible_runs, incidents=incidents, reported_history=history,
                    rules=rules, reporters=reporters)
     # Full observation points for endpoint drill-down, not repeated daily sums.
     payload['points'] = [{k: r.get(k) for k in ('entity_id', 'observed_at', 'day', 'calls', 'errors', 'error_pct', 'mean_ms', 'source_complete', 'interval_state', 'interval_error_pct')}
-                         for r in state['observations']]
+                         for r in observations]
     from .documentation import generate
     with tempfile.TemporaryDirectory(dir=output.parent, prefix='.admin-stage-') as temporary:
         stage = Path(temporary)

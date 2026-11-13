@@ -28,3 +28,18 @@ O workflow é best effort. O sucesso da primeira execução não demonstra dispo
 - Duas Releases aprovadas: `state-42881001169-1` e `state-42880395554-1`, com recibos de deploy. O pacote atual foi baixado, verificado e reconstruído localmente: 2 ciclos, 552 observações e 16 objetos bronze.
 - As 276 entidades permaneceram sem mudança entre essas duas observações próximas; todos os intervalos foram corretamente classificados como `unchanged_report`, sem inventar tráfego. Essas execuções manuais não representam amostras espaçadas em duas horas.
 - Revisão de leitura solicitada pelo usuário: fontes auxiliares de 13–14 px, contraste reforçado, títulos semânticos no ranking, caminhos com quebra de linha, resumo executivo dividido em destaques e gráficos com dimensões adaptadas à largura real. Preview conferido em desktop e em 390 px, sem overflow horizontal da página.
+
+## Correções e frequência horária · 12/11/2026
+
+- Cron alterado para `17 * * * *` UTC; configuração informativa e YAML conferidos por teste. Aviso de atraso após duas horas. Agendamento permanece best effort do GitHub, sem serviço externo.
+- Corrigidos: supressão de latência por contadores não comparáveis; poda com referências órfãs na fronteira de 30 dias; falta de retry após interrupção do corpo HTTP 200; URI inválida interrompendo normalização; filtro de incidentes baseado no rótulo mutável.
+- Comparabilidade separada de erros/rejeições: reset de um numerador não esconde regra válida do outro. Incidentes novos usam `model_version=2`; identidade estável migra incidentes legados sem recalcular detecções passadas.
+- Duplicatas conflitantes tornam a fonte incompleta, preservam evidência e última coleta boa, e ficam fora dos KPIs do ciclo. Regras têm validação de tipo, limites e ordem antes da coleta.
+- Pack e restore compartilham limites: estado até 512 MiB, objetos até 16 MiB, total expandido até 512 MiB e ZIP até 300 MiB. O estado horário estimado ultrapassaria o limite antigo de 256 MiB; o ensaio abaixo confirmou o transporte com a nova configuração.
+- Dashboard, tendências, duração Admin e detalhe de endpoint: janela de 72 horas; estado/warehouse continuam com 30 dias. Os três dias anteriores declarados são exibidos separadamente; arrays completos permanecem no estado para baseline/recorrência.
+- Testes locais: 82 testes Python e três testes Node aprovados. Cenário de 31 dias horários cruza a fronteira de retenção com captura três segundos após o início do run, validando referências em cada ciclo.
+- Ensaio sintético de escala: 720 ciclos × 279 endpoints = 200.880 observações, derivadas da última coleta real apenas para teste local. Estado 303,25 MiB; ZIP 35,64 MiB; JSON público de 3 dias 5,74 MiB e 20.088 pontos. Build 1,652 s, pack 14,547 s e restore 6,613 s. Dados repetitivos, sem chamadas de rede, sem publicação e sem garantia de SLA; resultado em `artifacts/hourly-scale-v2/result.json`, ignorado pelo Git.
+- Replay local do pacote aprovado `state-43279156859-1`: oito ciclos e 2.216 observações preservados. Manual regenerado sem acrescentar observação.
+- Navegador: tendências de 72h com lacunas reais, filtro CCVM com incidentes, detalhe D−1/D−2/D−3, manual aberto pelo link da navegação, três diagramas e busca sem acentos. Sem erros de console nas páginas verificadas.
+
+Os horários não coletados antes da correção não são preenchidos. Uma janela de três dias não comprova três dias completos de amostragem; o painel informa desde quando existem observações.

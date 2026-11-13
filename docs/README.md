@@ -28,6 +28,7 @@ Execute em `teste-opendata/admin-metrics/`, usando o ambiente Python deste proje
 Copy-Item -LiteralPath site/documentacao.html -Destination docs/documentacao.html
 .\.venv\Scripts\python.exe -m pytest -q
 node --check src/admin_metrics/web/app.js
+node --test tests/test_dashboard.cjs
 ```
 
 Antes de publicar, conferir âncoras, busca com/sem acento, três diagramas, tabelas, impressão, leitura móvel e ausência de recursos externos obrigatórios. Push em main republica sem nova coleta quando existe estado aprovado. Conferir run_id, jobs build/deploy e que confirm ficou skipped nessa republicação.

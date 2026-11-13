@@ -58,3 +58,46 @@ async def test_malformed_payload_observed_as_failure(tmp_path,reporter,body):
 @pytest.mark.parametrize('url',['http://ccvm.api.santander.com.br/open-banking/admin/v2/metrics','https://ccvm.api.santander.com.br/private','https://evil.example/open-banking/admin/v2/metrics','https://ccvm.api.santander.com.br/open-banking/admin/v2/metrics?target=private'])
 def test_catalog_prevents_customer_calls(reporter,url):
     with pytest.raises(ValueError):validate_reporter({**reporter,'url':url})
+
+
+class InterruptedBody(httpx.AsyncByteStream):
+    async def __aiter__(self):
+        yield b'{'
+        raise httpx.ReadError('body interrupted after HTTP 200')
+
+
+@pytest.mark.asyncio
+async def test_retry_transport_failure_after_success_headers(tmp_path, reporter, monkeypatch):
+    import admin_metrics.collect as module
+    async def noop(_): pass
+    monkeypatch.setattr(module.asyncio, 'sleep', noop)
+    requests = []
+    def handler(request):
+        requests.append(request)
+        if len(requests) == 1:
+            return httpx.Response(200, stream=InterruptedBody())
+        return httpx.Response(200, json={'data': [record()], 'meta': {'totalRecords': 1}})
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        result = await capture(client, reporter, tmp_path)
+    assert len(requests) == 2 and result['complete']
+    assert result['probes'][0]['status'] == 200 and 'interrupted' in result['probes'][0]['error']
+    assert result['probes'][1]['error'] is None
+
+
+@pytest.mark.asyncio
+async def test_conflicting_identity_cannot_be_reconciled_as_complete(tmp_path, reporter):
+    body = {'data': [record(errors=0), record(errors=900)], 'meta': {'totalRecords': 1}}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))) as client:
+        result = await capture(client, reporter, tmp_path)
+    assert not result['complete'] and 'conflicting_endpoint' in result['issues']
+    assert result['rows'][0]['ambiguous']
+
+
+@pytest.mark.parametrize('endpoint', ['https://[invalid', 'https://example.com:bad/path', '', 'garbage', 'https://example.com/a b'])
+@pytest.mark.asyncio
+async def test_invalid_endpoint_is_source_quality_failure(tmp_path, reporter, endpoint):
+    body = {'data': [record(endpoint=endpoint), record()], 'meta': {'totalRecords': 2, 'totalPages': 1}}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))) as client:
+        result = await capture(client, reporter, tmp_path)
+    assert not result['complete'] and len(result['rows']) == 1
+    assert 'invalid_endpoint_record' in result['issues']

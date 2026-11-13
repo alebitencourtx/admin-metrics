@@ -5,7 +5,7 @@ from .pipeline import run
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Santander Admin Metrics · observação a cada duas horas')
+    parser = argparse.ArgumentParser(description='Santander Admin Metrics · observação a cada hora')
     parser.add_argument('command', choices=['collect', 'build'])
     parser.add_argument('--root', type=Path, default=Path('data'))
     parser.add_argument('--output', type=Path, default=Path('site'))

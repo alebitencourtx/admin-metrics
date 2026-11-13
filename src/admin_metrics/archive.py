@@ -9,6 +9,19 @@ from .storage import atomic, encoded, load, sha
 HEX = re.compile(r'^[0-9a-f]{64}$')
 MAX_ARCHIVE = 300 * 1024**2
 MAX_EXPANDED = 512 * 1024**2
+MAX_STATE = 512 * 1024**2
+MAX_OBJECT = 16 * 1024**2
+MAX_ENTRIES = 4096
+
+
+def validate_entries(entries):
+    if len(entries) > MAX_ENTRIES or sum(entries.values()) > MAX_EXPANDED:
+        raise ValueError('Limites de expansão / entradas inválidos')
+    for name, size in entries.items():
+        if name not in ('state.json', 'manifest.json') and not re.fullmatch(r'bronze/[0-9a-f]{64}\.json', name):
+            raise ValueError('Caminho não permitido no pacote')
+        if size > (MAX_STATE if name == 'state.json' else MAX_OBJECT):
+            raise ValueError('Entrada fora dos limites: ' + name)
 
 
 def recent_objects(state):
@@ -21,12 +34,15 @@ def validate(state):
         raise ValueError('Contrato de estado inválido')
     if not state['runs']:
         raise ValueError('Estado sem execuções')
-    runs = [r['run_id'] for r in state['runs']]
-    if len(runs) != len(set(runs)):
+    run_ids = [r['run_id'] for r in state['runs']]
+    runs = set(run_ids)
+    if len(run_ids) != len(runs):
         raise ValueError('Execuções duplicadas')
     identities = [(r['run_id'],r['entity_id']) for r in state['observations']]
     if len(identities) != len(set(identities)) or any(r not in runs for r,_ in identities):
         raise ValueError('Identidades ou referências inválidas')
+    if any(r['run_id'] not in runs for r in state['latest_rows']):
+        raise ValueError('Referências atuais inválidas')
     ids=[i['id'] for i in state['incidents']]
     if len(ids)!=len(set(ids)):
         raise ValueError('Ocorrência duplicada')
@@ -47,8 +63,7 @@ def pack(root, output):
         files['bronze/'+digest+'.json']=raw
     manifest={'version':1,'run_id':state['runs'][-1]['run_id'], 'files':{name:sha(raw) for name,raw in files.items()}}
     files['manifest.json']=encoded(manifest)
-    if sum(map(len,files.values()))>MAX_EXPANDED:
-        raise ValueError('Estado excede limite de transporte')
+    validate_entries({name: len(raw) for name, raw in files.items()})
     output.parent.mkdir(parents=True,exist_ok=True)
     with zipfile.ZipFile(output,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=6) as archive:
         for name,raw in sorted(files.items()):
@@ -71,13 +86,11 @@ def restore(package, checksum, root):
     with zipfile.ZipFile(package) as archive:
         items=archive.infolist()
         names=[i.filename for i in items]
-        if len(items)>4096 or len(names)!=len(set(names)) or sum(i.file_size for i in items)>MAX_EXPANDED:
+        if len(names)!=len(set(names)):
             raise ValueError('Limites de expansão / entradas inválidos')
+        validate_entries({i.filename: i.file_size for i in items})
         for item in items:
-            if item.filename not in ('state.json','manifest.json') and not re.fullmatch(r'bronze/[0-9a-f]{64}\.json',item.filename):
-                raise ValueError('Caminho não permitido no pacote')
-            limit=256*1024**2 if item.filename=='state.json' else 16*1024**2
-            if item.file_size>limit or item.flag_bits&1:
+            if item.flag_bits&1:
                 raise ValueError('Entrada fora dos limites')
         manifest=json.loads(archive.read('manifest.json'))
         if manifest.get('version')!=1 or set(manifest.get('files',{}))!=set(names)-{'manifest.json'}:

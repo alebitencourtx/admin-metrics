@@ -12,6 +12,7 @@ import httpx
 import truststore
 
 from .storage import now, put, sha, encoded
+from .contracts import endpoint_parts
 
 
 def validate_reporter(reporter):
@@ -42,6 +43,7 @@ async def fetch(client, reporter, root, page, retries=2):
                  'source_sha': None, 'http_date': None, 'error': None,
                  'url': str(httpx.URL(reporter['url'], params={'page': page, 'page-size': 1000, 'period': 'ALL'}))}
         wait = None
+        transport_failed = False
         try:
             async with client.stream('GET', reporter['url'], params={'page': page, 'page-size': 1000, 'period': 'ALL'}) as response:
                 probe.update(status=response.status_code, http_date=response.headers.get('date'), url=str(response.url))
@@ -56,12 +58,16 @@ async def fetch(client, reporter, root, page, retries=2):
                 if response.status_code != 200:
                     probe['error'] = 'http_' + str(response.status_code)
                 wait = response.headers.get('retry-after')
+        except httpx.TransportError as error:
+            transport_failed = True
+            probe['error'] = str(error)[:300] or type(error).__name__
+            raw = None
         except (httpx.HTTPError, ValueError) as error:
             probe['error'] = str(error)[:300] or type(error).__name__
             raw = None
         probe['duration_ms'] = round((time.perf_counter() - started) * 1000, 2)
         probes.append(probe)
-        if (probe['status'] in (408, 429, 500, 502, 503, 504, 529) or probe['status'] == 0) and attempt < retries:
+        if (transport_failed or probe['status'] in (408, 429, 500, 502, 503, 504, 529) or probe['status'] == 0) and attempt < retries:
             await asyncio.sleep(delay(wait, attempt))
             continue
         return raw, probes
@@ -93,7 +99,7 @@ async def capture(client, reporter, root, max_pages=20, retries=2):
                 raise ValueError('invalid_totals')
             added = 0
             for index, row in enumerate(payload['data']):
-                if not isinstance(row, dict) or not isinstance(row.get('endpoint'), str) or not row['endpoint']:
+                if not isinstance(row, dict) or endpoint_parts(row.get('endpoint')) is None:
                     result['issues'].append('invalid_endpoint_record')
                     continue
                 key = row['endpoint']
@@ -103,13 +109,14 @@ async def capture(client, reporter, root, max_pages=20, retries=2):
                     new = {k: v for k, v in row.items() if k != 'requestTime'}
                     if sha(encoded(old)) != sha(encoded(new)):
                         result['issues'].append('conflicting_endpoint')
+                        unique[key]['ambiguous'] = True
                     continue
                 unique[key] = {'record': row, 'source_sha': last['source_sha'], 'json_path': f'$.data[{index}]'}
                 added += 1
             if len(unique) > 10000:
                 raise ValueError('record_limit')
             if total is not None and len(unique) >= total:
-                result['complete'] = len(unique) == total and 'invalid_endpoint_record' not in result['issues']
+                result['complete'] = len(unique) == total and not {'invalid_endpoint_record', 'conflicting_endpoint'}.intersection(result['issues'])
                 result['coverage'] = 'reported_total_reconciled' if result['complete'] else 'total_mismatch'
                 if pages and page < pages:
                     result['issues'].append('page_metadata_conflict')

@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '17 */2 * * *'
+    - cron: '17 * * * *'
   workflow_dispatch:
     inputs:
       refresh_data:
@@ -40,6 +40,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --check src/admin_metrics/web/app.js
+      - run: node --test tests/test_dashboard.cjs
       - name: Restaurar, observar e validar
         id: prepare
         env:

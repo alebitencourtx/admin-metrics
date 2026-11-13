@@ -8,7 +8,7 @@ from pathlib import Path
 from .storage import atomic, sha
 
 HERE = Path(__file__).parent
-DOC_REVISION = '2026-11-10.2'
+DOC_REVISION = '2026-11-12.1'
 
 FIELD_HELP = {
     'run_id': 'Identidade de execução UTC + sufixo aleatório; não é a data de referência do banco.',
@@ -36,13 +36,13 @@ OBSERVATION_EXTRAS = [
     ('source_sha','SHA-256','Hash do corpo bronze de origem; os bytes podem expirar da retenção.'),
     ('json_path','string','Posição $.data[n] no corpo identificado pelo hash.'),
     ('request_time','string/nulo','requestTime original, sem correção automática de fuso.'),
-    ('clock_offset_seconds','número/nulo','observed_at − requestTime; desvio absoluto >900 s gera flag.'),
+    ('clock_offset_seconds','número/nulo','observed_at − requestTime; limiar clock_skew_seconds configurável.'),
     ('average_tps / peak_tps','int64/nulo','averageTps / peakTps atuais declarados; não são calculados a partir de chamadas.'),
     ('general_uptime','razão/nulo','generalUptimeRate declarado, independente do uptime do endpoint.'),
     ('downtime_seconds / general_downtime / scheduled_outage','int64/nulo','Segundos declarados em partialDowntime / generalDowntime / scheduledOutage.'),
     ('previous','objeto de arrays','Até sete posições por calls, errors, rejections, mean_ms, average_tps e peak_tps; D−1 primeiro.'),
-    ('baseline_mean_ms','número/nulo','Mediana de pelo menos três médias diárias anteriores positivas; não exige volume mínimo nesses dias.'),
-    ('recurrent_days','inteiro','Dias anteriores com chamadas ≥100 e erro ≥5%; limiares fixos no normalizador.'),
+    ('baseline_mean_ms','número/nulo','Mediana das médias diárias anteriores positivas; mínimo baseline_minimum_days configurável.'),
+    ('recurrent_days','inteiro','Dias anteriores com chamadas ≥minimum_calls e erro ≥error_attention_pct; limiares compartilhados com as regras.'),
     ('quality','array de strings','Ocorrências de contrato/consistência; não reescreve o valor informado.'),
     ('fingerprint','SHA-256','Seis métricas atuais, uptime, downtime_seconds e previous; exclui requestTime. Não é checksum do JSON completo.'),
     ('interval_from / interval_to','UTC/nulo','Instantes das duas observações comparadas, e não janela oficial de agregação da instituição.'),
@@ -50,6 +50,7 @@ OBSERVATION_EXTRAS = [
     ('interval_calls / interval_errors / interval_rejections','int64/nulo','Diferenças aceitas dos cumulativos; indisponíveis quando a classificação não é valid.'),
     ('interval_error_pct / interval_rejection_pct','percentual/nulo','Taxas dos deltas aceitos; sem denominador positivo ficam nulas.'),
     ('interval_state','enum','Motivo preciso de comparação aceita ou suspensa; ver a tabela de estados.'),
+    ('interval_error_state / interval_rejection_state','enum','Comparabilidade de cada numerador com chamadas; impede que reset de rejeições esconda uma taxa de erro válida. Latência tem elegibilidade independente.'),
 ]
 
 PROBE_FIELDS = [
@@ -66,13 +67,13 @@ PROBE_FIELDS = [
 INCIDENT_FIELDS = [
     ('id','hash truncado','Ocorrência identificada por entidade + regra + run de abertura; reabertura após resolução cria outro ID.'),
     ('entity_id / rule','strings','Entidade do serviço ou source:<reporter_id>, mais nome da regra detectada.'),
-    ('reporter / endpoint','string/nulo','Fonte e endpoint da evidência; incidentes de coleta não têm endpoint de serviço.'),
+    ('reporter_id / reporter / endpoint','string/nulo','ID estável usado no filtro, rótulo atual e endpoint; rótulos antigos são reconciliados pelo ID. Coleta não tem endpoint de serviço.'),
     ('opened_at / opened_run','UTC / ID','Primeira detecção observada; não é necessariamente o início real da falha.'),
     ('last_seen','UTC','Última detecção acima do limiar; não é a última coleta bem-sucedida.'),
     ('evaluated_at','UTC','Última avaliação conclusiva de detecção/recuperação; pode ficar antiga durante ausência de dados.'),
     ('samples','inteiro','Total de detecções desta ocorrência, inclusive sequências separadas por recuperação parcial.'),
     ('consecutive_samples','inteiro','Tamanho da sequência atual de detecções; uma amostra sem sinal interrompe a sequência.'),
-    ('confirmed','booleano','Última sequência detectada teve pelo menos duas detecções; não prova erros novos entre os ciclos.'),
+    ('confirmed','booleano','Última sequência detectada atingiu confirmation_samples; não prova erros novos entre os ciclos.'),
     ('recovery_samples','inteiro','Amostras avaliáveis consecutivas abaixo do limiar; amostra desconhecida zera a sequência.'),
     ('status / severity','enum','open / recovering / resolved e attention / critical; severidade pode variar na mesma ocorrência.'),
     ('evidence','string','Numerador, denominador ou contexto que justificou a última detecção.'),
@@ -114,7 +115,7 @@ def generate(payload, output, warehouse=None):
     sources = table(['Reporte', 'Empresa / CNPJ', 'URL Admin'], [(r['label'], r['company']+' / '+r['cnpj'], r['url']) for r in payload['reporters']])
     rules = table(['Parâmetro', 'Valor configurado'], payload['rules'].items())
     evidence = table(['Reporte', 'HTTP', 'Identidades', 'Cobertura', 'Diagnóstico'], [(r['label'],r['status'],r['records'],r['coverage'], ', '.join(r['issues']) or 'Sem flags de coleta') for r in payload['runs'][-1]['reports']])
-    modules = [('collect.py','HTTP, limites, retry, paginação e bronze'), ('analysis.py','Contratos, deltas, histórico e incidentes'), ('storage.py','Hash, escrita atômica e exclusão mútua'), ('build.py','Arrow, DuckDB, Parquet e publicação estática'), ('marts.sql','Definições únicas de agregação SQL'), ('pipeline.py','Coleta, build e commit de estado'), ('archive.py','Pacote limitado, integridade e restore seguro'), ('cli.py','Operação local padronizada'), ('documentation.py','Este manual autocontido'), ('web/app.js','Filtros, gráficos, navegação, detalhes e exportação'), ('scripts/cloud_pipeline.py','Restore, candidato, confirmação e retenção remotos')]
+    modules = [('collect.py','HTTP, limites, retry, paginação e bronze'), ('contracts.py','Validação segura das URIs declaradas'), ('rules.py','Configuração tipada e limites compartilhados'), ('analysis.py','Contratos, deltas, histórico e incidentes'), ('storage.py','Hash, escrita atômica e exclusão mútua'), ('build.py','Arrow, DuckDB, Parquet e publicação estática'), ('marts.sql','Definições únicas de agregação SQL'), ('pipeline.py','Coleta, build e commit de estado'), ('archive.py','Pacote limitado, integridade e restore seguro'), ('cli.py','Operação local padronizada'), ('documentation.py','Este manual autocontido'), ('web/app.js','Filtros, gráficos, navegação, detalhes e exportação'), ('scripts/cloud_pipeline.py','Restore, candidato, confirmação e retenção remotos')]
     code = ''
     for name, desc in modules:
         path = HERE/name
@@ -129,8 +130,9 @@ def generate(payload, output, warehouse=None):
                        PHYSICAL_SCHEMAS=''.join(physical) or '<p>Sem warehouse nesta geração; consulte o contrato Arrow e o SQL incorporado.</p>',
                        OPERATING_SOURCES=table(['Arquivo incorporado','SHA-256'],hashes)+''.join(sources_code),
                        DOC_REVISION=DOC_REVISION, CODE_REVISION=text(os.getenv('GITHUB_SHA','Checkout local; consultar git rev-parse HEAD')),
-                       RUN_COUNT=str(len(payload['runs'])), POINT_COUNT=str(len(payload['points'])),
-                       FIRST_OBSERVED=text(payload['runs'][0]['observed_at']))
+                       RUN_COUNT=str(payload['meta']['retained_runs']), POINT_COUNT=str(payload['meta']['retained_observations']),
+                       DISPLAY_RUN_COUNT=str(len(payload['runs'])), DISPLAY_POINT_COUNT=str(len(payload['points'])),
+                       FIRST_OBSERVED=text(payload['meta']['history_first_observed_at']))
     for key, value in substitutes.items():
         template = template.replace('@@'+key+'@@',value)
     if re.search(r'@@[A-Z_]+@@', template):

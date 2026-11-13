@@ -1,5 +1,8 @@
 {
   "retention_days": 30,
+  "dashboard_history_days": 3,
+  "schedule_interval_hours": 1,
+  "schedule_minute": 17,
   "error_attention_pct": 5,
   "error_critical_pct": 20,
   "minimum_calls": 100,
@@ -9,5 +12,11 @@
   "latency_critical_ms": 4000,
   "regression_multiplier": 2,
   "recovery_samples": 2,
-  "stale_after_hours": 3
+  "confirmation_samples": 2,
+  "baseline_minimum_days": 3,
+  "recurrent_minimum_days": 3,
+  "reported_history_days": 7,
+  "clock_skew_seconds": 900,
+  "stale_after_hours": 2,
+  "chart_gap_hours": 1.5
 }
