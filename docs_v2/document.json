@@ -5,7 +5,7 @@
   "version": "2.0",
   "updated": "2026-11-15",
   "language": "pt-BR",
-  "theme": "default",
+  "theme": "vermelho",
   "mode": "full",
   "companionDoc": {
     "href": "documentacao-v2-resumida.html",
@@ -13,7 +13,7 @@
   },
   "content": "content.md",
   "repoRoot": "..",
-  "revision": "29e19f197093e730c038e7e41a787ca0b24fb7a1",
+  "revision": "a0dd7f522dbde4588070bb38ad240501a7d044c9",
   "dataAsOf": "snapshot local de implementação de 2026-11-10T18:37:28Z; revisão documental de 2026-11-15",
   "cards": [
     {

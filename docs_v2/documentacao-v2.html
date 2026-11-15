@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-mode="full" data-theme="azul"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Monitor horário dos oito reportes Admin Santander: coleta auditável, regras explicáveis, modelo de dados, dashboard e recuperação."><meta name="generator" content="project-html-docs 1.7.0"><title>Admin Metrics · Manual completo v3 · 3.0</title><style>:root {
+<html lang="pt-BR" data-mode="full" data-theme="vermelho"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Monitor horário dos oito reportes Admin Santander: coleta auditável, regras explicáveis, modelo de dados, dashboard e recuperação."><meta name="generator" content="project-html-docs 1.8.0"><title>Admin Metrics · Manual completo v2 · 2.0</title><style>:root {
   --ink: #172b3c;
   --muted: #526778;
   --paper: #f4f6f8;
@@ -102,56 +102,9 @@
   --dialog-backdrop: #0e0e0ecc;
 }
 
-:root[data-theme="verde"] {
-  --ink: #122c22;
-  --muted: #4c6b5b;
-  --paper: #f3f7f5;
-  --surface: #ffffff;
-  --line: #d5e5dc;
-  --accent: #0f7a52;
-  --accent-hover: #0a5f3f;
-  --nav: #0b2a20;
-  --nav-text: #e8f5ee;
-  --nav-brand: #8fe3b8;
-  --nav-label: #bcd9cb;
-  --nav-input-bg: #143e2f;
-  --nav-input-border: #3c6654;
-  --nav-link: #d5e9df;
-  --nav-num: #86b9a0;
-  --nav-active: #1c5a43;
-  --nav-meta: #a6c9b9;
-  --nav-count: #b7e6cd;
-  --nav-clear-hover: #225c47;
-  --nav-divider: rgba(255, 255, 255, 0.12);
-  --hero-bg: linear-gradient(120deg, #0b2f24, #0f6046);
-  --hero-eyebrow: #a7f3d0;
-  --hero-subtitle: #dcefe5;
-  --soft: #e8f6ee;
-  --code: #0e2b20;
-  --code-inline-bg: #edf5f1;
-  --code-btn: #24513e;
-  --code-btn-border: #3c6654;
-  --card-bg: #f8fcfa;
-  --th-bg: #e9f4ee;
-  --th-fg: #2a5340;
-  --figure-bg: #f7fcf9;
-  --figure-note: #365a49;
-  --toolbar-bg: #e7f0ea;
-  --toolbar-fg: #3d5c4c;
-  --aud-business-bg: #e8f6ee;
-  --aud-business-fg: #0d6b46;
-  --aud-tech-bg: #eef0fa;
-  --aud-tech-fg: #5f4f96;
-  --aud-ops-bg: #fff3df;
-  --aud-ops-fg: #805c20;
-  --aud-all-bg: #eef1f4;
-  --aud-all-fg: #4a6373;
-  --focus-ring: #f1ad35;
-  --dialog-backdrop: #0b2a20bb;
-}
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); }
+body { margin: 0; background: var(--paper); overflow-x: clip; }
 a { color: var(--accent-hover); text-underline-offset: 3px; }
 button, input { font: inherit; }
 button { cursor: pointer; border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; color: var(--ink); background: var(--surface); }
@@ -159,14 +112,18 @@ button:hover { border-color: var(--accent); background: var(--soft); }
 button:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 
 .skip { position: absolute; left: -9999px; }
-.skip:focus { left: 20px; top: 15px; z-index: 20; background: white; padding: 12px; }
+.skip:focus { left: 20px; top: 15px; z-index: 50; background: white; padding: 12px; }
 
+.sidebar-backdrop { display: none; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: 268px; background: var(--nav); color: var(--nav-text); padding: 24px 18px 16px; display: flex; flex-direction: column; overflow: hidden; z-index: 5; }
-.brand { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--nav-brand); margin: 0 10px 8px; flex-shrink: 0; }
+.sidebar-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+.brand { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: var(--nav-brand); margin: 0 10px 8px; flex: 1; min-width: 0; }
+.sidebar-close { display: none; }
 .sidebar strong { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 22px; margin: 0 10px 18px; line-height: 1.3; flex-shrink: 0; }
 .sidebar label { font-size: 12px; color: var(--nav-label); display: block; margin: 0 8px 5px; flex-shrink: 0; }
 .search-box { position: relative; flex-shrink: 0; }
 .sidebar input { width: 100%; padding: 10px 30px 10px 10px; border: 1px solid var(--nav-input-border); background: var(--nav-input-bg); color: white; border-radius: 8px; }
+.sidebar input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
 #search-clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: 0; color: var(--nav-label); font-size: 16px; line-height: 1; padding: 3px 6px; border-radius: 4px; }
 #search-clear:hover { background: var(--nav-clear-hover); color: #ffffff; }
 mark.search-hit { background: #fef08a; color: #0f172a; padding: 0 2px; border-radius: 3px; }
@@ -181,7 +138,8 @@ mark.search-hit { background: #fef08a; color: #0f172a; padding: 0 2px; border-ra
 .sidebar small { flex-shrink: 0; background: var(--nav); border-top: 1px solid var(--nav-divider); padding: 12px 0 2px; margin: 12px 10px 0; color: var(--nav-meta); font-size: 12px; display: block; }
 .sidebar .search-count { min-height: 20px; margin: 6px 4px 0; font-size: 12px; color: var(--nav-count); flex-shrink: 0; }
 
-main { margin-left: 268px; }
+main { margin-left: 268px; min-width: 0; }
+.mobile-topbar { display: none; }
 .hero { background: var(--hero-bg); color: white; padding: 56px clamp(28px, 5vw, 80px) 44px; position: relative; overflow: hidden; }
 .hero:after { content: ""; position: absolute; right: -60px; top: -120px; width: 370px; height: 370px; border: 55px solid #ffffff06; border-radius: 50%; pointer-events: none; }
 .eyebrow { text-transform: uppercase; letter-spacing: .16em; font-size: 12px; font-weight: 700; color: var(--hero-eyebrow); margin: 0 0 16px; }
@@ -212,9 +170,8 @@ html[data-mode="summary"] .content { padding: 24px clamp(24px, 4vw, 64px) 56px; 
 .audience-filter button.is-active,
 .theme-filter button.is-active { background: #ffffff; color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 43, 61, 0.08); }
 .theme-swatch { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-.theme-swatch-verde { background: #0f7a52; }
-.theme-swatch-azul { background: #087f8c; }
 .theme-swatch-vermelho { background: #990000; }
+.theme-swatch-azul { background: #087f8c; }
 .toolbar-actions { display: inline-flex; gap: 8px; flex-wrap: wrap; }
 
 .doc-section { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin: 0 0 22px; scroll-margin-top: 20px; overflow: clip; transition: opacity 0.18s ease; }
@@ -274,7 +231,7 @@ blockquote.callout-limit { background: #fef2f2; border-left-color: #dc2626; }
 .card p { font-size: 14px; margin: 8px 0; }
 
 .table-wrap {
-  /* Sem overscroll-behavior: contain: tabelas curtas não devem capturar a roda e travar a página. */
+  /* Sem contenção de encadeamento: tabelas curtas não devem capturar a roda e travar a página. */
   overflow: auto;
   max-height: min(72vh, 680px);
   margin: 18px 0;
@@ -339,7 +296,8 @@ figure { margin: 22px 0; border: 1px solid var(--line); border-radius: 12px; bac
 .diagram-scroll::-webkit-scrollbar-track { background: transparent; }
 .diagram-scroll svg { display: block; max-width: none; height: auto; margin: auto; }
 .figure-tools { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
-.figure-tools button { margin-left: auto; font-size: 11px; }
+.figure-tools .figure-tag { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.figure-tools button { margin-left: auto; font-size: 11px; flex-shrink: 0; }
 figcaption { font-size: 12px; color: var(--muted); line-height: 1.55; margin-top: 10px; }
 
 .figure-legend {
@@ -486,77 +444,6 @@ figcaption { font-size: 12px; color: var(--muted); line-height: 1.55; margin-top
 :root[data-theme="vermelho"] .schema-sub-bg-json { fill: #f5f5f5; }
 :root[data-theme="vermelho"] .schema-sub-fg-json { fill: #262626; }
 
-/* Green theme SVG & badge palette harmonization (colors only) */
-:root[data-theme="verde"] .chart .chart-bar[fill="#087f8c"] { fill: #0f7a52; }
-:root[data-theme="verde"] .chart .chart-track { fill: #e7f0ea; }
-:root[data-theme="verde"] .chart .chart-label { fill: #1b3a2c; }
-:root[data-theme="verde"] .chart .chart-value-outside { fill: #122c22; }
-:root[data-theme="verde"] .schema-svg path[fill="#102b3d"],
-:root[data-theme="verde"] g.entity rect.er-card-header { fill: #0b2a20 !important; stroke: #0b2a20 !important; }
-:root[data-theme="verde"] .schema-svg rect[fill="#1d4b68"] { fill: #0f7a52; }
-:root[data-theme="verde"] .schema-svg rect[stroke="#9fb6c5"] { stroke: #a9c9b7; }
-:root[data-theme="verde"] .schema-svg rect[fill="#edf3f6"] { fill: #edf6f1; }
-:root[data-theme="verde"] .schema-svg path[fill="#0f5f68"] { fill: #0f7a52; }
-:root[data-theme="verde"] .schema-svg rect[fill="#187d88"] { fill: #0a5f3f; }
-:root[data-theme="verde"] .schema-svg rect[stroke="#8ec7cd"] { stroke: #8fc9ae; }
-:root[data-theme="verde"] .schema-svg rect[fill="#eef8f8"] { fill: #e8f6ee; }
-:root[data-theme="verde"] td code.col-badge-partition { background: #e8f6ee; color: #0f7a52; border-color: #86d3ae; }
-:root[data-theme="verde"] .sol-zone-warm .sol-zone-bg { fill: #eaf7f0; stroke: #b9ddc9; }
-:root[data-theme="verde"] .sol-zone-warm .sol-zone-title { fill: #0f6b46; }
-:root[data-theme="verde"] .sol-zone-warm .sol-zone-subtitle { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-zone-cool .sol-zone-bg { fill: #f1f5f2; stroke: #d5e5dc; }
-:root[data-theme="verde"] .sol-zone-cool .sol-zone-title { fill: #1b3a2c; }
-:root[data-theme="verde"] .sol-zone-cool .sol-zone-subtitle { fill: #4c6b5b; }
-:root[data-theme="verde"] .sol-zone-teal .sol-zone-bg { fill: #e8f6ee; stroke: #b9ddc9; }
-:root[data-theme="verde"] .sol-zone-teal .sol-zone-title { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-zone-teal .sol-zone-subtitle { fill: #4c6b5b; }
-:root[data-theme="verde"] .sol-node-role-step .sol-node-frame { stroke: #2f5b47; }
-:root[data-theme="verde"] .sol-node-role-step .sol-node-accent,
-:root[data-theme="verde"] .sol-node-role-step .sol-node-step-circle { fill: #0b2a20; }
-:root[data-theme="verde"] .sol-node-role-step .sol-node-title { fill: #122c22; }
-:root[data-theme="verde"] .sol-node-role-step .sol-node-meta-bg { fill: #e9f4ee; }
-:root[data-theme="verde"] .sol-node-role-step .sol-node-meta-fg { fill: #2a5340; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-frame { stroke: #0f7a52; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-header { fill: #e8f6ee; stroke: #0f7a52; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-accent,
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-step-circle { fill: #0f7a52; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-title { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-meta-bg { fill: #e8f6ee; }
-:root[data-theme="verde"] .sol-node-role-analytical .sol-node-meta-fg { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-frame { stroke: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-header { fill: #e8f6ee; stroke: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-accent,
-:root[data-theme="verde"] .sol-node-role-output .sol-node-step-circle { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-title { fill: #0a4a33; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-meta-bg { fill: #dff2e7; }
-:root[data-theme="verde"] .sol-node-role-output .sol-node-meta-fg { fill: #0a5f3f; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-frame { stroke: #5b7a6a; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-header { fill: #f1f5f2; stroke: #5b7a6a; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-accent,
-:root[data-theme="verde"] .sol-node-role-info .sol-node-step-circle { fill: #3d5c4c; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-title { fill: #1b3a2c; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-meta-bg { fill: #e9f4ee; }
-:root[data-theme="verde"] .sol-node-role-info .sol-node-meta-fg { fill: #2a5340; }
-:root[data-theme="verde"] .sol-edge-role-analytical { stroke: #3f6b58; }
-:root[data-theme="verde"] .sol-arrow-head-analytical { fill: #3f6b58; }
-:root[data-theme="verde"] .sol-edge-label-analytical rect { fill: #f1f5f2; stroke: #a9c9b7; }
-:root[data-theme="verde"] .sol-edge-label-analytical text { fill: #1b3a2c; }
-:root[data-theme="verde"] .sol-edge-role-output,
-:root[data-theme="verde"] .sol-edge-lineage path { stroke: #0f7a52; }
-:root[data-theme="verde"] .sol-arrow-head-output,
-:root[data-theme="verde"] .lineage-arrow-head { fill: #0f7a52; }
-:root[data-theme="verde"] .sol-edge-label-output rect,
-:root[data-theme="verde"] .sol-edge-label-lineage rect { fill: #e8f6ee; stroke: #86d3ae; }
-:root[data-theme="verde"] .sol-edge-label-output text,
-:root[data-theme="verde"] .sol-edge-label-lineage text { fill: #0a5f3f; }
-:root[data-theme="verde"] .schema-header-mart { fill: #0f7a52; }
-:root[data-theme="verde"] .schema-tag-bg-mart { fill: #0a5f3f; }
-:root[data-theme="verde"] .schema-sub-bg-mart { fill: #e8f6ee; }
-:root[data-theme="verde"] .schema-sub-fg-mart { fill: #0a5f3f; }
-:root[data-theme="verde"] .schema-header-json { fill: #2a5340; }
-:root[data-theme="verde"] .schema-tag-bg-json { fill: #3f6b58; }
-:root[data-theme="verde"] .schema-sub-bg-json { fill: #edf6f1; }
-:root[data-theme="verde"] .schema-sub-fg-json { fill: #1b3a2c; }
 
 /* Semantic Subgraphs & Architectural Styling (Mermaid fallback) */
 g.subgraph[data-id*="stream" i] > rect:nth-of-type(1),
@@ -717,26 +604,384 @@ dialog::backdrop { background: var(--dialog-backdrop); }
   .hero h1 { font-size: 50px; }
 }
 
-@media (max-width: 1000px) {
-  .sidebar { width: 220px; padding: 22px 12px; }
-  main { margin-left: 220px; }
-  .content { padding: 24px; }
-  .section-heading { padding: 20px; }
-  .section-body { padding: 0 20px 20px; }
-  .hero { padding: 36px 24px; }
-  .audience { font-size: 9px; }
+@media (max-width: 960px) {
+  .mobile-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: 52px;
+    padding: 0 12px;
+    background: var(--nav);
+    color: var(--nav-text);
+    border-bottom: 1px solid var(--nav-divider);
+  }
+  #nav-toggle,
+  #mobile-search-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    min-width: 40px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--nav-input-border);
+    background: var(--nav-input-bg);
+    color: var(--nav-text);
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  #nav-toggle:hover,
+  #mobile-search-btn:hover {
+    background: var(--nav-clear-hover);
+    border-color: var(--nav-brand);
+  }
+  .mobile-topbar-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(10, 15, 22, 0.56);
+    backdrop-filter: blur(2px);
+  }
+  .sidebar {
+    width: min(304px, 86vw);
+    z-index: 40;
+    padding: 18px 14px 14px;
+    transform: translateX(-105%);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.22s ease;
+    box-shadow: none;
+  }
+  .sidebar.is-open {
+    transform: translateX(0);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.42);
+  }
+  .sidebar-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 8px;
+    border: 1px solid var(--nav-input-border);
+    background: var(--nav-input-bg);
+    color: var(--nav-text);
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .sidebar-close:hover {
+    background: var(--nav-clear-hover);
+    border-color: var(--nav-brand);
+  }
+  .sidebar strong {
+    font-size: 19px;
+    margin: 0 10px 14px;
+  }
+  .sidebar input {
+    font-size: 16px;
+    min-height: 42px;
+  }
+  .sidebar nav a {
+    min-height: 40px;
+    align-items: center;
+  }
+  .sidebar nav .nav-sub a {
+    min-height: 36px;
+    align-items: center;
+  }
+  body.nav-open {
+    overflow: hidden;
+  }
+  main {
+    margin-left: 0;
+  }
+  .doc-section,
+  h3[id],
+  h4[id],
+  tr[id] {
+    scroll-margin-top: 66px;
+  }
+  .hero {
+    padding: 32px 22px 28px;
+  }
+  .content {
+    padding: 22px 20px 60px;
+  }
+  .section-heading {
+    padding: 18px 20px;
+  }
+  .section-body {
+    padding: 0 20px 22px;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero {
+    padding: 26px 16px 24px;
+  }
+  .hero:after {
+    width: 220px;
+    height: 220px;
+    right: -70px;
+    top: -80px;
+    border-width: 34px;
+  }
+  .hero h1 {
+    font-size: clamp(24px, 6.4vw, 34px);
+    margin-bottom: 12px;
+    text-wrap: balance;
+  }
+  .hero .subtitle {
+    font-size: 15.5px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+  .badges {
+    gap: 6px;
+  }
+  .badges span,
+  .badges a.hero-companion {
+    font-size: 11.5px;
+    padding: 4px 9px;
+  }
+  html[data-mode="summary"] .hero {
+    padding: 24px 16px 22px;
+  }
+  html[data-mode="summary"] .content {
+    padding: 18px 14px 48px;
+  }
+  .content {
+    padding: 18px 14px 56px;
+  }
+  .hero-cards {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .metric {
+    padding: 14px 16px;
+  }
+  .metric strong {
+    font-size: 20px;
+    margin: 5px 0;
+  }
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .card {
+    padding: 14px 16px;
+  }
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .toolbar .hint {
+    margin-right: 0;
+    font-size: 12.5px;
+  }
+  .audience-filter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .audience-filter button {
+    justify-content: center;
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .theme-filter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .theme-filter button {
+    justify-content: center;
+    min-height: 38px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .toolbar-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+  }
+  .toolbar-actions button {
+    min-height: 38px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    text-align: center;
+  }
+  .doc-section {
+    border-radius: 11px;
+    margin-bottom: 14px;
+  }
+  .section-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 15px 16px;
+  }
+  .section-heading .number {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 12px;
+  }
+  .section-heading h2 {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 18px;
+    line-height: 1.28;
+  }
+  .section-heading:after {
+    grid-column: 3;
+    grid-row: 1;
+    margin-left: 4px;
+  }
+  .section-heading .audience {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    font-size: 9.5px;
+    padding: 3px 7px;
+  }
+  .section-body {
+    padding: 0 16px 18px;
+    font-size: 15px;
+  }
+  .section-body > p:first-child {
+    font-size: 15.5px;
+  }
+  h3 {
+    font-size: 17px;
+    margin: 22px 0 10px;
+  }
+  h4 {
+    font-size: 15px;
+    margin: 18px 0 6px;
+  }
+  blockquote {
+    margin: 14px 0;
+    padding: 10px 14px;
+  }
+  figure {
+    padding: 12px;
+    margin: 16px 0;
+  }
+  .diagram-scroll,
+  .chart,
+  .table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+  .diagram-scroll svg {
+    max-width: none !important;
+  }
+  .figure-tools {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .figure-tools button {
+    min-height: 36px;
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+  .table-filter {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0 -8px;
+  }
+  .table-filter input {
+    max-width: none;
+    width: 100%;
+    flex: 1 1 100%;
+    font-size: 16px;
+    min-height: 40px;
+  }
+  .table-wrap {
+    margin: 14px 0;
+    max-height: 62vh;
+  }
+  th, td {
+    padding: 9px 10px;
+    font-size: 12.5px;
+  }
+  pre {
+    padding: 40px 12px 12px;
+    font-size: 12px;
+  }
+  .copy {
+    min-height: 30px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+  }
+  dialog {
+    width: calc(100vw - 16px);
+    max-width: none;
+    max-height: 92dvh;
+    padding: 14px;
+  }
+  .dialog-head {
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .dialog-controls {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .dialog-controls button {
+    min-height: 36px;
+    padding: 5px 10px;
+  }
+  .dialog-canvas {
+    max-height: 68dvh;
+  }
+  #back-to-top {
+    right: 14px;
+    bottom: 14px;
+    padding: 9px 14px;
+    min-height: 40px;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .section-heading:after { transition: none; }
+  .section-heading:after,
+  .sidebar { transition: none; }
 }
 
 @media print {
   @page { size: A4; margin: 14mm; }
-  .sidebar, .toolbar, .audience-filter, .theme-filter, .table-filter, .figure-tools, .copy, .skip, #back-to-top, dialog { display: none !important; }
+  .sidebar, .sidebar-backdrop, .mobile-topbar, .toolbar, .audience-filter, .theme-filter, .table-filter, .figure-tools, .copy, .skip, #back-to-top, dialog { display: none !important; }
   main { margin: 0; }
   .hero { background: white; color: var(--ink); padding: 0 0 20px; border-bottom: 2px solid var(--accent); }
   .hero .subtitle, .eyebrow { color: var(--th-fg); }
@@ -766,7 +1011,7 @@ dialog::backdrop { background: var(--dialog-backdrop); }
   .hero h1 { font-size: 30px; }
   th { position: static; box-shadow: none; }
 }
-</style></head><body><a class="skip" href="#main">Ir para o conteúdo</a><aside class="sidebar"><p class="brand">Documentação de projeto</p><strong>Admin Metrics · Manual completo v3</strong><label for="search">Pesquisar documentação</label><div class="search-box"><input id="search" type="search" autocomplete="off" placeholder="Buscar tópicos… (/)"><button id="search-clear" type="button" hidden aria-label="Limpar busca">×</button></div><div id="search-count" class="search-count" role="status" aria-live="polite"></div><nav aria-label="Conteúdo"><a href="#resumo" data-audience="all"><span>01</span>Resumo executivo</a><a href="#escopo" data-audience="business"><span>02</span>Escopo e estado atual</a><div class="nav-sub" data-parent="escopo"><a href="#escopo-o-que-esta-implementado">O que está implementado</a><a href="#escopo-o-que-nao-esta-no-escopo">O que não está no escopo</a></div><a href="#uso" data-audience="business"><span>03</span>Uso do dashboard</a><div class="nav-sub" data-parent="uso"><a href="#uso-ler-a-atualizacao-sem-confundir-os-relogios">Ler a atualização sem confundir os relógios</a><a href="#uso-incidentes-e-persistencia">Incidentes e persistência</a><a href="#uso-tendencias-endpoints-e-exportacao">Tendências, endpoints e exportação</a></div><a href="#arquitetura" data-audience="technical"><span>04</span>Arquitetura da solução</a><div class="nav-sub" data-parent="arquitetura"><a href="#arquitetura-componentes-e-fronteiras">Componentes e fronteiras</a></div><a href="#fluxo" data-audience="technical"><span>05</span>Fluxo de coleta e publicação</a><div class="nav-sub" data-parent="fluxo"><a href="#fluxo-regras-de-captura-e-conciliacao">Regras de captura e conciliação</a><a href="#fluxo-idempotencia-e-falhas">Idempotência e falhas</a></div><a href="#regras" data-audience="business"><span>06</span>Regras de negócio e cálculos</a><div class="nav-sub" data-parent="regras"><a href="#regras-formulas-e-denominadores">Fórmulas e denominadores</a><a href="#regras-limiares-configurados">Limiares configurados</a><a href="#regras-deltas-de-contadores-cumulativos">Deltas de contadores cumulativos</a><a href="#regras-incidentes-deteccao-confirmacao-e-recuperacao">Incidentes: detecção, confirmação e recuperação</a></div><a href="#qualidade" data-audience="business"><span>07</span>Qualidade, incidentes e continuidade</a><div class="nav-sub" data-parent="qualidade"><a href="#qualidade-flags-de-qualidade">Flags de qualidade</a><a href="#qualidade-saude-da-coleta-e-continuidade">Saúde da coleta e continuidade</a></div><a href="#modelo" data-audience="technical"><span>08</span>Modelo de dados</a><div class="nav-sub" data-parent="modelo"><a href="#modelo-estado-logico-tentativas-e-observacoes">Estado lógico, tentativas e observações</a><a href="#modelo-projecoes-derivadas-e-marts">Projeções derivadas e marts</a><a href="#modelo-identidade-tempo-e-proveniencia">Identidade, tempo e proveniência</a><a href="#modelo-dicionario-da-projecao-arrow">Dicionário da projeção Arrow</a></div><a href="#consulta" data-audience="technical"><span>09</span>Consulta e consumo dos dados</a><div class="nav-sub" data-parent="consulta"><a href="#consulta-receitas-duckdb">Receitas DuckDB</a><a href="#consulta-consumir-o-payload-publicado">Consumir o payload publicado</a></div><a href="#operacao" data-audience="operations"><span>10</span>Operação local</a><div class="nav-sub" data-parent="operacao"><a href="#operacao-preparacao">Preparação</a><a href="#operacao-comandos">Comandos</a><a href="#operacao-o-que-esperar">O que esperar</a><a href="#operacao-diagnostico-rapido">Diagnóstico rápido</a></div><a href="#publicacao" data-audience="operations"><span>11</span>Publicação, retenção e recuperação</a><div class="nav-sub" data-parent="publicacao"><a href="#publicacao-ciclo-da-release">Ciclo da Release</a><a href="#publicacao-retencao">Retenção</a><a href="#publicacao-restauracao-explicita">Restauração explícita</a><a href="#publicacao-matriz-de-recuperacao">Matriz de recuperação</a></div><a href="#limites" data-audience="all"><span>12</span>Limitações e interpretação</a><a href="#decisoes" data-audience="technical"><span>13</span>Decisões e racional</a><a href="#glossario" data-audience="all"><span>14</span>Glossário e referências</a><div class="nav-sub" data-parent="glossario"><a href="#glossario-referencias-primarias">Referências primárias</a><a href="#glossario-arquivos-locais-desta-documentacao">Arquivos locais desta documentação</a></div><a href="#document-references" data-audience="technical">Referências</a></nav><small>HTML único · leitura offline<br>3.0 · 2026-11-15</small></aside><main id="main"><header class="hero"><p class="eyebrow">DOCUMENTAÇÃO FUNCIONAL + TÉCNICA · REVISÃO V3</p><h1>Admin Metrics · Manual completo v3</h1><p class="subtitle">Monitor horário dos oito reportes Admin Santander: coleta auditável, regras explicáveis, modelo de dados, dashboard e recuperação.</p><div class="badges"><span>3.0</span><span>Atualizado: 2026-11-15</span><span>HTML único · leitura offline</span><span>Dados observados em: snapshot local de implementação de 2026-11-10T18:37:28Z; revisão documental de 2026-11-15</span><a class="hero-companion" href="documentacao-v3-resumida.html">Guia rápido v3 ↗</a></div></header><div class="content"><div class="hero-cards"><article class="metric"><span class="label">Origens</span><strong>8 reportes</strong><p>GET /open-banking/admin/v2/metrics em oito hosts Santander; catálogo fechado e nenhuma chamada aos endpoints de clientes.</p></article><article class="metric"><span class="label">Cadência / Janela</span><strong>1 hora</strong><p>Cron 17 * * * * UTC; painel e séries com 72 h; estado normalizado por 30 dias e bronze dos dois ciclos recentes.</p></article><article class="metric"><span class="label">Entrega / Grão</span><strong>276 identidades</strong><p>Dashboard, manual, JSON e Parquet; 1 linha de observação = execução × reporte × endpoint. Snapshot local de 2026-11-10.</p></article><article class="metric"><span class="label">Escopo / Limites</span><strong>Somente Admin</strong><p>Média declarada não é p95; erro e rejeição não identificam causa; ausência não vira zero; agenda GitHub é best effort.</p></article></div><div class="toolbar"><span class="hint">Navegue por assunto ou filtre por perfil de leitura.</span><div class="audience-filter" role="group" aria-label="Perfil de leitura"><button type="button" data-audience-filter="all" class="is-active">Todas</button><button type="button" data-audience-filter="business">Visão de negócio</button><button type="button" data-audience-filter="technical">Visão técnica</button><button type="button" data-audience-filter="operations">Operação</button></div><div class="theme-filter" role="group" aria-label="Tema de cores"><button type="button" data-theme-select="verde" class="" aria-pressed="false"><span class="theme-swatch theme-swatch-verde" aria-hidden="true"></span>Verde</button><button type="button" data-theme-select="azul" class="is-active" aria-pressed="true"><span class="theme-swatch theme-swatch-azul" aria-hidden="true"></span>Azul</button><button type="button" data-theme-select="vermelho" class="" aria-pressed="false"><span class="theme-swatch theme-swatch-vermelho" aria-hidden="true"></span>Vermelho</button></div><div class="toolbar-actions"><button id="expand" type="button">Expandir tudo</button><button id="collapse" type="button">Recolher tudo</button><button id="print" type="button">Imprimir / PDF</button></div></div><p id="no-results" hidden>Nenhuma seção encontrada.</p><details class="doc-section" id="resumo" data-audience="all" open><summary class="section-heading"><span class="number">01</span><h2>Resumo executivo</h2><span class="audience all">Para todos</span></summary><div class="section-body"><p>O <strong>Admin Metrics</strong> é um observatório executivo dos oito reportes operacionais Santander que publicam o endpoint Admin do Open Finance. A cada ciclo, ele consulta somente <code>GET /open-banking/admin/v2/metrics</code> nos hosts autorizados, preserva o corpo original com hash SHA-256, normaliza as métricas declaradas pelo banco, calcula sinais analíticos explicáveis e publica um dashboard estático, um manual HTML autocontido e tabelas Parquet.</p>
+</style></head><body><a class="skip" href="#main">Ir para o conteúdo</a><div id="sidebar-backdrop" class="sidebar-backdrop" hidden></div><aside id="sidebar" class="sidebar"><div class="sidebar-head"><p class="brand">Documentação de projeto</p><button id="nav-close" class="sidebar-close" type="button" aria-label="Fechar menu de navegação">×</button></div><strong>Admin Metrics · Manual completo v2</strong><label for="search">Pesquisar documentação</label><div class="search-box"><input id="search" type="search" autocomplete="off" placeholder="Buscar tópicos… (/)"><button id="search-clear" type="button" hidden aria-label="Limpar busca">×</button></div><div id="search-count" class="search-count" role="status" aria-live="polite"></div><nav aria-label="Conteúdo"><a href="#resumo" data-audience="all"><span>01</span>Resumo executivo</a><a href="#escopo" data-audience="business"><span>02</span>Escopo e estado atual</a><div class="nav-sub" data-parent="escopo"><a href="#escopo-o-que-esta-implementado">O que está implementado</a><a href="#escopo-o-que-nao-esta-no-escopo">O que não está no escopo</a></div><a href="#uso" data-audience="business"><span>03</span>Uso do dashboard</a><div class="nav-sub" data-parent="uso"><a href="#uso-ler-a-atualizacao-sem-confundir-os-relogios">Ler a atualização sem confundir os relógios</a><a href="#uso-incidentes-e-persistencia">Incidentes e persistência</a><a href="#uso-tendencias-endpoints-e-exportacao">Tendências, endpoints e exportação</a></div><a href="#arquitetura" data-audience="technical"><span>04</span>Arquitetura da solução</a><div class="nav-sub" data-parent="arquitetura"><a href="#arquitetura-componentes-e-fronteiras">Componentes e fronteiras</a></div><a href="#fluxo" data-audience="technical"><span>05</span>Fluxo de coleta e publicação</a><div class="nav-sub" data-parent="fluxo"><a href="#fluxo-regras-de-captura-e-conciliacao">Regras de captura e conciliação</a><a href="#fluxo-idempotencia-e-falhas">Idempotência e falhas</a></div><a href="#regras" data-audience="business"><span>06</span>Regras de negócio e cálculos</a><div class="nav-sub" data-parent="regras"><a href="#regras-formulas-e-denominadores">Fórmulas e denominadores</a><a href="#regras-limiares-configurados">Limiares configurados</a><a href="#regras-deltas-de-contadores-cumulativos">Deltas de contadores cumulativos</a><a href="#regras-incidentes-deteccao-confirmacao-e-recuperacao">Incidentes: detecção, confirmação e recuperação</a></div><a href="#qualidade" data-audience="business"><span>07</span>Qualidade, incidentes e continuidade</a><div class="nav-sub" data-parent="qualidade"><a href="#qualidade-flags-de-qualidade">Flags de qualidade</a><a href="#qualidade-saude-da-coleta-e-continuidade">Saúde da coleta e continuidade</a></div><a href="#modelo" data-audience="technical"><span>08</span>Modelo de dados</a><div class="nav-sub" data-parent="modelo"><a href="#modelo-estado-logico-tentativas-e-observacoes">Estado lógico, tentativas e observações</a><a href="#modelo-projecoes-derivadas-e-marts">Projeções derivadas e marts</a><a href="#modelo-identidade-tempo-e-proveniencia">Identidade, tempo e proveniência</a><a href="#modelo-dicionario-da-projecao-arrow">Dicionário da projeção Arrow</a></div><a href="#consulta" data-audience="technical"><span>09</span>Consulta e consumo dos dados</a><div class="nav-sub" data-parent="consulta"><a href="#consulta-receitas-duckdb">Receitas DuckDB</a><a href="#consulta-consumir-o-payload-publicado">Consumir o payload publicado</a></div><a href="#operacao" data-audience="operations"><span>10</span>Operação local</a><div class="nav-sub" data-parent="operacao"><a href="#operacao-preparacao">Preparação</a><a href="#operacao-comandos">Comandos</a><a href="#operacao-o-que-esperar">O que esperar</a><a href="#operacao-diagnostico-rapido">Diagnóstico rápido</a></div><a href="#publicacao" data-audience="operations"><span>11</span>Publicação, retenção e recuperação</a><div class="nav-sub" data-parent="publicacao"><a href="#publicacao-ciclo-da-release">Ciclo da Release</a><a href="#publicacao-retencao">Retenção</a><a href="#publicacao-restauracao-explicita">Restauração explícita</a><a href="#publicacao-matriz-de-recuperacao">Matriz de recuperação</a></div><a href="#limites" data-audience="all"><span>12</span>Limitações e interpretação</a><a href="#decisoes" data-audience="technical"><span>13</span>Decisões e racional</a><a href="#glossario" data-audience="all"><span>14</span>Glossário e referências</a><div class="nav-sub" data-parent="glossario"><a href="#glossario-referencias-primarias">Referências primárias</a><a href="#glossario-arquivos-locais-desta-documentacao">Arquivos locais desta documentação</a></div><a href="#document-references" data-audience="technical">Referências</a></nav><small>HTML único · leitura offline<br>2.0 · 2026-11-15</small></aside><main id="main"><div class="mobile-topbar"><button id="nav-toggle" type="button" aria-expanded="false" aria-controls="sidebar" aria-label="Abrir menu de navegação"><svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg><span>Menu</span></button><span class="mobile-topbar-title">Admin Metrics · Manual completo v2</span><button id="mobile-search-btn" type="button" aria-label="Pesquisar documentação"><svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><line x1="13" y1="13" x2="17" y2="17"/></svg></button></div><header class="hero"><p class="eyebrow">DOCUMENTAÇÃO FUNCIONAL + TÉCNICA · REVISÃO V2</p><h1>Admin Metrics · Manual completo v2</h1><p class="subtitle">Monitor horário dos oito reportes Admin Santander: coleta auditável, regras explicáveis, modelo de dados, dashboard e recuperação.</p><div class="badges"><span>2.0</span><span>Atualizado: 2026-11-15</span><span>HTML único · leitura offline</span><span>Dados observados em: snapshot local de implementação de 2026-11-10T18:37:28Z; revisão documental de 2026-11-15</span><a class="hero-companion" href="documentacao-v2-resumida.html">Guia rápido v2 ↗</a></div></header><div class="content"><div class="hero-cards"><article class="metric"><span class="label">Origens</span><strong>8 reportes</strong><p>GET /open-banking/admin/v2/metrics em oito hosts Santander; catálogo fechado e nenhuma chamada aos endpoints de clientes.</p></article><article class="metric"><span class="label">Cadência / Janela</span><strong>1 hora</strong><p>Cron 17 * * * * UTC; painel e séries com 72 h; estado normalizado por 30 dias e bronze dos dois ciclos recentes.</p></article><article class="metric"><span class="label">Entrega / Grão</span><strong>276 identidades</strong><p>Dashboard, manual, JSON e Parquet; 1 linha de observação = execução × reporte × endpoint. Snapshot local de 2026-11-10.</p></article><article class="metric"><span class="label">Escopo / Limites</span><strong>Somente Admin</strong><p>Média declarada não é p95; erro e rejeição não identificam causa; ausência não vira zero; agenda GitHub é best effort.</p></article></div><div class="toolbar"><span class="hint">Navegue por assunto ou filtre por perfil de leitura.</span><div class="audience-filter" role="group" aria-label="Perfil de leitura"><button type="button" data-audience-filter="all" class="is-active">Todas</button><button type="button" data-audience-filter="business">Visão de negócio</button><button type="button" data-audience-filter="technical">Visão técnica</button><button type="button" data-audience-filter="operations">Operação</button></div><div class="theme-filter" role="group" aria-label="Tema de cores"><button type="button" data-theme-select="vermelho" class="is-active" aria-pressed="true"><span class="theme-swatch theme-swatch-vermelho" aria-hidden="true"></span>Vermelho</button><button type="button" data-theme-select="azul" class="" aria-pressed="false"><span class="theme-swatch theme-swatch-azul" aria-hidden="true"></span>Azul</button></div><div class="toolbar-actions"><button id="expand" type="button">Expandir tudo</button><button id="collapse" type="button">Recolher tudo</button><button id="print" type="button">Imprimir / PDF</button></div></div><p id="no-results" hidden>Nenhuma seção encontrada.</p><details class="doc-section" id="resumo" data-audience="all" open><summary class="section-heading"><span class="number">01</span><h2>Resumo executivo</h2><span class="audience all">Para todos</span></summary><div class="section-body"><p>O <strong>Admin Metrics</strong> é um observatório executivo dos oito reportes operacionais Santander que publicam o endpoint Admin do Open Finance. A cada ciclo, ele consulta somente <code>GET /open-banking/admin/v2/metrics</code> nos hosts autorizados, preserva o corpo original com hash SHA-256, normaliza as métricas declaradas pelo banco, calcula sinais analíticos explicáveis e publica um dashboard estático, um manual HTML autocontido e tabelas Parquet.</p>
 <p>O produto responde a três perguntas: <strong>o que exige atenção agora</strong>, <strong>qual é a evidência de cada endpoint</strong> e <strong>o que o observador conseguiu medir na última tentativa</strong>. Ele não mede diretamente os serviços de clientes, consentimentos ou pagamentos descritos no relatório; mede a resposta do Admin e os agregados que o próprio banco declara.</p>
 <div class="cards">
 <div class="card"><h3>Decisão apoiada</h3><p>Priorizar investigação por volume de erros, taxa com amostra mínima, rejeição, média declarada, regressão e recorrência no histórico reportado.</p></div>
@@ -814,7 +1059,7 @@ dialog::backdrop { background: var(--dialog-backdrop); }
 <blockquote class="callout-example">
 <p>Exemplo prático: em uma execução em que seis fontes retornam dados válidos e duas retornam HTTP 200 vazio, a saúde da coleta fica <code>partial</code>. O panorama executivo pode continuar no último ciclo completo, com dia explícito, enquanto os cartões de cada fonte mostram a tentativa recente e a idade do último dado válido.</p>
 </blockquote>
-<p>A revisão documental é de <strong>2026-11-15</strong> e descreve o projeto a partir da revisão <code>62994d4</code> (versão <strong>1.2.0</strong>, modelo de captura <strong>3</strong>, envelope de estado <strong>1</strong>), incluindo a publicação dos manuais v3 e os novos links da home. Consulte o <a href="#escopo">escopo e estado atual</a>, a <a href="#arquitetura">arquitetura</a>, as <a href="#regras">regras</a> e as <a href="#limites">limitações</a> antes de usar os números como conclusão operacional.</p>
+<p>A revisão documental é de <strong>2026-11-15</strong> e descreve o projeto na versão <strong>1.2.0</strong> (modelo de captura <strong>3</strong>, envelope de estado <strong>1</strong>), a partir da revisão de código <code>62994d4</code>, agora republicada como manual <strong>v2</strong> completo e guia resumido. Consulte o <a href="#escopo">escopo e estado atual</a>, a <a href="#arquitetura">arquitetura</a>, as <a href="#regras">regras</a> e as <a href="#limites">limitações</a> antes de usar os números como conclusão operacional.</p>
 <div class="section-sources">Referências: <a href="#ref-readme">README.md</a> <a href="#ref-reporters-config">config/reporters.json</a> <a href="#ref-rules-config">config/rules.json</a> <a href="#ref-build">src/admin_metrics/build.py</a> <a href="#ref-web-app">src/admin_metrics/web/app.js</a></div></div></details>
 <details class="doc-section" id="escopo" data-audience="business" open><summary class="section-heading"><span class="number">02</span><h2>Escopo e estado atual</h2><span class="audience business">Funcional</span></summary><div class="section-body"><p>O monitor acompanha oito reportes operacionais do grupo Santander. O catálogo é explícito e versionado em <code>config/reporters.json</code>; Nissan e Renault permanecem fontes distintas mesmo compartilhando o mesmo CNPJ. O vínculo entre URL e CNPJ foi conferido no Diretório oficial de participantes e o comprovante é mantido em <code>config/catalog-evidence.json</code>, com data, SHA-256 e tamanho do documento consultado.</p>
 <div class="table-wrap"><table>
@@ -1082,9 +1327,9 @@ dialog::backdrop { background: var(--dialog-backdrop); }
 <td>Gerado por build; distribuível sozinho.</td>
 </tr>
 <tr>
-<td><code>site/docs_v3/documentacao-v3.html</code> e <code>...-resumida.html</code></td>
-<td>Manual v3 completo e guia rápido</td>
-<td>Copiados do diretório <code>docs_v3/</code> para o Pages.</td>
+<td><code>site/docs_v2/documentacao-v2.html</code> e <code>...-resumida.html</code></td>
+<td>Manual v2 completo e guia rápido</td>
+<td>Copiados do diretório <code>docs_v2/</code> para o Pages.</td>
 </tr>
 <tr>
 <td>Releases <code>state-*</code></td>
@@ -2547,7 +2792,7 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
 <td>Só promove estado depois de publicação comprovada; reduz estado “aprovado” sem site.</td>
 </tr>
 <tr>
-<td>Manuais v3 completos e resumidos lado a lado</td>
+<td>Manuais v2 completos e resumidos lado a lado</td>
 <td>Atendem leitura executiva e aprofundamento técnico sem duplicar facts contraditórios.</td>
 </tr>
 </tbody></table></div>
@@ -2693,14 +2938,14 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
 <td>Cenários de análise, coleta, panorama, pipeline, cloud e dashboard.</td>
 </tr>
 <tr>
-<td><code>docs_v3/</code></td>
-<td>Manuais v3 completo e resumido e seus arquivos de autoria.</td>
+<td><code>docs_v2/</code></td>
+<td>Manuais v2 completo e resumido e seus arquivos de autoria.</td>
 </tr>
 </tbody></table></div>
 <blockquote class="callout-limit">
 <p>Limitação: o manual é gerado com <code>project-html-docs</code> e não executa o projeto. A verificação estrutural não certifica cardinalidades, significado de negócio, frescor ou status de produção; esses pontos foram checados na leitura das fontes e devem ser reconferidos a cada revisão.</p>
 </blockquote>
-<div class="section-sources">Referências: <a href="#ref-readme">README.md</a> <a href="#ref-reporters-config">config/reporters.json</a> <a href="#ref-contracts">src/admin_metrics/contracts.py</a> <a href="#ref-documentation">src/admin_metrics/documentation.py</a> <a href="#ref-manual-template">src/admin_metrics/manual-template.html</a></div></div></details><details class="doc-section" id="document-references" data-audience="technical"><summary class="section-heading"><h2>Referências do documento</h2></summary><div class="section-body"><p>Arquivos locais usados para descrever esta revisão. As referências são para aprofundamento; o conteúdo necessário à leitura está incorporado.</p><div class="table-wrap"><table><thead><tr><th>Arquivo</th><th>Conteúdo</th></tr></thead><tbody><tr id="ref-readme"><td class="source-path">README.md</td><td>Visão geral, escopo, operação e limitações declaradas pelo projeto.</td></tr><tr id="ref-pyproject"><td class="source-path">pyproject.toml</td><td>Versão, dependências de runtime, entry point e configuração de testes.</td></tr><tr id="ref-reporters-config"><td class="source-path">config/reporters.json</td><td>Catálogo fechado dos oito reportes, empresas, CNPJs e URLs Admin.</td></tr><tr id="ref-rules-config"><td class="source-path">config/rules.json</td><td>Limiares analíticos, janelas, cron e parâmetros de recuperação.</td></tr><tr id="ref-catalog-evidence"><td class="source-path">config/catalog-evidence.json</td><td>Comprovante da conferência de URL/CNPJ no Diretório oficial.</td></tr><tr id="ref-collect"><td class="source-path">src/admin_metrics/collect.py</td><td>Coleta HTTPX, validação de catálogo, retry, paginação, deduplicação e bronze.</td></tr><tr id="ref-contracts"><td class="source-path">src/admin_metrics/contracts.py</td><td>Validação segura das URIs declaradas, sem executar chamadas.</td></tr><tr id="ref-health"><td class="source-path">src/admin_metrics/health.py</td><td>Classificação do resultado da coleta e saúde agregada das fontes.</td></tr><tr id="ref-analysis"><td class="source-path">src/admin_metrics/analysis.py</td><td>Normalização, nulos, flags, deltas, baseline, recorrência e incidentes.</td></tr><tr id="ref-panorama"><td class="source-path">src/admin_metrics/panorama.py</td><td>Seleção de um ciclo completo e um dia coerente por recorte.</td></tr><tr id="ref-rules"><td class="source-path">src/admin_metrics/rules.py</td><td>Configuração tipada, validação de limites e geração do cron.</td></tr><tr id="ref-storage"><td class="source-path">src/admin_metrics/storage.py</td><td>Hash, escrita atômica, lock de escritor e carregamento do estado.</td></tr><tr id="ref-archive"><td class="source-path">src/admin_metrics/archive.py</td><td>Pacote limitado, manifesto, checksums e restore com rollback.</td></tr><tr id="ref-build"><td class="source-path">src/admin_metrics/build.py</td><td>Arrow, DuckDB, Parquet, HTML, assets e publicação dos manuais.</td></tr><tr id="ref-marts"><td class="source-path">src/admin_metrics/marts.sql</td><td>SQL de report_summary, family_summary e observation_trends.</td></tr><tr id="ref-pipeline"><td class="source-path">src/admin_metrics/pipeline.py</td><td>Orquestração de coleta, aplicação, build, estado e retenção local.</td></tr><tr id="ref-cli"><td class="source-path">src/admin_metrics/cli.py</td><td>Interface local com comandos collect/build e parâmetros de diretório.</td></tr><tr id="ref-cloud"><td class="source-path">scripts/cloud_pipeline.py</td><td>Restore, candidato draft, promoção, descarte e retenção de Releases.</td></tr><tr id="ref-web-index"><td class="source-path">src/admin_metrics/web/index.html</td><td>Estrutura e conteúdo estático do dashboard.</td></tr><tr id="ref-web-app"><td class="source-path">src/admin_metrics/web/app.js</td><td>Filtros, navegação, gráficos, detalhes, monitor e exportação do dashboard.</td></tr><tr id="ref-web-styles"><td class="source-path">src/admin_metrics/web/styles.css</td><td>Sistema visual, estados, tabelas, diálogos e impressão do dashboard.</td></tr><tr id="ref-pages-workflow"><td class="source-path">.github/workflows/pages.yml</td><td>Workflow de testes, restore, coleta, Pages, deploy e confirmação.</td></tr><tr id="ref-ci-workflow"><td class="source-path">.github/workflows/ci.yml</td><td>Matriz de CI Linux/Windows e Python 3.11/3.12.</td></tr><tr id="ref-test-analysis"><td class="source-path">tests/test_analysis.py</td><td>Cenários de nulos, deltas, baseline, incidentes e retenção.</td></tr><tr id="ref-test-panorama"><td class="source-path">tests/test_panorama.py</td><td>Cenários de falha total, falha parcial, virada de dia e recuperação.</td></tr><tr id="ref-test-pipeline"><td class="source-path">tests/test_pipeline.py</td><td>End-to-end, archive, restore, retenção, build e falhas de publicação.</td></tr><tr id="ref-test-collect"><td class="source-path">tests/test_collect.py</td><td>Paginação, deduplicação, retries, vazio, limites e data por página.</td></tr><tr id="ref-test-cloud"><td class="source-path">tests/test_cloud.py</td><td>Promoção, retenção de Releases, recibos e saúde no resumo do workflow.</td></tr><tr id="ref-test-dashboard"><td class="source-path">tests/test_dashboard.cjs</td><td>Testes de renderização, filtros, frescor, execuções e detalhe do dashboard.</td></tr><tr id="ref-test-rules"><td class="source-path">tests/test_rules.py</td><td>Validação de parâmetros e correspondência entre regras e cron.</td></tr><tr id="ref-documentation"><td class="source-path">src/admin_metrics/documentation.py</td><td>Gerador do manual HTML único a partir do estado e dos arquivos do projeto.</td></tr><tr id="ref-manual-template"><td class="source-path">src/admin_metrics/manual-template.html</td><td>Template do manual HTML gerado pelo build do dashboard.</td></tr><tr id="ref-manual-supplement"><td class="source-path">src/admin_metrics/manual-supplement.html</td><td>Conteúdo complementar incorporado ao manual gerado.</td></tr></tbody></table></div><p class="revision">Código: b25eaf24fc81473e34326ea48ab9e5de3959d40c</p></div></details><footer>Admin Metrics · Manual completo v3 · 3.0 · HTML único · leitura offline</footer></div><button id="back-to-top" type="button" hidden aria-label="Topo">↑ Topo</button></main><dialog id="diagram-dialog" aria-labelledby="dialog-title"><div class="dialog-head"><strong id="dialog-title"></strong><div class="dialog-controls"><button id="dialog-zoom-out" type="button" aria-label="Reduzir zoom">−</button><span id="dialog-zoom-label" class="dialog-zoom-label" aria-live="polite">100%</span><button id="dialog-zoom-in" type="button" aria-label="Aumentar zoom">+</button><button id="dialog-fit" type="button">Ajustar à tela</button><button id="dialog-actual" type="button" class="is-active">Tamanho real</button><button id="dialog-close" type="button">Fechar</button></div></div><div id="dialog-canvas" class="dialog-canvas"></div></dialog><script>(() => {
+<div class="section-sources">Referências: <a href="#ref-readme">README.md</a> <a href="#ref-reporters-config">config/reporters.json</a> <a href="#ref-contracts">src/admin_metrics/contracts.py</a> <a href="#ref-documentation">src/admin_metrics/documentation.py</a> <a href="#ref-manual-template">src/admin_metrics/manual-template.html</a></div></div></details><details class="doc-section" id="document-references" data-audience="technical"><summary class="section-heading"><h2>Referências do documento</h2></summary><div class="section-body"><p>Arquivos locais usados para descrever esta revisão. As referências são para aprofundamento; o conteúdo necessário à leitura está incorporado.</p><div class="table-wrap"><table><thead><tr><th>Arquivo</th><th>Conteúdo</th></tr></thead><tbody><tr id="ref-readme"><td class="source-path">README.md</td><td>Visão geral, escopo, operação e limitações declaradas pelo projeto.</td></tr><tr id="ref-pyproject"><td class="source-path">pyproject.toml</td><td>Versão, dependências de runtime, entry point e configuração de testes.</td></tr><tr id="ref-reporters-config"><td class="source-path">config/reporters.json</td><td>Catálogo fechado dos oito reportes, empresas, CNPJs e URLs Admin.</td></tr><tr id="ref-rules-config"><td class="source-path">config/rules.json</td><td>Limiares analíticos, janelas, cron e parâmetros de recuperação.</td></tr><tr id="ref-catalog-evidence"><td class="source-path">config/catalog-evidence.json</td><td>Comprovante da conferência de URL/CNPJ no Diretório oficial.</td></tr><tr id="ref-collect"><td class="source-path">src/admin_metrics/collect.py</td><td>Coleta HTTPX, validação de catálogo, retry, paginação, deduplicação e bronze.</td></tr><tr id="ref-contracts"><td class="source-path">src/admin_metrics/contracts.py</td><td>Validação segura das URIs declaradas, sem executar chamadas.</td></tr><tr id="ref-health"><td class="source-path">src/admin_metrics/health.py</td><td>Classificação do resultado da coleta e saúde agregada das fontes.</td></tr><tr id="ref-analysis"><td class="source-path">src/admin_metrics/analysis.py</td><td>Normalização, nulos, flags, deltas, baseline, recorrência e incidentes.</td></tr><tr id="ref-panorama"><td class="source-path">src/admin_metrics/panorama.py</td><td>Seleção de um ciclo completo e um dia coerente por recorte.</td></tr><tr id="ref-rules"><td class="source-path">src/admin_metrics/rules.py</td><td>Configuração tipada, validação de limites e geração do cron.</td></tr><tr id="ref-storage"><td class="source-path">src/admin_metrics/storage.py</td><td>Hash, escrita atômica, lock de escritor e carregamento do estado.</td></tr><tr id="ref-archive"><td class="source-path">src/admin_metrics/archive.py</td><td>Pacote limitado, manifesto, checksums e restore com rollback.</td></tr><tr id="ref-build"><td class="source-path">src/admin_metrics/build.py</td><td>Arrow, DuckDB, Parquet, HTML, assets e publicação dos manuais.</td></tr><tr id="ref-marts"><td class="source-path">src/admin_metrics/marts.sql</td><td>SQL de report_summary, family_summary e observation_trends.</td></tr><tr id="ref-pipeline"><td class="source-path">src/admin_metrics/pipeline.py</td><td>Orquestração de coleta, aplicação, build, estado e retenção local.</td></tr><tr id="ref-cli"><td class="source-path">src/admin_metrics/cli.py</td><td>Interface local com comandos collect/build e parâmetros de diretório.</td></tr><tr id="ref-cloud"><td class="source-path">scripts/cloud_pipeline.py</td><td>Restore, candidato draft, promoção, descarte e retenção de Releases.</td></tr><tr id="ref-web-index"><td class="source-path">src/admin_metrics/web/index.html</td><td>Estrutura e conteúdo estático do dashboard.</td></tr><tr id="ref-web-app"><td class="source-path">src/admin_metrics/web/app.js</td><td>Filtros, navegação, gráficos, detalhes, monitor e exportação do dashboard.</td></tr><tr id="ref-web-styles"><td class="source-path">src/admin_metrics/web/styles.css</td><td>Sistema visual, estados, tabelas, diálogos e impressão do dashboard.</td></tr><tr id="ref-pages-workflow"><td class="source-path">.github/workflows/pages.yml</td><td>Workflow de testes, restore, coleta, Pages, deploy e confirmação.</td></tr><tr id="ref-ci-workflow"><td class="source-path">.github/workflows/ci.yml</td><td>Matriz de CI Linux/Windows e Python 3.11/3.12.</td></tr><tr id="ref-test-analysis"><td class="source-path">tests/test_analysis.py</td><td>Cenários de nulos, deltas, baseline, incidentes e retenção.</td></tr><tr id="ref-test-panorama"><td class="source-path">tests/test_panorama.py</td><td>Cenários de falha total, falha parcial, virada de dia e recuperação.</td></tr><tr id="ref-test-pipeline"><td class="source-path">tests/test_pipeline.py</td><td>End-to-end, archive, restore, retenção, build e falhas de publicação.</td></tr><tr id="ref-test-collect"><td class="source-path">tests/test_collect.py</td><td>Paginação, deduplicação, retries, vazio, limites e data por página.</td></tr><tr id="ref-test-cloud"><td class="source-path">tests/test_cloud.py</td><td>Promoção, retenção de Releases, recibos e saúde no resumo do workflow.</td></tr><tr id="ref-test-dashboard"><td class="source-path">tests/test_dashboard.cjs</td><td>Testes de renderização, filtros, frescor, execuções e detalhe do dashboard.</td></tr><tr id="ref-test-rules"><td class="source-path">tests/test_rules.py</td><td>Validação de parâmetros e correspondência entre regras e cron.</td></tr><tr id="ref-documentation"><td class="source-path">src/admin_metrics/documentation.py</td><td>Gerador do manual HTML único a partir do estado e dos arquivos do projeto.</td></tr><tr id="ref-manual-template"><td class="source-path">src/admin_metrics/manual-template.html</td><td>Template do manual HTML gerado pelo build do dashboard.</td></tr><tr id="ref-manual-supplement"><td class="source-path">src/admin_metrics/manual-supplement.html</td><td>Conteúdo complementar incorporado ao manual gerado.</td></tr></tbody></table></div><p class="revision">Código: a0dd7f522dbde4588070bb38ad240501a7d044c9</p></div></details><footer>Admin Metrics · Manual completo v2 · 2.0 · HTML único · leitura offline</footer></div><button id="back-to-top" type="button" hidden aria-label="Topo">↑ Topo</button></main><dialog id="diagram-dialog" aria-labelledby="dialog-title"><div class="dialog-head"><strong id="dialog-title"></strong><div class="dialog-controls"><button id="dialog-zoom-out" type="button" aria-label="Reduzir zoom">−</button><span id="dialog-zoom-label" class="dialog-zoom-label" aria-live="polite">100%</span><button id="dialog-zoom-in" type="button" aria-label="Aumentar zoom">+</button><button id="dialog-fit" type="button">Ajustar à tela</button><button id="dialog-actual" type="button" class="is-active">Tamanho real</button><button id="dialog-close" type="button">Fechar</button></div></div><div id="dialog-canvas" class="dialog-canvas"></div></dialog><script>(() => {
   const lang = document.documentElement.lang.startsWith('pt');
   const words = lang
     ? {
@@ -2715,8 +2960,44 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
       };
 
   const sections = [...document.querySelectorAll('.doc-section')];
+  const sidebar = document.querySelector('#sidebar');
+  const navToggle = document.querySelector('#nav-toggle');
+  const navClose = document.querySelector('#nav-close');
+  const mobileSearchBtn = document.querySelector('#mobile-search-btn');
+  const backdrop = document.querySelector('#sidebar-backdrop');
+  const mobileMq = window.matchMedia('(max-width: 960px)');
   const search = document.querySelector('#search');
   const searchClear = document.querySelector('#search-clear');
+
+  function setDrawerOpen(open, { focusTarget = null, restoreFocus = false } = {}) {
+    if (!sidebar) return;
+    const active = Boolean(open && mobileMq.matches);
+    sidebar.classList.toggle('is-open', active);
+    document.body.classList.toggle('nav-open', active);
+    if (backdrop) backdrop.hidden = !active;
+    if (navToggle) navToggle.setAttribute('aria-expanded', active ? 'true' : 'false');
+    if (active) {
+      const target = focusTarget === 'search' ? search : (navClose || search);
+      requestAnimationFrame(() => {
+        target?.focus();
+        if (focusTarget === 'search') target?.select?.();
+      });
+    } else if (restoreFocus) {
+      navToggle?.focus();
+    }
+  }
+
+  navToggle?.addEventListener('click', () => {
+    setDrawerOpen(!sidebar?.classList.contains('is-open'), { restoreFocus: true });
+  });
+  navClose?.addEventListener('click', () => setDrawerOpen(false, { restoreFocus: true }));
+  backdrop?.addEventListener('click', () => setDrawerOpen(false, { restoreFocus: true }));
+  mobileSearchBtn?.addEventListener('click', () => setDrawerOpen(true, { focusTarget: 'search' }));
+  if (typeof mobileMq.addEventListener === 'function') {
+    mobileMq.addEventListener('change', e => { if (!e.matches) setDrawerOpen(false); });
+  } else if (typeof mobileMq.addListener === 'function') {
+    mobileMq.addListener(e => { if (!e.matches) setDrawerOpen(false); });
+  }
   const normalize = x => String(x || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const index = new Map(sections.map(s => [s, normalize(s.textContent)]));
   const openAncestors = el => { for (let n = el; n; n = n.parentElement) if (n.tagName === 'DETAILS') n.open = true; };
@@ -2834,12 +3115,19 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
     const editable = tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable;
     if ((e.key === '/' && !editable) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
       e.preventDefault();
-      search.focus();
-      search.select();
+      if (mobileMq.matches && !sidebar?.classList.contains('is-open')) {
+        setDrawerOpen(true, { focusTarget: 'search' });
+      } else {
+        search.focus();
+        search.select();
+      }
     } else if (e.key === 'Escape' && document.activeElement === search && search.value) {
       e.preventDefault();
       search.value = '';
       filter();
+    } else if (e.key === 'Escape' && sidebar?.classList.contains('is-open')) {
+      e.preventDefault();
+      setDrawerOpen(false, { restoreFocus: true });
     }
   });
 
@@ -2880,11 +3168,11 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
     });
   });
 
-  // Seletor de paleta de cores (Verde, Azul e Vermelho) sem alterar layout.
+  // Seletor de paleta de cores (Vermelho e Azul) sem alterar layout.
   // O vermelho é o padrão; valores antigos do localStorage são migrados.
   const themeBtns = [...document.querySelectorAll('[data-theme-select]')];
   if (themeBtns.length) {
-    const themeAliases = { verde: 'verde', azul: 'azul', vermelho: 'vermelho', default: 'azul', santander: 'vermelho' };
+    const themeAliases = { vermelho: 'vermelho', azul: 'azul', santander: 'vermelho', default: 'azul' };
     const normalizeTheme = theme => themeAliases[theme] || 'vermelho';
     const applyTheme = (theme, persist = false) => {
       const target = normalizeTheme(theme);
@@ -2903,7 +3191,7 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
       const saved = localStorage.getItem('project-docs-theme');
       if (saved) initialTheme = normalizeTheme(saved);
     } catch {}
-    applyTheme(initialTheme, false);
+    applyTheme(initialTheme, true);
     themeBtns.forEach(btn => btn.addEventListener('click', () => applyTheme(btn.dataset.themeSelect, true)));
   }
 
@@ -2965,6 +3253,7 @@ python -m admin_metrics.cli build</code></pre><p>O restore verifica o checksum e
     const targetId = decodeURIComponent(rawHref.slice(1));
     const el = targetId ? document.getElementById(targetId) : null;
     if (el) { search.value = ''; filter(); openAncestors(el); }
+    if (mobileMq.matches && a.closest('.sidebar')) setDrawerOpen(false);
   }));
 
   // Copia com clipboard; se o navegador negar, tenta execCommand e por fim

@@ -9,23 +9,24 @@
   "referenceBlocks": 1,
   "diagrams": 2,
   "charts": 0,
-  "bytes": 106638,
+  "bytes": 118635,
   "browserReviewed": false,
   "warnings": [],
-  "version": "1.6.0",
-  "skillVersion": "1.6.0",
-  "builtAt": "2026-11-15T06:43:34.235Z",
-  "manifestSha256": "2e7fca383170f05b49f5870614e309af622a67ee690528a1472b7b1857747cc4",
-  "document": "Admin Metrics · Guia rápido v3",
-  "revision": "b25eaf24fc81473e34326ea48ab9e5de3959d40c",
-  "inputSha256": "3b4cd13ae90a3d7831f64524845221875526180960632a23add89d93e3b0f1ee",
-  "htmlSha256": "3261fbc6101ae46d2b038181e4d1db0b9af75195812b0d267a8866f83bef1409",
+  "version": "1.8.0",
+  "skillVersion": "1.8.0",
+  "rendererSha256": "2b0421509bfb495d5db45a9e09d166972bdd2952581060e6efb0349c59646dd2",
+  "builtAt": "2026-11-15T15:18:12.123Z",
+  "manifestSha256": "75e7151d6530787ad711a0e0d144d9e82e6ead3dabcd1c1484b5727aa2fb8152",
+  "document": "Admin Metrics · Guia rápido v2",
+  "revision": "a0dd7f522dbde4588070bb38ad240501a7d044c9",
+  "inputSha256": "983958e37505c77d2c570460b88b3e165fcdafc5b4b95d4ae5993d592af42fbe",
+  "htmlSha256": "7b1c0c64b8e71bfa43caada8ce421ca097f484af61d41562a174909cfad45778",
   "sources": [
     {
       "id": "readme",
       "path": "README.md",
       "description": "Visão geral, escopo, operação e limitações declaradas pelo projeto.",
-      "sha256": "2c4c9ec87e90fe9ced8f10c345d86e93415589b4f1ddbcef655ee019b098a43d"
+      "sha256": "333750893ca82b286c9efdd2e6fe37831a140aa17ab14d81be6d889d5f8165d4"
     },
     {
       "id": "reporters-config",
@@ -43,7 +44,7 @@
       "id": "web-index",
       "path": "src/admin_metrics/web/index.html",
       "description": "Estrutura e conteúdo estático do dashboard.",
-      "sha256": "2204fd262feb5ad6c5b50a77560094228e87bc968dbabe229062849548baa95e"
+      "sha256": "c749555dd9a7c3b616d65b2918be9d1f35997eadf7eb35fd43027fe1376518eb"
     },
     {
       "id": "web-app",
@@ -79,7 +80,7 @@
       "id": "build",
       "path": "src/admin_metrics/build.py",
       "description": "Arrow, DuckDB, Parquet, HTML e assets do site.",
-      "sha256": "84eea381faa685c335bee8d2d4af015cd15f5c397bf16b54e555036ec667928b"
+      "sha256": "af8a99438d05fa7d02e0f42dc8cbbe76021a3082a3eaf39d2f06d52c953d2880"
     },
     {
       "id": "storage",

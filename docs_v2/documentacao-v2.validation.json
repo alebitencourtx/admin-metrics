@@ -9,23 +9,24 @@
   "referenceBlocks": 1,
   "diagrams": 4,
   "charts": 1,
-  "bytes": 258880,
+  "bytes": 263869,
   "browserReviewed": false,
   "warnings": [],
-  "version": "1.7.0",
-  "skillVersion": "1.7.0",
-  "builtAt": "2026-11-15T06:49:20.804Z",
-  "manifestSha256": "c48ea8feeb77deb5948a51701c290c1c2a1834050e7245f8184d95ac9febc6f1",
-  "document": "Admin Metrics · Manual completo v3",
-  "revision": "b25eaf24fc81473e34326ea48ab9e5de3959d40c",
-  "inputSha256": "0adebf97ac939d057507622e7d18dfea77703a22c0b6cf3195b547886a8c5454",
-  "htmlSha256": "7cc56394e85806e16cb0032c99b66fe1d019eb57e978191be89c383864703585",
+  "version": "1.8.0",
+  "skillVersion": "1.8.0",
+  "rendererSha256": "2b0421509bfb495d5db45a9e09d166972bdd2952581060e6efb0349c59646dd2",
+  "builtAt": "2026-11-15T15:18:11.538Z",
+  "manifestSha256": "09c524850dbd15cafc10621a01070d4af1d2eab608ae432789230c815b363cc4",
+  "document": "Admin Metrics · Manual completo v2",
+  "revision": "a0dd7f522dbde4588070bb38ad240501a7d044c9",
+  "inputSha256": "55db2d129106bab876ec6c9096d9c5e88caed72f649d25e9826a9a9fd3507664",
+  "htmlSha256": "613b39fe7f2f83db3eb14bcd02eb1ae2df4841ebec9ace79b91fcc745099fb70",
   "sources": [
     {
       "id": "readme",
       "path": "README.md",
       "description": "Visão geral, escopo, operação e limitações declaradas pelo projeto.",
-      "sha256": "2c4c9ec87e90fe9ced8f10c345d86e93415589b4f1ddbcef655ee019b098a43d"
+      "sha256": "333750893ca82b286c9efdd2e6fe37831a140aa17ab14d81be6d889d5f8165d4"
     },
     {
       "id": "pyproject",
@@ -103,7 +104,7 @@
       "id": "build",
       "path": "src/admin_metrics/build.py",
       "description": "Arrow, DuckDB, Parquet, HTML, assets e publicação dos manuais.",
-      "sha256": "84eea381faa685c335bee8d2d4af015cd15f5c397bf16b54e555036ec667928b"
+      "sha256": "af8a99438d05fa7d02e0f42dc8cbbe76021a3082a3eaf39d2f06d52c953d2880"
     },
     {
       "id": "marts",
@@ -133,7 +134,7 @@
       "id": "web-index",
       "path": "src/admin_metrics/web/index.html",
       "description": "Estrutura e conteúdo estático do dashboard.",
-      "sha256": "2204fd262feb5ad6c5b50a77560094228e87bc968dbabe229062849548baa95e"
+      "sha256": "c749555dd9a7c3b616d65b2918be9d1f35997eadf7eb35fd43027fe1376518eb"
     },
     {
       "id": "web-app",
