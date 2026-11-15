@@ -239,7 +239,6 @@ O workflow principal roda em `ubuntu-latest`, com concorrência única `admin-st
   "edges": [
     { "from": "trigger", "to": "has_state", "fromSide": "right", "toSide": "left" },
     { "from": "has_state", "to": "restore", "branch": "yes", "label": "Sim" },
-    { "from": "has_state", "to": "collect", "fromSide": "bottom", "toSide": "top", "branch": "no", "label": "Não · bootstrap" },
     { "from": "restore", "to": "collect", "label": "refresh" },
     { "from": "collect", "to": "apply", "fromSide": "bottom", "toSide": "top" },
     { "from": "apply", "to": "build", "fromSide": "left", "toSide": "right" },
@@ -647,7 +646,7 @@ O estado é um JSON versionado com quatro coleções principais: `runs`, `observ
     { "from": "observations", "to": "trends", "kind": "lineage", "label": "SUM por run + reporter" },
     { "from": "latest_rows", "to": "report_summary", "kind": "lineage", "label": "fresh + source_complete" },
     { "from": "latest_rows", "to": "family_summary", "kind": "lineage", "label": "fresh + source_complete" },
-    { "from": "observations", "to": "reported_history", "kind": "lineage", "label": "previousDays do último contexto" }
+    { "from": "observations", "to": "reported_history", "kind": "lineage", "channel": "bottom", "label": "previousDays do último contexto" }
   ],
   "note": "Marts usam apenas linhas frescas e completas do ciclo atual; o contexto antigo permanece disponível para continuidade, mas não entra nos KPIs correntes. A média dos marts é ponderada por chamadas e não é p95."
 }
