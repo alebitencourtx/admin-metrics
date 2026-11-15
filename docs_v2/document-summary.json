@@ -1,19 +1,19 @@
 {
-  "title": "Admin Metrics · Guia rápido v3",
+  "title": "Admin Metrics · Guia rápido v2",
   "subtitle": "Visão resumida do monitor dos oito reportes Admin Santander: uso do painel, regras, operação e limites.",
-  "eyebrow": "GUIA RÁPIDO · VISÃO RESUMIDA V3",
-  "version": "3.0",
+  "eyebrow": "GUIA RÁPIDO · VISÃO RESUMIDA V2",
+  "version": "2.0",
   "updated": "2026-11-15",
   "language": "pt-BR",
   "theme": "default",
   "mode": "summary",
   "companionDoc": {
-    "href": "documentacao-v3.html",
-    "label": "Manual completo v3"
+    "href": "documentacao-v2.html",
+    "label": "Manual completo v2"
   },
   "content": "content-summary.md",
   "repoRoot": "..",
-  "revision": "b25eaf24fc81473e34326ea48ab9e5de3959d40c",
+  "revision": "29e19f197093e730c038e7e41a787ca0b24fb7a1",
   "dataAsOf": "snapshot local de implementação de 2026-11-10T18:37:28Z; revisão documental de 2026-11-15",
   "cards": [
     {

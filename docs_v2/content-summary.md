@@ -238,4 +238,4 @@ LIMIT 25;
 
 > Limitação: o monitor é single node, sem HA, autenticação corporativa, RBAC, SLA, alerta externo ou operação 24×7. Não é laudo de conformidade regulatória.
 
-Referências: [Admin 2.0.1](https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml), [Diretório oficial](https://data.directory.openbankingbrasil.org.br/participants), [dashboard](https://alebitencourtx.github.io/admin-metrics/), [repositório](https://github.com/alebitencourtx/admin-metrics) e [workflow](https://github.com/alebitencourtx/admin-metrics/actions/workflows/pages.yml). Para o detalhamento completo, abra o **Manual completo v3** no topo da página.
+Referências: [Admin 2.0.1](https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml), [Diretório oficial](https://data.directory.openbankingbrasil.org.br/participants), [dashboard](https://alebitencourtx.github.io/admin-metrics/), [repositório](https://github.com/alebitencourtx/admin-metrics) e [workflow](https://github.com/alebitencourtx/admin-metrics/actions/workflows/pages.yml). Para o detalhamento completo, abra o **Manual completo v2** no topo da página.

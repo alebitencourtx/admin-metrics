@@ -4,8 +4,8 @@ Observatório executivo dos oito reportes Admin Santander, com atualização rem
 
 - **[Dashboard](https://alebitencourtx.github.io/admin-metrics/)** — HTML na raiz, sem redirect de release.
 - **[Documentação funcional e técnica](https://alebitencourtx.github.io/admin-metrics/documentacao.html)** — um único HTML autocontido, com desenhos de solução, fluxo e entidades, contratos, regras, código e manual do dashboard.
-- **[Documentação v3 · manual completo](https://alebitencourtx.github.io/admin-metrics/docs_v3/documentacao-v3.html)** — revisão de 15/11/2026 com arquitetura, fluxo, regras, modelo de dados, consultas, operação e recuperação.
-- **[Documentação v3 · guia resumido](https://alebitencourtx.github.io/admin-metrics/docs_v3/documentacao-v3-resumida.html)** — leitura executiva de 7 minutos com os mesmos fatos e limites.
+- **[Documentação v2 · manual completo](https://alebitencourtx.github.io/admin-metrics/docs_v2/documentacao-v2.html)** — revisão de 15/11/2026 com arquitetura, fluxo, regras, modelo de dados, consultas, operação e recuperação.
+- **[Documentação v2 · guia resumido](https://alebitencourtx.github.io/admin-metrics/docs_v2/documentacao-v2-resumida.html)** — leitura executiva de 7 minutos com os mesmos fatos e limites.
 - **[Executar ou consultar o ETL](https://github.com/alebitencourtx/admin-metrics/actions/workflows/pages.yml)**.
 - [Plano anterior à implementação](PLAN.md).
 
