@@ -116,11 +116,17 @@ def build(state, root, output, rules, reporters):
         atomic(output / 'dashboard.json', raw)
         atomic(output / '.nojekyll', b'')
         atomic(output / 'index.html', html.encode())
-        # The v2 manual is maintained outside the generated app manual. Publish it
-        # alongside the dashboard without coupling its build to the runtime site.
+        # The v2 and v3 manuals are maintained outside the generated app manual.
+        # Publish them alongside the dashboard without coupling their build to
+        # the runtime site.
         docs_v2 = HERE.parents[1] / 'docs_v2' / 'documentacao-v2.html'
         if docs_v2.is_file():
             atomic(output / 'docs_v2' / 'documentacao-v2.html', docs_v2.read_bytes())
+        docs_v3 = HERE.parents[1] / 'docs_v3'
+        for name in ('documentacao-v3.html', 'documentacao-v3-resumida.html'):
+            manual = docs_v3 / name
+            if manual.is_file():
+                atomic(output / 'docs_v3' / name, manual.read_bytes())
         # Assets are content-addressed; old builds are no longer referenced by
         # the entry page and can be removed locally without touching the current.
         assets_root = output / 'assets'

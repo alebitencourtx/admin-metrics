@@ -1,0 +1,175 @@
+{
+  "title": "Admin Metrics · Guia rápido v3",
+  "subtitle": "Visão resumida do monitor dos oito reportes Admin Santander: uso do painel, regras, operação e limites.",
+  "eyebrow": "GUIA RÁPIDO · VISÃO RESUMIDA V3",
+  "version": "3.0",
+  "updated": "2026-11-15",
+  "language": "pt-BR",
+  "theme": "default",
+  "mode": "summary",
+  "companionDoc": {
+    "href": "documentacao-v3.html",
+    "label": "Manual completo v3"
+  },
+  "content": "content-summary.md",
+  "repoRoot": "..",
+  "revision": "62994d407369bbddc0826b5a6f324d46b4bd43ba",
+  "dataAsOf": "snapshot local de implementação de 2026-11-10T18:37:28Z; revisão documental de 2026-11-15",
+  "cards": [
+    {
+      "label": "Origens",
+      "value": "8 reportes",
+      "description": "GET /open-banking/admin/v2/metrics em oito hosts Santander; catálogo fechado e nenhuma chamada aos endpoints de clientes."
+    },
+    {
+      "label": "Cadência / Janela",
+      "value": "1 hora",
+      "description": "Cron 17 * * * * UTC; painel e séries com 72 h; estado normalizado por 30 dias e bronze dos dois ciclos recentes."
+    },
+    {
+      "label": "Entrega / Grão",
+      "value": "276 identidades",
+      "description": "Dashboard, manual, JSON e Parquet; 1 linha de observação = execução × reporte × endpoint. Snapshot local de 2026-11-10."
+    },
+    {
+      "label": "Escopo / Limites",
+      "value": "Somente Admin",
+      "description": "Média declarada não é p95; erro e rejeição não identificam causa; ausência não vira zero; agenda GitHub é best effort."
+    }
+  ],
+  "sections": [
+    {
+      "id": "visao",
+      "title": "O que é e para que serve",
+      "audience": "all",
+      "sources": ["readme", "reporters-config", "catalog-evidence"]
+    },
+    {
+      "id": "painel",
+      "title": "Como usar o painel",
+      "audience": "business",
+      "sources": ["web-index", "web-app", "panorama"]
+    },
+    {
+      "id": "formacao",
+      "title": "Como os dados são formados",
+      "audience": "technical",
+      "sources": ["pipeline", "collect", "analysis", "build", "storage"]
+    },
+    {
+      "id": "regras",
+      "title": "Regras, sinais e qualidade",
+      "audience": "business",
+      "sources": ["analysis", "rules-config", "marts", "test-analysis"]
+    },
+    {
+      "id": "operacao",
+      "title": "Operação e continuidade",
+      "audience": "operations",
+      "sources": ["cli", "pipeline", "cloud", "pages-workflow", "archive"]
+    },
+    {
+      "id": "limites",
+      "title": "Limites e referências",
+      "audience": "all",
+      "sources": ["readme", "collect", "contracts", "analysis"]
+    }
+  ],
+  "sources": [
+    {
+      "id": "readme",
+      "path": "README.md",
+      "description": "Visão geral, escopo, operação e limitações declaradas pelo projeto."
+    },
+    {
+      "id": "reporters-config",
+      "path": "config/reporters.json",
+      "description": "Catálogo fechado dos oito reportes, empresas, CNPJs e URLs Admin."
+    },
+    {
+      "id": "catalog-evidence",
+      "path": "config/catalog-evidence.json",
+      "description": "Comprovante da conferência de URL/CNPJ no Diretório oficial."
+    },
+    {
+      "id": "web-index",
+      "path": "src/admin_metrics/web/index.html",
+      "description": "Estrutura e conteúdo estático do dashboard."
+    },
+    {
+      "id": "web-app",
+      "path": "src/admin_metrics/web/app.js",
+      "description": "Filtros, gráficos, detalhes, monitor e exportação do dashboard."
+    },
+    {
+      "id": "panorama",
+      "path": "src/admin_metrics/panorama.py",
+      "description": "Seleção de um ciclo completo e um dia coerente por recorte."
+    },
+    {
+      "id": "pipeline",
+      "path": "src/admin_metrics/pipeline.py",
+      "description": "Orquestração de coleta, aplicação, build, estado e retenção local."
+    },
+    {
+      "id": "collect",
+      "path": "src/admin_metrics/collect.py",
+      "description": "Coleta HTTPX, validação de catálogo, retry, paginação e bronze."
+    },
+    {
+      "id": "analysis",
+      "path": "src/admin_metrics/analysis.py",
+      "description": "Normalização, nulos, flags, deltas, baseline e incidentes."
+    },
+    {
+      "id": "build",
+      "path": "src/admin_metrics/build.py",
+      "description": "Arrow, DuckDB, Parquet, HTML e assets do site."
+    },
+    {
+      "id": "storage",
+      "path": "src/admin_metrics/storage.py",
+      "description": "Hash, escrita atômica, lock e carregamento do estado."
+    },
+    {
+      "id": "rules-config",
+      "path": "config/rules.json",
+      "description": "Limiares analíticos, janelas e cron."
+    },
+    {
+      "id": "marts",
+      "path": "src/admin_metrics/marts.sql",
+      "description": "SQL dos marts report_summary, family_summary e observation_trends."
+    },
+    {
+      "id": "test-analysis",
+      "path": "tests/test_analysis.py",
+      "description": "Cenários de nulos, deltas, baseline, incidentes e retenção."
+    },
+    {
+      "id": "cli",
+      "path": "src/admin_metrics/cli.py",
+      "description": "Comandos collect/build e parâmetros de diretório."
+    },
+    {
+      "id": "cloud",
+      "path": "scripts/cloud_pipeline.py",
+      "description": "Restore, candidato draft, promoção e retenção de Releases."
+    },
+    {
+      "id": "pages-workflow",
+      "path": ".github/workflows/pages.yml",
+      "description": "Workflow de testes, coleta, Pages, deploy e confirmação."
+    },
+    {
+      "id": "archive",
+      "path": "src/admin_metrics/archive.py",
+      "description": "Pacote limitado, checksums e restore com rollback."
+    },
+    {
+      "id": "contracts",
+      "path": "src/admin_metrics/contracts.py",
+      "description": "Validação segura das URIs declaradas."
+    }
+  ]
+}

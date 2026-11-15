@@ -1,0 +1,139 @@
+{
+  "passed": true,
+  "errors": [],
+  "mode": "summary",
+  "wordCount": 1420,
+  "readingMinutes": 7,
+  "sections": 6,
+  "contentSections": 6,
+  "referenceBlocks": 1,
+  "diagrams": 2,
+  "charts": 0,
+  "bytes": 106638,
+  "browserReviewed": false,
+  "warnings": [],
+  "version": "1.6.0",
+  "skillVersion": "1.6.0",
+  "builtAt": "2026-11-15T06:37:33.158Z",
+  "manifestSha256": "ce4fc2d19fdaa2f12a73f1574ee03d9db6395fbd15b479ee9aeb722cdc3cc983",
+  "document": "Admin Metrics · Guia rápido v3",
+  "revision": "62994d407369bbddc0826b5a6f324d46b4bd43ba",
+  "inputSha256": "3b4cd13ae90a3d7831f64524845221875526180960632a23add89d93e3b0f1ee",
+  "htmlSha256": "f6320fb3d220a8c425d41c77228345ed526e331c54052ae8695b0e7ea06a44c4",
+  "sources": [
+    {
+      "id": "readme",
+      "path": "README.md",
+      "description": "Visão geral, escopo, operação e limitações declaradas pelo projeto.",
+      "sha256": "2c4c9ec87e90fe9ced8f10c345d86e93415589b4f1ddbcef655ee019b098a43d"
+    },
+    {
+      "id": "reporters-config",
+      "path": "config/reporters.json",
+      "description": "Catálogo fechado dos oito reportes, empresas, CNPJs e URLs Admin.",
+      "sha256": "1812fc8bcee6c0aeaf3ba5bbb9407c25e166ef25adccc32486b37f7025227c3c"
+    },
+    {
+      "id": "catalog-evidence",
+      "path": "config/catalog-evidence.json",
+      "description": "Comprovante da conferência de URL/CNPJ no Diretório oficial.",
+      "sha256": "debb8f34c9ab9105842e92ae6e3246c64ff605216108e9687638c188c36b6575"
+    },
+    {
+      "id": "web-index",
+      "path": "src/admin_metrics/web/index.html",
+      "description": "Estrutura e conteúdo estático do dashboard.",
+      "sha256": "2204fd262feb5ad6c5b50a77560094228e87bc968dbabe229062849548baa95e"
+    },
+    {
+      "id": "web-app",
+      "path": "src/admin_metrics/web/app.js",
+      "description": "Filtros, gráficos, detalhes, monitor e exportação do dashboard.",
+      "sha256": "8e3d54a143b775e732bfacc4a093e253672aebf65a11aacf369dca490013a85f"
+    },
+    {
+      "id": "panorama",
+      "path": "src/admin_metrics/panorama.py",
+      "description": "Seleção de um ciclo completo e um dia coerente por recorte.",
+      "sha256": "9fdc2a0d193db2fbddd77267aad61711b490437465a4bacf3231d03109a3aa64"
+    },
+    {
+      "id": "pipeline",
+      "path": "src/admin_metrics/pipeline.py",
+      "description": "Orquestração de coleta, aplicação, build, estado e retenção local.",
+      "sha256": "3f3192d3bc6764508106940af83885a456c41d2d5f4529f14c3acd4417ee1170"
+    },
+    {
+      "id": "collect",
+      "path": "src/admin_metrics/collect.py",
+      "description": "Coleta HTTPX, validação de catálogo, retry, paginação e bronze.",
+      "sha256": "4e69e742cc549f5fdb28b5e8acaac5dbf7bb76c6f142fa70c4b981a71741ad43"
+    },
+    {
+      "id": "analysis",
+      "path": "src/admin_metrics/analysis.py",
+      "description": "Normalização, nulos, flags, deltas, baseline e incidentes.",
+      "sha256": "a39cfca1e643acb4c258b53aa195a0078414bddf9112b945b23d8c23463bd49b"
+    },
+    {
+      "id": "build",
+      "path": "src/admin_metrics/build.py",
+      "description": "Arrow, DuckDB, Parquet, HTML e assets do site.",
+      "sha256": "84eea381faa685c335bee8d2d4af015cd15f5c397bf16b54e555036ec667928b"
+    },
+    {
+      "id": "storage",
+      "path": "src/admin_metrics/storage.py",
+      "description": "Hash, escrita atômica, lock e carregamento do estado.",
+      "sha256": "cdd74acf89bf4388874cdf9f5671475e0720b5ceef9c6a2716ec913b1cf675e6"
+    },
+    {
+      "id": "rules-config",
+      "path": "config/rules.json",
+      "description": "Limiares analíticos, janelas e cron.",
+      "sha256": "f30426148970d30490ce10cc5373a597f128767d0ca07f36c7eef2d18cea3197"
+    },
+    {
+      "id": "marts",
+      "path": "src/admin_metrics/marts.sql",
+      "description": "SQL dos marts report_summary, family_summary e observation_trends.",
+      "sha256": "1d06a47cf66d077c3496fa2d608b5aa7c06276273ec05caf716d52f14fef47be"
+    },
+    {
+      "id": "test-analysis",
+      "path": "tests/test_analysis.py",
+      "description": "Cenários de nulos, deltas, baseline, incidentes e retenção.",
+      "sha256": "492fcafc87cd8ac5d4ae0d2347bca0901544d36e955314c0d828add1af21cdb8"
+    },
+    {
+      "id": "cli",
+      "path": "src/admin_metrics/cli.py",
+      "description": "Comandos collect/build e parâmetros de diretório.",
+      "sha256": "d73a75eee9d6f1b7fa28a695e15cf7343b641bacad092bb7bef97343e2173415"
+    },
+    {
+      "id": "cloud",
+      "path": "scripts/cloud_pipeline.py",
+      "description": "Restore, candidato draft, promoção e retenção de Releases.",
+      "sha256": "a4c2c437e7be5a8ca0c72e369b9a78f32c23faaabfdbce13899704cd1f0f02d8"
+    },
+    {
+      "id": "pages-workflow",
+      "path": ".github/workflows/pages.yml",
+      "description": "Workflow de testes, coleta, Pages, deploy e confirmação.",
+      "sha256": "0945020fb6f5c9791b96ab5241f1c227b7ca958d46fc48ff3f904ed6c3ae8745"
+    },
+    {
+      "id": "archive",
+      "path": "src/admin_metrics/archive.py",
+      "description": "Pacote limitado, checksums e restore com rollback.",
+      "sha256": "3b0674ef313d98abf878ea934fffdccd3ccdaa1e8a6ebe5eaef8bf04545c48fa"
+    },
+    {
+      "id": "contracts",
+      "path": "src/admin_metrics/contracts.py",
+      "description": "Validação segura das URIs declaradas.",
+      "sha256": "96581530579f43c58a14544a15b8809106bbcbc79de26f26186ac782cc5626f5"
+    }
+  ]
+}

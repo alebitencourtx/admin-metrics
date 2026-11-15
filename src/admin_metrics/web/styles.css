@@ -38,7 +38,7 @@ nav{display:grid;gap:5px}
 .sidebar-bottom{margin-top:auto;padding:20px 10px 0}
 .source-label{font-size:11px;letter-spacing:1px;color:#91cdbc}
 .sidebar-bottom p{font-size:13px;line-height:1.9;color:#b4c6d3;margin:12px 0}
-.sidebar-bottom>a{display:block;font-size:13px;color:#adbfca;padding:8px 0}
+.sidebar-bottom>a{display:block;font-size:12px;color:#adbfca;padding:5px 0;line-height:1.6}
 .sidebar-foot{display:flex;justify-content:space-between;border-top:1px solid #ffffff15;color:#8da2af;padding-top:18px;margin-top:20px;font-size:11px;letter-spacing:1.4px}
 .shell{margin-left:250px}
 .topbar{height:70px;background:white;border-bottom:1px solid var(--line);padding:0 36px;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--muted)}
@@ -157,7 +157,7 @@ dialog h3{margin:24px 0 15px}
 @media(min-width:1600px){main{padding-inline:45px}
 .metric-number{font-size:36px}
 }
-@media(max-height:850px) and (min-width:901px){.sidebar{padding-top:20px;padding-bottom:18px}
+@media(max-height:1000px) and (min-width:901px){.sidebar{padding-top:20px;padding-bottom:18px;overflow-y:auto}
 .workspace{margin-top:20px}
 .nav-label{margin-top:22px}
 .nav-item{padding-block:10px}
