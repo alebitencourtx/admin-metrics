@@ -24,7 +24,7 @@ O produto responde a três perguntas: **o que exige atenção agora**, **qual é
 
 > Exemplo prático: em uma execução em que seis fontes retornam dados válidos e duas retornam HTTP 200 vazio, a saúde da coleta fica `partial`. O panorama executivo pode continuar no último ciclo completo, com dia explícito, enquanto os cartões de cada fonte mostram a tentativa recente e a idade do último dado válido.
 
-A revisão documental é de **2026-11-15** e descreve o código na revisão `62994d4` (versão **1.2.0**, modelo de captura **3**, envelope de estado **1**). Consulte o [escopo e estado atual](#escopo), a [arquitetura](#arquitetura), as [regras](#regras) e as [limitações](#limites) antes de usar os números como conclusão operacional.
+A revisão documental é de **2026-11-15** e descreve o projeto a partir da revisão `62994d4` (versão **1.2.0**, modelo de captura **3**, envelope de estado **1**), incluindo a publicação dos manuais v3 e os novos links da home. Consulte o [escopo e estado atual](#escopo), a [arquitetura](#arquitetura), as [regras](#regras) e as [limitações](#limites) antes de usar os números como conclusão operacional.
 
 ## Escopo e estado atual
 

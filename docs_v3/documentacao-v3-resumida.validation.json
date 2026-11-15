@@ -14,12 +14,12 @@
   "warnings": [],
   "version": "1.6.0",
   "skillVersion": "1.6.0",
-  "builtAt": "2026-11-15T06:37:33.158Z",
-  "manifestSha256": "ce4fc2d19fdaa2f12a73f1574ee03d9db6395fbd15b479ee9aeb722cdc3cc983",
+  "builtAt": "2026-11-15T06:43:34.235Z",
+  "manifestSha256": "2e7fca383170f05b49f5870614e309af622a67ee690528a1472b7b1857747cc4",
   "document": "Admin Metrics · Guia rápido v3",
-  "revision": "62994d407369bbddc0826b5a6f324d46b4bd43ba",
+  "revision": "b25eaf24fc81473e34326ea48ab9e5de3959d40c",
   "inputSha256": "3b4cd13ae90a3d7831f64524845221875526180960632a23add89d93e3b0f1ee",
-  "htmlSha256": "f6320fb3d220a8c425d41c77228345ed526e331c54052ae8695b0e7ea06a44c4",
+  "htmlSha256": "3261fbc6101ae46d2b038181e4d1db0b9af75195812b0d267a8866f83bef1409",
   "sources": [
     {
       "id": "readme",
