@@ -1,0 +1,165 @@
+{
+  "passed": true,
+  "errors": [],
+  "sections": 13,
+  "contentSections": 13,
+  "referenceBlocks": 1,
+  "diagrams": 5,
+  "charts": 3,
+  "bytes": 222894,
+  "browserReviewed": false,
+  "version": "1.3.0",
+  "skillVersion": "1.3.0",
+  "builtAt": "2026-11-15T05:12:03.835Z",
+  "manifestSha256": "9acd78d7da6632049aa9771290157ee855fb19152b061f6dc2b0ac2f1690e9df",
+  "document": "Admin Metrics · Observatório Santander",
+  "revision": "042610172aafa30179b19a74a7df5b2e14259043",
+  "inputSha256": "47deb6e4447250df207cefa352d69923ea8c3e23cb2af78369127fa9ce5c7527",
+  "htmlSha256": "835c55fdb7de531015702b5314d75b365067e91c817acbb1aa0ec8e0a7826749",
+  "sources": [
+    {
+      "id": "readme",
+      "path": "README.md",
+      "description": "Visão de produto, escopo, engenharia, operação e limitações declaradas.",
+      "sha256": "fb131fc595c41f0ba6bad67ccc2de203acc982ab0637f97d1f202f13cafb1fb3"
+    },
+    {
+      "id": "collect",
+      "path": "src/admin_metrics/collect.py",
+      "description": "Catálogo, TLS, timeout, retries, paginação, deduplicação e repetição de vazio.",
+      "sha256": "4e69e742cc549f5fdb28b5e8acaac5dbf7bb76c6f142fa70c4b981a71741ad43"
+    },
+    {
+      "id": "analysis",
+      "path": "src/admin_metrics/analysis.py",
+      "description": "Normalização, taxas, flags, deltas, fingerprints, incidentes e retenção.",
+      "sha256": "a39cfca1e643acb4c258b53aa195a0078414bddf9112b945b23d8c23463bd49b"
+    },
+    {
+      "id": "pipeline",
+      "path": "src/admin_metrics/pipeline.py",
+      "description": "Orquestração local: coleta, aplicação, build e commit do estado.",
+      "sha256": "3f3192d3bc6764508106940af83885a456c41d2d5f4529f14c3acd4417ee1170"
+    },
+    {
+      "id": "build",
+      "path": "src/admin_metrics/build.py",
+      "description": "Arrow, DuckDB, Parquet, payload, assets, Pages e limites de publicação.",
+      "sha256": "1d4be079abbba5babe99d844c7e56bb94d291589a8c1c8b53088559c819bea5b"
+    },
+    {
+      "id": "marts",
+      "path": "src/admin_metrics/marts.sql",
+      "description": "Definições SQL de report_summary, family_summary e observation_trends.",
+      "sha256": "1d06a47cf66d077c3496fa2d608b5aa7c06276273ec05caf716d52f14fef47be"
+    },
+    {
+      "id": "rules",
+      "path": "config/rules.json",
+      "description": "Limiares, amostras, retenção, janela, agenda e parâmetros versionados.",
+      "sha256": "f30426148970d30490ce10cc5373a597f128767d0ca07f36c7eef2d18cea3197"
+    },
+    {
+      "id": "reporters",
+      "path": "config/reporters.json",
+      "description": "Catálogo dos oito reportes, identidades, CNPJs e hosts Admin.",
+      "sha256": "1812fc8bcee6c0aeaf3ba5bbb9407c25e166ef25adccc32486b37f7025227c3c"
+    },
+    {
+      "id": "catalog",
+      "path": "config/catalog-evidence.json",
+      "description": "Evidência de verificação de URL/CNPJ no Diretório oficial.",
+      "sha256": "debb8f34c9ab9105842e92ae6e3246c64ff605216108e9687638c188c36b6575"
+    },
+    {
+      "id": "panorama",
+      "path": "src/admin_metrics/panorama.py",
+      "description": "Seleção do último ciclo completo e de um único dia por recorte.",
+      "sha256": "9fdc2a0d193db2fbddd77267aad61711b490437465a4bacf3231d03109a3aa64"
+    },
+    {
+      "id": "health",
+      "path": "src/admin_metrics/health.py",
+      "description": "Resultado da coleta e saúde agregada independentes da publicação.",
+      "sha256": "297b65a28ac9d308ccd5f406ddfa876de19a26f5c5f788e6effe58135a0493aa"
+    },
+    {
+      "id": "storage",
+      "path": "src/admin_metrics/storage.py",
+      "description": "Hash, escrita atômica, lock exclusivo e envelope de estado.",
+      "sha256": "cdd74acf89bf4388874cdf9f5671475e0720b5ceef9c6a2716ec913b1cf675e6"
+    },
+    {
+      "id": "archive",
+      "path": "src/admin_metrics/archive.py",
+      "description": "Pacote limitado, manifesto, checksums e restore com rollback.",
+      "sha256": "3b0674ef313d98abf878ea934fffdccd3ccdaa1e8a6ebe5eaef8bf04545c48fa"
+    },
+    {
+      "id": "cloud",
+      "path": "scripts/cloud_pipeline.py",
+      "description": "Restore, candidato draft, promoção após deploy e retenção de duas Releases.",
+      "sha256": "a4c2c437e7be5a8ca0c72e369b9a78f32c23faaabfdbce13899704cd1f0f02d8"
+    },
+    {
+      "id": "pages-workflow",
+      "path": ".github/workflows/pages.yml",
+      "description": "Agenda, jobs build/deploy/confirm, permissões e publicação do Pages.",
+      "sha256": "0945020fb6f5c9791b96ab5241f1c227b7ca958d46fc48ff3f904ed6c3ae8745"
+    },
+    {
+      "id": "ci-workflow",
+      "path": ".github/workflows/ci.yml",
+      "description": "Matriz de testes Windows/Linux e verificações de Python e Node.",
+      "sha256": "c74f0035b41b2acdbaa3b2ea6ee8fb2795ae0256dc3c17c59970acf56fb362cd"
+    },
+    {
+      "id": "dashboard-html",
+      "path": "src/admin_metrics/web/index.html",
+      "description": "Estrutura da home, seções, controles, CSP e links de documentação.",
+      "sha256": "6f590c0a6004e82c8e1e9c9c89ac073c1a8073831a55a2a850dc785ad5aede15"
+    },
+    {
+      "id": "dashboard-js",
+      "path": "src/admin_metrics/web/app.js",
+      "description": "Renderização, filtros, gráficos, detalhes, monitor, CSV e deep links.",
+      "sha256": "8e3d54a143b775e732bfacc4a093e253672aebf65a11aacf369dca490013a85f"
+    },
+    {
+      "id": "pyproject",
+      "path": "pyproject.toml",
+      "description": "Versão do pacote, dependências, entrypoint e configuração de testes.",
+      "sha256": "b0f7960c14d43218b05923bd97694785be3dd42ce0d26068034a958c6f85e6f5"
+    },
+    {
+      "id": "tests-analysis",
+      "path": "tests/test_analysis.py",
+      "description": "Casos de taxas, deltas, qualidade, incidentes, recuperação e retenção.",
+      "sha256": "492fcafc87cd8ac5d4ae0d2347bca0901544d36e955314c0d828add1af21cdb8"
+    },
+    {
+      "id": "tests-collect",
+      "path": "tests/test_collect.py",
+      "description": "Casos de paginação, conflitos, retry, vazio, limites e dia por página.",
+      "sha256": "de8ce6015ccb7b8d363f719c6dbbd8f965b7f250dbe99356eca97989c648c057"
+    },
+    {
+      "id": "tests-pipeline",
+      "path": "tests/test_pipeline.py",
+      "description": "Casos ponta a ponta de marts, archive, restore, retenção e falha preservada.",
+      "sha256": "8222681d619bcd55767d5f9f571fbe31725090d9a7a2236e3619210c6de8088e"
+    },
+    {
+      "id": "tests-panorama",
+      "path": "tests/test_panorama.py",
+      "description": "Casos de panorama preservado, falha parcial, dia misto e recuperação.",
+      "sha256": "e89d574087c973422f6666bc1fbddfa8b32707cbddb1d8590ea0f13919bc6d71"
+    },
+    {
+      "id": "tests-cloud",
+      "path": "tests/test_cloud.py",
+      "description": "Casos de promoção, recibos de deploy, Releases e resumo de saúde.",
+      "sha256": "2e9e5f4823acbd7e9867807b3da632ec41bf548f03b0fa348f13b30854e6412c"
+    }
+  ]
+}
