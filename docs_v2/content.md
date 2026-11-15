@@ -1,213 +1,200 @@
-## Resumo executivo
+## Resumo executivo e escopo
 
-O **Admin Metrics** é um observatório executivo dos oito reportes Admin do Santander no Open Finance. A cada hora, ele consulta somente o endpoint público `GET /open-banking/admin/v2/metrics` de cada reporte, preserva a resposta original, normaliza as métricas declaradas, calcula taxas e incidentes com regras versionadas e publica um dashboard estático e um conjunto de artefatos analíticos.
+O **Admin Metrics · Observatório Santander** transforma os relatórios públicos do Admin do Open Finance em um painel operacional auditável. A cada hora, o projeto consulta os oito hosts Santander catalogados, preserva o corpo bruto de cada resposta, normaliza as métricas declaradas, calcula sinais de atenção e publica um dashboard estático, um JSON de consumo e um manual offline.
 
-O produto atende três leituras do mesmo fato: **negócio** (onde investigar e o que o número significa), **técnica** (como o dado foi capturado, transformado e modelado) e **operação** (como executar, publicar e recuperar). O documento descreve o estado implementado no repositório, não uma promessa de roadmap.
-
-<div class="cards">
-<div class="card"><h3>Para quem decide</h3><p>Panorama executivo, ranking de erros, incidentes explicáveis e leitura de cobertura para priorizar investigação sem confundir ausência de dado com zero.</p></div>
-<div class="card"><h3>Para quem analisa</h3><p>Dashboard filtrável, detalhe por endpoint, série de 72 horas, histórico declarado pelo banco, exportação CSV e receitas SQL sobre Parquet.</p></div>
-<div class="card"><h3>Para quem opera</h3><p>Coleta horária no GitHub Actions, estado com lock de escritor, pacotes de recuperação com checksum, retenção de 30 dias e runbook de restauração.</p></div>
-</div>
-
-- **Origens:** oito hosts oficiais em `config/reporters.json`; nenhum endpoint de cliente ou pagamento é chamado.
-- **Cadência:** cron `17 * * * *` UTC; o dashboard publica os últimos 3 dias e o estado normalizado retém 30 dias.
-- **Entrega:** dashboard em GitHub Pages, `site/dashboard.json`, cinco arquivos Parquet em `data/gold/` e um manual HTML autocontido.
-- **Limite central:** as métricas são **autodeclaradas** pelo banco. Média declarada não é p95; erro não identifica status HTTP; rejeição não prova causa; o monitor não é laudo de conformidade regulatória.
-
-> Atenção: o snapshot local de implementação disponível em 10/11/2026 contém oito reportes com HTTP 200 e 276 identidades; o reporte Santander principal declarou páginas excedentes mesmo cobrindo o total de registros, e a divergência de aproximadamente três horas em `requestTime` permanece sinalizada. Esse snapshot não é telemetria ao vivo.
-
-A leitura recomendada começa em [escopo funcional e origens](#escopo-funcional), passa por [como usar o dashboard](#dashboard) e [regras de negócio](#regras-negocio), e só então avança para [arquitetura](#arquitetura), [modelo de dados](#modelo-dados) e [operação](#operacao).
-
-## Escopo funcional e origens
-
-O monitor cobre o **Admin API** do Open Finance brasileiro. A coleta é deliberadamente estreita: o catálogo valida esquema, host, porta, caminho e ausência de parâmetros livres antes de qualquer requisição. O único caminho permitido é `/open-banking/admin/v2/metrics` no host `<reporter_id>.api.santander.com.br`.
+O problema que ele resolve é específico: separar **o que o banco declarou** do **o que o observador conseguiu medir**. A duração e o status HTTP da nossa tentativa ao Admin são evidências da coleta; as médias, erros e rejeições dos serviços são valores autodeclarados pelo Santander. O projeto mantém essas duas camadas visíveis e não as mistura.
 
 <div class="cards">
-<div class="card"><h3>Entra</h3><p>Respostas JSON paginadas dos oito reportes Admin, com métricas declaradas por endpoint e o cabeçalho HTTP `Date` de cada página.</p></div>
-<div class="card"><h3>Sai</h3><p>Dashboard, payload JSON, Parquet tipado, estado de 30 dias, incidentes e pacotes ZIP de recuperação aprovados.</p></div>
-<div class="card"><h3>Fica fora</h3><p>Serviços de clientes, pagamentos, consentimentos e qualquer URL descrita dentro do relatório. Também ficam fora autenticação corporativa e julgamento regulatório.</p></div>
+<div class="card"><h3>Pergunta que responde</h3><p>Quais endpoints reportados estão acima dos limiares de erro, rejeição ou latência, em qual fonte e com qual evidência?</p></div>
+<div class="card"><h3>O que entrega</h3><p>Dashboard, payload JSON, Parquet/DuckDB, estado versionado em Release e um manual HTML que funciona sem servidor.</p></div>
+<div class="card"><h3>O que não é</h3><p>Não é laudo de conformidade, medidor de p95, teste sintético dos serviços de clientes ou prova de causa de uma rejeição.</p></div>
 </div>
 
-### Catálogo de reportes
+### Em uma página
 
-| `reporter_id` | Rótulo operacional | Empresa no catálogo | CNPJ | Host Admin |
-|---|---|---|---|---|
-| `ccvm` | Santander CCVM | SANTANDER CCVM S.A. | `51014223000149` | `ccvm.api.santander.com.br` |
-| `financiamentos` | Aymoré | AYMORE CFI S.A. | `07707650000110` | `financiamentos.api.santander.com.br` |
-| `getnet` | Getnet | GETNET ADQUIRENCIA E SERVICOS PARA MEIOS DE PAGAMENTO S A | `10440482000154` | `getnet.api.santander.com.br` |
-| `hyundai` | Hyundai Capital | BANCO HYUNDAI CAPITAL BRASIL | `30172491000119` | `hyundai.api.santander.com.br` |
-| `nissan` | RCI · Nissan | BCO RCI BRASIL S.A. | `62307848000115` | `nissan.api.santander.com.br` |
-| `openbanking` | Santander | BCO SANTANDER (BRASIL) S.A. | `90400888000142` | `openbanking.api.santander.com.br` |
-| `renault` | RCI · Renault | BCO RCI BRASIL S.A. | `62307848000115` | `renault.api.santander.com.br` |
-| `toro` | Toro | Santander CTVM S.A. | `29162769000198` | `toro.api.santander.com.br` |
-
-> Atenção: Nissan e Renault compartilham o mesmo CNPJ, mas permanecem fontes distintas por `reporter_id` e por host. O vínculo de URL e CNPJ foi conferido no Diretório oficial; ele não comprova controle societário nem substitui a identidade operacional do reporte.
-
-### Contrato consumido
-
-| Elemento | Uso no monitor |
+| Dimensão | Implementação atual |
 |---|---|
-| `GET /open-banking/admin/v2/metrics` | Única rota permitida; `https`, host exato, porta 443 ou ausente, sem usuário, query ou fragmento. |
-| `page` | Página solicitada, começando em 1; o monitor limita a 20 páginas por captura. |
-| `page-size=1000` | Tamanho de página fixo na requisição. |
-| `period=ALL` | Período solicitado ao Admin. |
-| `meta.totalRecords` / `meta.totalPages` | Usados para conciliar cobertura; metadados divergentes geram diagnóstico, não correção silenciosa. |
-| `data[].endpoint` | Identidade declarada do serviço; é validada como URI, mas **nunca chamada**. |
-| `data[].requestTime` | Horário declarado pelo banco; preservado e comparado com a aquisição, sem correção automática de fuso. |
-| `invocations`, `errors`, `rejections` | Contadores cumulativos do dia, em `currentDay`, com `previousDays` declarados. |
-| `averageResponse`, `averageTps`, `peakTps` | Médias e picos declarados; a resposta média não é p95. |
-| `availability.uptime` / `availability.downtime` | Uptime, downtime parcial, downtime geral e parada programada declarados. |
+| Origens | Oito hosts `*.api.santander.com.br`, todos no caminho `GET /open-banking/admin/v2/metrics` |
+| Catálogo | `config/reporters.json`, com URL, CNPJ, empresa e rótulo; vínculo conferido no Diretório oficial e registrado em `config/catalog-evidence.json` |
+| Cadência | GitHub Actions em `17 * * * *` UTC, além de push e execução manual |
+| Janela do painel | 72 horas de observações próprias, com eixo fixo mesmo quando há poucas amostras |
+| Histórico durável | 30 dias de ciclos normalizados e incidentes resolvidos; dois ciclos de bronze local |
+| Entrega estática | `site/index.html`, `site/dashboard.json`, `site/documentacao.html` e `site/docs_v2/documentacao-v2.html` |
+| Entrega analítica | `data/gold/*.parquet`, `data/gold/warehouse.duckdb` e o estado `data/state.json` |
+| Durabilidade remota | Releases `state-<run>-<attempt>` com `state.zip`, `manifest.json`, bronzes e `SHA256SUMS`; até dois pacotes aprovados |
+| Consumo | Dashboard no navegador, JSON para integrações e receitas SQL/DuckDB sobre Parquet |
+| Operação | Um único escritor por diretório de dados, lock explícito, restauração apenas em raiz vazia e promoção somente após deploy comprovado |
 
-O catálogo também mantém `config/catalog-evidence.json`, com a data de verificação, o hash do Diretório e os matches de URL/CNPJ. A presença do comprovante não transforma o monitor em auditoria: ele documenta de onde veio a lista de hosts.
+### Quem usa o quê
 
-> Limitação: o monitor não mede a disponibilidade dos serviços de clientes descritos no relatório. Ele mede a resposta do **Admin** e reproduz as médias que o próprio banco declara. Uma falha de acesso ao Admin não prova indisponibilidade dos demais serviços.
-
-## Como usar o dashboard
-
-A home publica dois manuais: `documentacao.html`, gerado pela aplicação, e `docs_v2/documentacao-v2.html`, este manual. Ambos são autocontidos e podem ser abertos sem servidor. O dashboard exige a pasta `site/` completa porque usa `assets/`, `data.js`, `styles.css` e `app.js`.
-
-<div class="cards">
-<div class="card"><h3>Triagem em três passos</h3><p>Leia o aviso de atualização, confira o panorama e abra os incidentes. Só depois desça ao endpoint e ao histórico declarado.</p></div>
-<div class="card"><h3>Um recorte por vez</h3><p>O seletor de reporte é global. Ele muda panorama, incidentes, tendências, endpoints, saúde, monitor e qualidade, sem misturar ciclos.</p></div>
-<div class="card"><h3>Evidência antes da conclusão</h3><p>Clique no endpoint para ver deltas, flags, SHA, caminho JSON e os dias anteriores declarados. Exporte o CSV do recorte filtrado.</p></div>
-</div>
-
-### Seções da home
-
-| Seção | Pergunta que responde | Principais controles |
+| Leitor | Pergunta principal | Entrada recomendada |
 |---|---|---|
-| 01 · Panorama executivo | O que exige atenção agora? | Reporte global, cartões de KPI, ranking de erros, cartões por fonte. |
-| 02 · Incidentes | O que está aberto, em recuperação ou resolvido? | Estado: ativos, todos ou somente críticos. |
-| 03 · Tendências | Como a métrica evoluiu nas nossas observações? | Métrica: erro, média declarada ou chamadas; janela fixa de 72 h. |
-| 04 · Endpoints | Qual serviço reportado concentra o problema? | Busca sem acento, família, ordenação, paginação de 25 linhas. |
-| 05 · Saúde da coleta | O que o observador conseguiu medir? | Última tentativa por fonte, HTTP, cobertura, duração e diagnóstico. |
-| 06 · Monitor de execuções | Como cada API respondeu em cada extração? | Matriz extração × API, 12 execuções por página, detalhe de tentativas. |
-| 07 · Qualidade do reporte | Quais inconsistências mudam a interpretação? | Contagem de flags por endpoint e estados de intervalo. |
-| 08 · Metodologia | Quais critérios e limites estão em vigor? | Resumo das regras configuradas e links para as fontes oficiais. |
+| Gestão e operação | “O que exige atenção agora?” | [Uso do dashboard](#uso) e [Regras de negócio](#regras) |
+| Analista de dados | “Como consultar e comparar os números?” | [Consulta e consumo](#consumo) e [Modelo de dados](#dados) |
+| Engenharia | “Como a coleta e a publicação funcionam?” | [Arquitetura](#arquitetura) e [Fluxo](#fluxo) |
+| Suporte / plantão | “Como recuperar uma execução?” | [Operação](#operacao) e [Qualidade](#qualidade) |
 
-### Fluxo de leitura recomendado
+### Fronteiras explícitas
 
-1. **Confira a idade real do dado.** O aviso separa “última tentativa” de “últimos dados válidos do panorama”. Uma tentativa recente com resposta vazia não renova a idade do dado.
-2. **Leia o contexto do panorama.** `CICLO ATUAL` indica que o panorama usa o último ciclo; `DADOS ANTERIORES` indica preservação explícita de um ciclo completo anterior; `SEM PANORAMA VÁLIDO` indica que não há ciclo completo e com um único dia de referência para o recorte.
-3. **Priorize incidentes confirmados.** O primeiro sinal é provisório. “Persistência confirmada” significa que a sequência atingiu duas detecções; não prova que surgiram novos erros entre as coletas.
-4. **Investigue o endpoint.** O detalhe mostra a comparação com a observação anterior, a série própria de 72 h, os dias D−1 a D−3 declarados pelo banco, a qualidade e a proveniência.
-5. **Exporte somente o necessário.** O CSV contém as linhas visíveis no filtro atual, com 23 colunas e proteção contra fórmulas de planilha.
+- O monitor chama **somente** os oito endpoints Admin do catálogo. As URIs de clientes, pagamentos, contas e consentimentos citadas dentro do relatório são validadas como texto e **nunca** acessadas.
+- A coleta é uma fotografia do acumulado declarado no dia. Ela não mede cada transação, não identifica o status HTTP de cada erro e não transforma rejeição em diagnóstico de causa.
+- A média declarada é uma média, não p95, p99 ou distribuição. O projeto não calcula percentis a partir dela.
+- O dia analítico é uma convenção do observador, derivada do `HTTP Date` da página e convertida para `America/Sao_Paulo`. Ele não prova o fuso de consolidação da origem.
+- Ausência de métrica é tratada como **indisponível**, não como zero. Um zero só aparece quando a origem declarou zero.
 
-### Matriz de interpretação da home
+> Regra de negócio: o painel publica o último ciclo completo e coerente por recorte. Quando a tentativa atual não consegue renovar esse ciclo, os valores anteriores permanecem identificados como **DADOS ANTERIORES** e a saúde da coleta descreve a tentativa real.
 
-| Situação exibida | Condição implementada | Leitura correta |
-|---|---|---|
-| `CICLO ATUAL` | O panorama selecionado é do último run e cobre o recorte com um único dia. | Os KPIs vêm de um ciclo completo atual. |
-| `DADOS ANTERIORES` | O último run não renovou o panorama, mas há um ciclo completo anterior. | Os valores são reais, porém antigos; a saúde da coleta continua sendo a da última tentativa. |
-| `SEM PANORAMA VÁLIDO` | Nenhum ciclo completo atende ao recorte e ao dia comum. | Métricas ausentes permanecem indisponíveis; não são convertidas em zero. |
-| `HTTP 200 sem dados` | Resposta vazia conciliada, sem métricas utilizáveis. | O Admin respondeu; isso não é sucesso de coleta nem renovação de KPI. |
-| `Falha HTTP` | Status diferente de 200 após o retry permitido. | O diagnóstico é da nossa tentativa ao Admin, não dos serviços descritos. |
-| `Reset ou revisão` | O contador cumulativo diminuiu entre observações comparáveis. | O delta do contador fica indisponível; a latência válida pode continuar sendo avaliada. |
-| `Reporte sem mudança` | O fingerprint das métricas é igual ao da observação anterior. | Não se infere tráfego novo nem taxa de chegada. |
-| `Origem incompleta` | Cobertura não conciliada, conflito de identidade ou página cruzando o dia. | A linha pode aparecer como contexto, mas não alimenta KPIs e marts do ciclo. |
+> Atenção: os números deste manual foram observados no snapshot local de **10/11/2026 18:37 UTC** (`initial-local-20261110`). Eles servem para explicar a implementação e não representam a produção deste momento.
 
-> Exemplo prático: às 14h o panorama está completo. Às 15h, uma fonte responde HTTP 200 com corpo vazio. O dashboard mostra “0/8 fontes com dados válidos nesta tentativa” ou o número correspondente, mas mantém o panorama das 14h com a etiqueta **DADOS ANTERIORES**. Os KPIs não viram zero; a saúde da coleta denuncia a tentativa vazia.
+> Limitação: o repositório prova a implementação, não a execução bem-sucedida em produção. Datas, volumes e estados de saúde mudam a cada publicação; consulte o dashboard e as Releases para o estado corrente.
 
-> Atenção: o filtro global de reporte altera a visão, mas não reescreve o estado. O CSV exporta apenas as linhas visíveis; links profundos usam `?reporter=`, `?q=`, `?family=` e `?sort=` para reproduzir o recorte.
+## Estado atual observado
 
-## Regras de negócio e triagem
+Esta seção descreve o snapshot local disponível no checkout usado para documentar a revisão `5a8cda6`. A fonte é o arquivo gerado `site/dashboard.json`, não uma consulta ao vivo. O snapshot contém **um único ciclo** (`initial-local-20261110`), portanto os intervalos aparecem como `first_observation` e não há série histórica própria para comparar.
 
-As regras separam **exibição** de **sinal**. O dashboard mostra taxas sempre que há numerador e denominador válidos; o incidente só é aberto quando a regra configurada é elegível. Um percentual alto com amostra pequena aparece no detalhe, mas não necessariamente vira incidente.
-
-<div class="cards">
-<div class="card"><h3>Denominador importa</h3><p>Erro e rejeição usam seus próprios denominadores válidos. Uma linha com erro maior que chamadas é excluída do numerador e do denominador daquela taxa.</p></div>
-<div class="card"><h3>Média não é p95</h3><p>A média ponderada é Σ(média × chamadas) ÷ Σ(chamadas), apenas para linhas com média positiva e chamadas positivas. Nenhum percentil é inferido.</p></div>
-<div class="card"><h3>Persistência não é causa</h3><p>Duas detecções confirmam persistência. O monitor não identifica status HTTP de erro, causa de rejeição ou relação causal entre reportes.</p></div>
-</div>
-
-### Fórmulas e elegibilidade
-
-- Taxa de erro: `error_pct = 100 × errors ÷ calls`, somente quando `calls > 0` e `0 ≤ errors ≤ calls`.
-- Taxa de rejeição: `rejection_pct = 100 × rejections ÷ calls`, sob os mesmos critérios.
-- Média ponderada: `Σ(mean_ms × calls) ÷ Σ(calls)`, somente com `mean_ms > 0` e `calls > 0`.
-- Baseline: mediana das médias diárias anteriores positivas, exigindo pelo menos `baseline_minimum_days` = 3 valores.
-- Regressão: `mean_ms ≥ regression_multiplier × baseline_mean_ms`, com `regression_multiplier` = 2.
-- Recorrência: contagem de dias anteriores com `calls ≥ minimum_calls` = 100 e `error_pct ≥ error_attention_pct` = 5%, considerando até 7 dias declarados.
-
-### Limiares configurados
-
-| Regra | Condição de atenção | Condição crítica | Amostra mínima |
-|---|---|---|---|
-| Taxa de erro | `error_pct ≥ 5%` | `error_pct ≥ 20%` e `calls ≥ 1.000` | 100 chamadas |
-| Taxa de rejeição | `rejection_pct ≥ 5%` | Sem nível crítico próprio | 100 chamadas |
-| Média declarada | `mean_ms ≥ 2.000` | `mean_ms ≥ 4.000` | 100 chamadas |
-| Regressão de média | `mean_ms ≥ 2 ×` mediana de 3 médias anteriores | Sem nível crítico próprio | 100 chamadas e 3 médias positivas |
-| Recorrência contextual | 3 dias anteriores com erro ≥ 5% e ≥ 100 chamadas | Não se aplica | Até 7 dias declarados |
-| Falha de coleta | Primeira falha consecutiva | Segunda falha consecutiva | Um reporte por ciclo |
-| Recuperação | 2 amostras avaliáveis consecutivas abaixo do limiar | Não se aplica | Regra precisa estar elegível |
+| Indicador do snapshot | Valor observado |
+|---|---|
+| Data e hora da observação | `2026-11-10T18:37:28Z` |
+| Ciclo | `initial-local-20261110` |
+| Fontes na tentativa | 8 de 8 com HTTP 200 e cobertura conciliada |
+| Identidades de endpoint | 276 |
+| Dia de referência | `2026-11-10` |
+| Chamadas declaradas no dia | 82.209.558 |
+| Erros declarados no dia | 1.212.481 |
+| Incidentes abertos no snapshot | 57 (41 de taxa de erro, 11 de regressão de latência, 5 de média elevada) |
+| Severidade dos incidentes | 49 de atenção e 8 críticos |
+| Ocorrências de qualidade | 276 de horário declarado divergente; 143 de TPS médio acima do pico; 11 de uptime 100% com downtime positivo |
+| Ciclos retidos no estado | 1 |
+| Pontos publicados | 276 |
 
 ```chart
-{"type":"bar","title":"Limiares configurados de erro e rejeição","unit":"%","source":"config/rules.json","asOf":"15/11/2026","data":[{"label":"Erro · atenção (mín. 100 chamadas)","value":5,"variant":"warning"},{"label":"Erro · crítico (mín. 1.000 chamadas)","value":20,"variant":"danger"},{"label":"Rejeição · atenção (mín. 100 chamadas)","value":5,"variant":"warning"}]}
+{"type":"bar","title":"Identidades Admin por reporte no snapshot local","unit":"identidades","source":"site/dashboard.json · snapshot local de 2026-11-10","asOf":"2026-11-10T18:37Z","data":[{"label":"Santander CCVM","value":23},{"label":"Aymoré","value":27},{"label":"Getnet","value":15},{"label":"Hyundai Capital","value":22},{"label":"RCI · Nissan","value":16},{"label":"Santander","value":112},{"label":"RCI · Renault","value":16},{"label":"Toro","value":45}]}
 ```
 
 ```chart
-{"type":"bar","title":"Limiares configurados de latência média","unit":"ms","source":"config/rules.json","asOf":"15/11/2026","data":[{"label":"Atenção · 2.000 ms","value":2000,"variant":"warning"},{"label":"Crítico · 4.000 ms","value":4000,"variant":"danger"}]}
+{"type":"bar","title":"Ocorrências de qualidade no snapshot local","unit":"ocorrências","source":"site/dashboard.json · snapshot local de 2026-11-10","asOf":"2026-11-10T18:37Z","data":[{"label":"Horário declarado divergente","value":276,"variant":"warning"},{"label":"TPS médio acima do pico","value":143,"variant":"warning"},{"label":"Uptime 100% com downtime","value":11,"variant":"danger"}]}
 ```
 
-> Regra de negócio: o nível crítico de erro exige **as duas condições**: pelo menos 1.000 chamadas e pelo menos 20% de erro. Um endpoint com 500 chamadas e 30% de erro gera atenção, não crítico. A latência crítica exige pelo menos 100 chamadas e 4.000 ms.
+### Leitura por reporte
 
-> Regra de negócio: a recorrência contextual é um indicador de leitura exibido no painel e no detalhe; ela não abre um incidente próprio. As regras que abrem ocorrência são erro, rejeição, latência, regressão de latência e falha de coleta.
+| Reporte | Identidades | Chamadas | Erros | Taxa de erro | Média declarada |
+|---|---:|---:|---:|---:|---:|
+| Santander CCVM | 23 | 133.427 | 775 | 0,58% | 224,61 ms |
+| Aymoré | 27 | 20.119 | 1.314 | 6,53% | 166,85 ms |
+| Getnet | 15 | 9.487 | 110 | 1,16% | 186,02 ms |
+| Hyundai Capital | 22 | 1.298 | 110 | 8,47% | 179,24 ms |
+| RCI · Nissan | 16 | 339 | 95 | 28,02% | 321,53 ms |
+| Santander | 112 | 81.665.261 | 1.198.290 | 1,47% | 1.186,65 ms |
+| RCI · Renault | 16 | 349 | 103 | 29,51% | 274,55 ms |
+| Toro | 45 | 379.278 | 11.684 | 3,08% | 217,09 ms |
 
-### Exemplos numéricos
+> Exemplo prático: no snapshot, RCI · Nissan e RCI · Renault compartilham o mesmo CNPJ, mas aparecem como reportes distintos porque a identidade interna é o `reporter_id` do catálogo, não o CNPJ. O mesmo acontece com serviços potencialmente compartilhados entre reportes: o agregado soma o que cada fonte declarou, sem garantir transações únicas entre instituições.
 
-> Exemplo prático: um endpoint declara 80 chamadas e 10 erros. A taxa exibida é 12,5%, mas a amostra é inferior a 100 chamadas; a regra de erro não é elegível e não abre incidente por esse critério.
+### O que o snapshot permite e não permite concluir
 
-> Exemplo prático: 2.000 chamadas e 150 erros resultam em 7,5%. Há atenção (≥ 5% e ≥ 100 chamadas), mas não crítico, porque 7,5% < 20%.
-
-> Exemplo prático: 1.500 chamadas e 330 erros resultam em 22,0%. Há crítico, porque 22,0% ≥ 20% e 1.500 ≥ 1.000. O incidente nasce como atenção e passa a crítico na mesma detecção se a sequência já estiver confirmada.
-
-> Exemplo prático: 120 chamadas e 8 rejeições resultam em 6,67%. Há atenção por rejeição, mas o monitor não afirma que a causa seja 429, fraude, contrato ou indisponibilidade.
-
-> Exemplo prático: as médias anteriores positivas são 200 ms, 300 ms e 400 ms; a mediana é 300 ms. Uma média atual de 650 ms é 2,17× a baseline e gera atenção por regressão, desde que haja pelo menos 100 chamadas.
-
-> Exemplo prático: um incidente de erro está aberto. A primeira amostra avaliável abaixo do limiar o coloca em recuperação; a segunda o resolve. Uma amostra ausente, inválida, parcial ou de baixa amostra zera a sequência de recuperação e mantém o incidente aberto.
-
-### Matriz de decisão
-
-| Condição | Resultado | Leitura |
+| Pergunta | Resposta com o snapshot | Cuidado de leitura |
 |---|---|---|
-| `calls < 100` | Nenhuma regra de erro, rejeição, latência ou regressão é elegível | O número pode aparecer no dashboard, mas não vira incidente. |
-| `error_pct ≥ 5%` e `calls ≥ 100` | Atenção | Investigue o endpoint e o contexto; não presuma causa. |
-| `error_pct ≥ 20%` e `calls ≥ 1.000` | Crítico | Prioridade alta, com evidência de numerador e denominador. |
-| `rejection_pct ≥ 5%` e `calls ≥ 100` | Atenção | Rejeição é sinal, não diagnóstico de causa. |
-| `mean_ms ≥ 2.000` e `calls ≥ 100` | Atenção ou crítico conforme 4.000 ms | Média declarada, não p95. |
-| Reset de contador | Regras de contador suspensas; latência válida continua | Não se compara contador revisado. |
-| Cobertura incompleta | Regras suspensas naquela linha | Ausência de sinal não é recuperação. |
+| Quais endpoints concentram mais erros? | Sim, pelo ranking do painel e pela tabela de endpoints | O ranking usa valores declarados no dia; não é taxa de chegada nem prova de incidente real |
+| A média de resposta piorou? | Não com um único ciclo | É necessário pelo menos um intervalo válido e, para regressão, três médias diárias anteriores positivas |
+| O Admin está fora do ar? | Não se conclui de uma resposta 200 | A saúde da coleta mede nossa tentativa; um relatório vazio ou inválido é diagnóstico da fonte, não indisponibilidade dos demais serviços |
+| O horário do banco está correto? | Há 276 linhas com `reported_clock_skew` no snapshot | O projeto sinaliza a divergência de aproximadamente três horas e não corrige o `requestTime` silenciosamente |
+| Os valores de uptime são confiáveis? | Há 11 conflitos entre uptime 100% e downtime positivo | O conflito é registrado em `quality`; o valor original permanece para inspeção |
 
-> Limitação: os limiares são critérios analíticos do monitor. Eles não são limites regulatórios, SLA contratual ou laudo de conformidade. A calibração pode ser alterada em `config/rules.json`, desde que a validação de ordem e faixa aceite o conjunto.
+> Limitação: este snapshot tem apenas o primeiro ciclo e todos os intervalos em `first_observation`. Ele é útil para conferir contratos e apresentação, mas insuficiente para avaliar tendência, recuperação de incidentes ou estabilidade ao longo do tempo.
+
+## Uso do dashboard e leitura executiva
+
+O dashboard publicado está em [alebitencourtx.github.io/admin-metrics](https://alebitencourtx.github.io/admin-metrics/) e exige apenas um navegador. A página carrega `data.js` e `app.js` do próprio site; a política de segurança bloqueia conexões de rede, então a consulta é sempre ao payload já publicado. O manual runtime fica em `documentacao.html` e esta documentação v2 fica em `docs_v2/documentacao-v2.html`, ambos acessíveis pelo rodapé lateral do dashboard.
+
+### Leitura em 60 segundos
+
+1. Confira o aviso de **frescor** no topo: ele separa a última tentativa da última data com dados válidos do panorama.
+2. Olhe os quatro indicadores do panorama: fontes com dados utilizáveis, chamadas declaradas, taxa de erro e média ponderada.
+3. Leia o cartão executivo: ele informa se há sinal crítico, sinal de atenção ou cobertura insuficiente.
+4. Abra **Incidentes** e priorize os críticos; confirme se o sinal é provisório ou confirmado por persistência.
+5. Use **Endpoints** para localizar o serviço e clique no caminho para ver dias anteriores declarados, deltas, flags e SHA.
+6. Use **Saúde da coleta** e **Monitor de execuções** para distinguir problema de dados de problema de publicação.
+7. Exporte o recorte atual em CSV quando precisar investigar fora do painel.
+
+### As oito seções
+
+| Seção | Pergunta que responde | O que entrega |
+|---|---|---|
+| 01 · Panorama executivo | O que exige atenção agora? | Quatro KPIs, leitura do recorte, top 5 de erros e cartões por reporte |
+| 02 · Incidentes | Quais sinais estão abertos, em recuperação ou resolvidos? | Severidade, regra, evidência, primeira observação e persistência |
+| 03 · Tendências | Como as métricas evoluem na janela? | Séries de erro, média declarada, chamadas e duração da tentativa Admin |
+| 04 · Endpoints | Qual serviço está pior e com qual contexto? | Busca, família, ordenação, paginação e detalhe por endpoint |
+| 05 · Saúde da coleta | O que o observador conseguiu medir? | HTTP, cobertura, identidades, duração e diagnóstico por fonte |
+| 06 · Monitor de execuções | O que aconteceu em cada extração? | Matriz extração × API, 12 execuções por página, tentativas e SHA |
+| 07 · Qualidade do reporte | Quais inconsistências mudam a interpretação? | Contagem de flags e estados de intervalo |
+| 08 · Metodologia | Quais critérios e limites foram aplicados? | Regras configuráveis, fontes oficiais e resumo metodológico |
+
+### Filtros e navegação
+
+| Controle | Efeito | Persistência |
+|---|---|---|
+| Reporte | Filtra panorama, incidentes, tendências, endpoints, execuções e qualidade para uma fonte | URL (`?reporter=...`) |
+| Estado do incidente | Abertos/em recuperação, todos ou somente críticos ativos | Apenas na sessão |
+| Métrica de tendência | Taxa de erro, média declarada ou chamadas acumuladas | Apenas na sessão |
+| Busca de endpoint | Filtra por caminho e nome do reporte, ignorando acentos | URL (`?q=...`) |
+| Família | Restringe pela primeira parte do caminho depois de `/open-banking/` | URL (`?family=...`) |
+| Ordenação | Erros, taxa, média, chamadas ou nome do caminho | URL (`?sort=...`) |
+| Paginação | 25 endpoints por página; 12 execuções por página no monitor | Apenas na sessão |
+| Exportar endpoints | Gera CSV do recorte visível, com BOM e proteção contra fórmulas | Download local |
+
+A busca usa normalização NFD e remove diacríticos, então `Aymore` encontra `Aymoré`. Os filtros de URL são restaurados ao abrir a página e atualizados com `history.replaceState` sem recarregar o dashboard.
+
+### Como interpretar o frescor
+
+| Situação exibida | O que significa | Como agir |
+|---|---|---|
+| “Última tentativa” recente e “Últimos dados válidos” recente | Coleta e panorama coerentes | Leitura normal |
+| “Última tentativa” recente, mas “Últimos dados válidos” antigo | A tentativa atual não renovou o panorama | Ver saúde da coleta; os KPIs são anteriores e estão rotulados |
+| Aviso com “DADOS ANTERIORES” | O painel preservou o último ciclo completo e um único dia de referência | Não trate os valores como novos; verifique a fonte e o motivo |
+| Aviso de dados desatualizados | A idade do último panorama excede `stale_after_hours` (2 horas por padrão) | Verifique atraso do Actions, falha de fonte ou publicação |
+| “Nenhum ciclo completo disponível” | Não há panorama coerente para o recorte | Métricas aparecem como “—”; não são convertidas em zero |
+| Fonte “HTTP 200 sem dados” | A resposta foi HTTP, mas o corpo não trouxe métricas | Verifique a origem e o histórico; não é o mesmo que falha HTTP |
+| Fonte “Reporte inválido” | O corpo veio, mas não reconciliou contrato ou cobertura | Consulte o diagnóstico e as tentativas preservadas |
+
+> Regra de negócio: o painel nunca mistura fontes de ciclos diferentes no agregado. O panorama “Todos” só é aceito quando todas as oito fontes têm dados válidos, cobertura reconciliada e um único dia de referência. O filtro por fonte usa o último ciclo válido daquele recorte.
+
+### O que evitar
+
+- **Somar snapshots**: as chamadas são acumuladas do dia; somar dois horários conta o mesmo tráfego duas vezes.
+- **Comparar média com p95**: a origem declara média; não há distribuição nem percentis.
+- **Atribuir causa**: erro não traz status HTTP por endpoint e rejeição não prova 429, bloqueio ou falha de negócio.
+- **Somar reportes como transações únicas**: serviços compartilhados podem aparecer em mais de uma instituição.
+- **Interpretar ausência como zero**: valores nulos ficam fora do denominador; zero só aparece quando informado.
+- **Usar o CSV sem conferir filtros**: a exportação reflete exatamente o recorte visível, não o universo inteiro.
+
+> Atenção: o botão de exportação neutraliza campos iniciados por `=`, `+`, `-`, `@`, tabulação ou retorno de carro, prefixando-os com apóstrofo. Ainda assim, trate o arquivo como dado de origem não confiável ao abri-lo em planilhas.
 
 ## Arquitetura da solução
 
-A solução é um pipeline batch horário com publicação estática. Não há servidor de aplicação, banco relacional nem consulta ao vivo no navegador: o GitHub Actions coleta, o Python normaliza e agrega, o DuckDB materializa Parquet, e o Pages entrega HTML, CSS, JavaScript e JSON estáticos.
+A solução é um pipeline batch de um único nó, executado no runner do GitHub Actions ou localmente. Não há banco de dados servidor, fila, API própria ou processo residente: o estado é um JSON versionado, o warehouse é um arquivo DuckDB recriado a cada build e a publicação é um conjunto de arquivos estáticos.
 
 ```solution
 {
-  "title": "Arquitetura em estágios 2D — captura, análise e publicação",
+  "title": "Arquitetura em dois estágios · coleta auditável e publicação estática",
   "cols": 4,
-  "colWidth": 218,
-  "colGap": 50,
-  "inputs": { "label": "ENTRADAS E CONTROLE" },
+  "colWidth": 206,
+  "colGap": 44,
+  "inputs": { "label": "ENTRADAS" },
   "zones": [
     {
-      "id": "ingest",
-      "title": "ESTÁGIO 1 · INGESTÃO",
-      "subtitle": "a cada hora, com retry limitado",
+      "id": "coleta",
+      "title": "ESTÁGIO 1 · COLETA E ANÁLISE",
+      "subtitle": "a cada execução com refresh",
       "variant": "warm",
       "row": 0,
       "colStart": 1,
-      "colSpan": 2
+      "colSpan": 3
     },
     {
-      "id": "publish",
-      "title": "ESTÁGIO 2 · ANÁLISE E PUBLICAÇÃO",
-      "subtitle": "estado, Parquet, Pages e Releases",
-      "variant": "teal",
+      "id": "publicacao",
+      "title": "ESTÁGIO 2 · APRESENTAÇÃO E DURABILIDADE",
+      "subtitle": "panorama, build e Pages",
+      "variant": "cool",
       "row": 1,
       "colStart": 1,
       "colSpan": 2
@@ -220,532 +207,509 @@ A solução é um pipeline batch horário com publicação estática. Não há s
       "row": 0,
       "shape": "cylinder",
       "role": "regulator",
-      "title": "Admin Santander",
-      "lines": ["8 hosts oficiais", "`GET /admin/v2/metrics`", "somente leitura"]
+      "title": "8 hosts Admin",
+      "lines": [
+        "`GET /admin/v2/metrics`",
+        "catálogo + evidência do Diretório"
+      ]
     },
     {
-      "id": "cron",
+      "id": "release",
       "col": 0,
       "row": 1,
-      "role": "step",
-      "title": "GitHub Actions",
-      "lines": ["cron `17 * * * *` UTC", "push ou dispatch"]
+      "shape": "cylinder",
+      "role": "info",
+      "title": "Release aprovada",
+      "lines": [
+        "`state.zip` + `SHA256SUMS`",
+        "até 2 pacotes"
+      ]
     },
     {
-      "id": "collect",
+      "id": "coletar",
       "col": 1,
       "row": 0,
       "step": 1,
       "role": "step",
-      "title": "Coletar e validar",
-      "lines": ["4 fontes em paralelo", "timeout 20 s · retry limitado", "dedup por endpoint"]
+      "title": "Coletar",
+      "lines": [
+        "HTTP/2 · 4 em paralelo",
+        "paginação, retry e bronze"
+      ]
     },
     {
-      "id": "bronze",
+      "id": "analisar",
       "col": 2,
       "row": 0,
-      "shape": "cylinder",
-      "role": "analytical",
-      "title": "Bronze + estado",
-      "lines": ["`data/bronze/<sha>.json`", "`data/state.json`", "lock de escritor único"]
+      "step": 2,
+      "role": "step",
+      "title": "Normalizar e analisar",
+      "lines": [
+        "contratos, dia e deltas",
+        "saúde, qualidade e incidentes"
+      ]
     },
     {
-      "id": "release",
+      "id": "estado",
       "col": 3,
       "row": 0,
       "shape": "cylinder",
-      "role": "output",
-      "title": "Releases aprovadas",
-      "lines": ["2 pacotes", "state.zip + SHA256SUMS"]
+      "role": "analytical",
+      "title": "Estado + warehouse",
+      "lines": [
+        "`data/state.json`",
+        "`warehouse.duckdb` + Parquet"
+      ],
+      "meta": "30 dias de ciclos"
     },
     {
-      "id": "analyze",
+      "id": "panorama",
       "col": 1,
       "row": 1,
-      "step": 2,
+      "step": 3,
       "role": "step",
-      "title": "Analisar e agregar",
-      "lines": ["deltas, regras e incidentes", "Arrow → DuckDB → Parquet"]
+      "title": "Montar panorama",
+      "lines": [
+        "último ciclo completo",
+        "um dia por escopo"
+      ]
     },
     {
-      "id": "site",
+      "id": "publicar",
       "col": 2,
       "row": 1,
+      "step": 4,
+      "role": "step",
+      "title": "Publicar",
+      "lines": [
+        "dashboard + manual",
+        "assets endereçados por hash"
+      ]
+    },
+    {
+      "id": "pages",
+      "col": 3,
+      "row": 1,
+      "shape": "cylinder",
       "role": "output",
-      "title": "Pages + Parquet",
-      "lines": ["`site/index.html`", "`data/gold/*.parquet`", "`dashboard.json`"]
+      "title": "Pages + Release",
+      "lines": [
+        "`site/` no GitHub Pages",
+        "candidato → deploy → aprovação"
+      ]
     }
   ],
   "edges": [
-    { "from": "admin", "to": "collect", "label": "páginas de 1.000" },
-    { "from": "cron", "to": "collect", "label": "dispara" },
-    { "from": "collect", "to": "bronze", "label": "corpo + hash" },
-    { "from": "collect", "to": "analyze", "label": "linhas normalizadas" },
-    { "from": "bronze", "to": "analyze", "style": "dashed", "label": "contexto anterior" },
-    { "from": "analyze", "to": "site", "label": "payload" },
-    { "from": "bronze", "to": "release", "style": "dashed", "label": "pacote de estado" }
+    { "from": "admin", "to": "coletar", "label": "relatórios públicos" },
+    { "from": "release", "to": "coletar", "style": "dashed", "label": "restaura estado aprovado" },
+    { "from": "coletar", "to": "analisar" },
+    { "from": "analisar", "to": "estado", "label": "commit lógico" },
+    { "from": "estado", "to": "panorama", "label": "ciclos retidos" },
+    { "from": "panorama", "to": "publicar" },
+    { "from": "publicar", "to": "pages", "label": "artefatos" },
+    { "from": "publicar", "to": "release", "channel": "bottom", "style": "dashed", "label": "novo candidato quando há refresh" }
   ],
   "legend": [
-    { "type": "box", "role": "regulator", "label": "origem e resultado externo" },
-    { "type": "box", "role": "analytical", "label": "estado e base analítica" },
-    { "type": "box", "role": "step", "label": "etapas executáveis" },
-    { "type": "dashed", "role": "neutral", "label": "leitura de contexto" }
+    { "type": "box", "role": "regulator", "label": "Origem regulatória e dado declarado" },
+    { "type": "box", "role": "analytical", "label": "Estado e projeções analíticas" },
+    { "type": "box", "role": "step", "label": "Etapas executáveis" },
+    { "type": "dashed", "role": "neutral", "label": "Leitura ou retorno de estado" }
   ],
-  "note": "O estado só avança depois que o payload, os marts e os artefatos estáticos foram gerados. Pages e Releases não têm transação distribuída: o candidato só é promovido após um job de deploy comprovadamente concluído."
+  "note": "A coleta e a publicação são independentes: o workflow pode falhar em uma fonte e ainda publicar diagnóstico. O estado só avança depois que o build e os artefatos forem gerados."
 }
 ```
 
 | Objeto | Papel | Lido / gravado |
 |---|---|---|
-| `config/reporters.json` | Catálogo fechado dos oito hosts e identidades | Lido antes de cada coleta |
-| `data/bronze/<sha>.json` | Corpo bruto da resposta, endereçado por SHA-256 | Gravado na captura; lido para o pacote de recuperação |
-| `data/state.json` | Envelope versionado com runs, observações, incidentes e último contexto | Lido no início; gravado ao final do build |
-| `data/gold/*.parquet` | Projeções Arrow e marts agregados | Gravados pelo DuckDB; consumidos por analistas |
-| `site/` | Dashboard, manual, payload e assets endereçados por conteúdo | Publicado no GitHub Pages |
-| `state-<run>-<attempt>` | Release com estado limitado e bronze recente | Criada como draft; promovida após deploy |
+| `config/reporters.json` | Catálogo dos oito hosts e identidades | Lido antes da coleta; qualquer URL fora do padrão bloqueia a execução |
+| `config/rules.json` | Limiares, janelas, retenção e agenda | Lido e validado antes da coleta; registrado no ciclo |
+| `data/state.json` | Estado lógico versionado | Lido no início; gravado somente após build bem-sucedido |
+| `data/bronze/<sha>.json` | Corpo HTTP integral endereçado por SHA-256 | Gravado durante a coleta; dois ciclos recentes permanecem |
+| `data/gold/warehouse.duckdb` | Warehouse local recriado no build | Gravado e consultado no build; não é publicado como site |
+| `data/gold/*.parquet` | Projeções Arrow comprimidas com Zstandard | Gravadas no build; consumo analítico |
+| `site/` | Dashboard, payload, manual e assets | Gerado e publicado no GitHub Pages |
+| Release `state-*` | Pacote durável do estado e bronzes | Criada como draft; promovida após deploy comprovado |
 
-<div class="cards">
-<div class="card"><h3>Um escritor por lake</h3><p>O lock exclusivo em `data/.writer.lock` impede duas execuções concorrentes sobre o mesmo estado local. Um lock abandonado precisa ser investigado, não apagado às cegas.</p></div>
-<div class="card"><h3>Bronze endereçado por hash</h3><p>Cada resposta é gravada pelo SHA-256 do corpo. O estado guarda o hash e o caminho JSON; os bytes antigos podem expirar sem apagar o histórico lógico.</p></div>
-<div class="card"><h3>Publicação atômica</h3><p>O build usa diretório temporário, assets com ID de conteúdo e troca de `index.html` no fim. Uma falha estrutural preserva o índice e o estado anteriores.</p></div>
-</div>
+### Componentes e responsabilidades
 
-> Atenção: o workflow verde significa que o processamento e a publicação concluíram; não significa que todas as fontes retornaram métricas válidas. A saúde da coleta é um resultado separado, publicado no output e no resumo do Actions.
+| Componente | Responsabilidade | Não faz |
+|---|---|---|
+| `collect.py` | TLS, HTTP/2, timeout, concorrência, paginação, retry, deduplicação e bronze | Não chama endpoints de clientes e não segue redirecionamentos |
+| `contracts.py` | Valida URIs declaradas sem executá-las | Não faz requisição nem resolve DNS |
+| `storage.py` | SHA-256, escrita atômica, lock e load do estado | Não publica e não decide regra |
+| `analysis.py` | Normaliza campos, calcula dia, qualidade, deltas, sinais e incidentes | Não inventa status HTTP, causa ou p95 |
+| `health.py` | Classifica a tentativa e a saúde da coleta | Não transforma publicação bem-sucedida em saúde dos dados |
+| `panorama.py` | Escolhe um ciclo completo e um dia por escopo | Não mistura fontes de ciclos diferentes |
+| `build.py` | Arrow, DuckDB, marts, Parquet, HTML, assets e cópia da documentação v2 | Não altera o estado |
+| `marts.sql` | Define as agregações SQL de reporte, família e tendência | Não define limiares de incidente |
+| `rules.py` | Valida o conjunto exato de parâmetros e gera o cron | Não aplica regra analítica diretamente |
+| `documentation.py` | Gera o manual runtime autocontido | Não substitui esta documentação v2 |
+| `web/` | Dashboard estático com filtros, gráficos e detalhes | Não consulta banco nem rede em runtime |
+| `scripts/cloud_pipeline.py` | Restore, candidato, promoção, descarte e retenção | Não decide se um dado é válido |
+| Workflows | Agenda, testes, build, deploy e confirmação | Não corrigem dados da origem |
 
-> Limitação: a arquitetura é de nó único, sem autenticação corporativa, sem banco de alta disponibilidade e sem medição contínua. O GitHub Actions agenda por melhor esforço e pode atrasar ou desabilitar schedules de repositórios públicos inativos.
+### Topologia de execução
 
-## Coleta e processamento
+| Ambiente | O que acontece |
+|---|---|
+| GitHub Actions | `prepare` restaura a Release aprovada mais recente, coleta ou republica, gera `site/` e cria um candidato draft quando há refresh |
+| GitHub Pages | Publica o conteúdo de `site/` como artefato estático; não executa backend |
+| GitHub Releases | Guarda até dois pacotes aprovados com estado, bronzes, manifesto e checksums |
+| Checkout local | Permite coletar, buildar e servir `site/` em `127.0.0.1`; requer as dependências Python |
+| Navegador | Abre o dashboard e o manual; CSP e ausência de CDN mantêm a leitura offline |
 
-A coleta é concorrente por fonte, mas sequencial por página dentro de cada fonte. Cada ciclo começa com um `run_id` UTC e um instante de aquisição; cada fonte recebe uma captura própria, e cada tentativa HTTP preserva status, duração, bytes, hash e erro.
+> Regra de negócio: o estado é a fonte de verdade lógica. O `warehouse.duckdb` e os Parquet são projeções recriadas a cada build, e o site é uma projeção de apresentação. Nenhum artefato publicado é lido de volta como insumo da análise.
+
+> Atenção: o build ocorre antes da gravação de `state.json`. Se a geração do manual, do HTML ou dos marts falhar, o estado e o site publicado anterior permanecem intactos; a próxima execução parte do último estado válido.
+
+> Limitação: o site é público e não possui autenticação corporativa, controle de acesso por usuário ou medição contínua dos serviços de clientes. O repositório e as Releases são a fronteira de confiança operacional.
+
+## Fluxo de coleta, análise e publicação
+
+O fluxo nominal é uma execução com `refresh=True`: restaura o último estado aprovado quando necessário, coleta as oito fontes, aplica a análise, valida o estado, gera os artefatos e só então grava o novo `state.json`. Uma execução de republicação usa `refresh=False` e não cria nova observação.
 
 ```flow
 {
-  "title": "Fluxo de captura, conciliação e publicação",
-  "cols": 5,
-  "colWidth": 200,
-  "colGap": 36,
+  "title": "Fluxo de decisão entre nova coleta, análise e publicação",
+  "cols": 4,
+  "colWidth": 214,
+  "colGap": 38,
   "zones": [
     {
-      "id": "capture",
-      "title": "CAPTURA E VALIDAÇÃO",
-      "subtitle": "8 fontes, páginas e retry limitado",
-      "variant": "warm",
+      "id": "entrada",
+      "title": "1 · GATILHO E ESTADO",
+      "subtitle": "push, agenda ou execução manual",
+      "variant": "neutral",
       "row": 0,
       "colStart": 0,
-      "colSpan": 3
+      "colSpan": 2
     },
     {
-      "id": "exceptions",
-      "title": "EXCEÇÕES",
-      "subtitle": "repetição controlada",
-      "variant": "cool",
-      "row": 1,
-      "colStart": 2,
-      "colSpan": 1
-    },
-    {
-      "id": "publish",
-      "title": "PROCESSAMENTO E PUBLICAÇÃO",
-      "subtitle": "normalização, estado e artefatos",
+      "id": "processo",
+      "title": "2 · PROCESSAMENTO E PUBLICAÇÃO",
+      "subtitle": "coleta condicional, análise e build",
       "variant": "teal",
-      "row": 1,
-      "colStart": 3,
+      "row": 0,
+      "rowSpan": 2,
+      "colStart": 2,
       "colSpan": 2
     }
   ],
   "nodes": [
-    {
-      "id": "cycle",
-      "col": 0,
-      "row": 0,
-      "step": 1,
-      "role": "step",
-      "title": "Ciclo horário",
-      "lines": ["GitHub Actions", "`17 * * * *` UTC"]
-    },
-    {
-      "id": "capture",
-      "col": 1,
-      "row": 0,
-      "step": 2,
-      "role": "step",
-      "title": "Capturar 8 fontes",
-      "lines": ["páginas de 1.000", "4 em paralelo · timeout 20 s"]
-    },
-    {
-      "id": "dec",
-      "col": 2,
-      "row": 0,
-      "shape": "decision",
-      "role": "warning",
-      "title": "Resposta completa?",
-      "lines": ["HTTP 200 + total conciliado", "sem identidade conflitante"]
-    },
-    {
-      "id": "retry",
-      "col": 2,
-      "row": 1,
-      "role": "warning",
-      "title": "Retry / repetição",
-      "lines": ["transporte/5xx: até 2", "vazio: 10 s e 30 s"]
-    },
-    {
-      "id": "dedup",
-      "col": 3,
-      "row": 1,
-      "step": 3,
-      "role": "step",
-      "title": "Deduplicar e normalizar",
-      "lines": ["identidade = endpoint", "dia pelo HTTP Date"]
-    },
-    {
-      "id": "publish",
-      "col": 4,
-      "row": 1,
-      "step": 4,
-      "role": "output",
-      "title": "Publicar diagnóstico",
-      "lines": ["estado + Parquet + Pages", "falha não vira zero"]
-    }
+    { "id": "gatilho", "col": 0, "row": 0, "step": 1, "role": "step", "title": "Receber gatilho", "lines": ["push, cron ou `workflow_dispatch`"] },
+    { "id": "refresh", "col": 1, "row": 0, "shape": "decision", "role": "warning", "title": "Nova coleta?", "lines": ["`refresh_data` ou agenda"] },
+    { "id": "coletar", "col": 2, "row": 0, "step": 2, "role": "step", "title": "Coletar e normalizar", "lines": ["8 fontes · paginação", "bronze por SHA-256"] },
+    { "id": "analisar", "col": 3, "row": 0, "step": 3, "role": "step", "title": "Aplicar análise", "lines": ["deltas, sinais", "incidentes e saúde"] },
+    { "id": "restaurar", "col": 1, "row": 1, "role": "info", "title": "Restaurar release", "lines": ["somente raiz vazia", "estado aprovado"] },
+    { "id": "cobertura", "col": 2, "row": 1, "shape": "decision", "role": "warning", "title": "Cobertura completa?", "lines": ["8 fontes e um dia"] },
+    { "id": "build", "col": 3, "row": 1, "step": 4, "role": "step", "title": "Build e publicar", "lines": ["marts + HTML", "site + manual"] },
+    { "id": "pacote", "col": 0, "row": 1, "step": 5, "role": "output", "title": "Empacotar candidato", "lines": ["se houve refresh", "draft + checksums"] }
   ],
   "edges": [
-    { "from": "cycle", "to": "capture" },
-    { "from": "capture", "to": "dec" },
-    { "from": "dec", "to": "dedup", "branch": "yes", "label": "Sim" },
-    { "from": "dec", "to": "retry", "branch": "no", "label": "Não" },
-    { "from": "retry", "to": "dedup", "label": "nova tentativa" },
-    { "from": "dedup", "to": "publish" }
+    { "from": "gatilho", "to": "refresh" },
+    { "from": "refresh", "to": "coletar", "branch": "yes", "label": "Sim · nova amostra" },
+    { "from": "refresh", "to": "restaurar", "branch": "no", "label": "Não · republicar" },
+    { "from": "coletar", "to": "analisar" },
+    { "from": "analisar", "to": "cobertura" },
+    { "from": "cobertura", "to": "build", "branch": "yes", "label": "Sim · ciclo válido" },
+    { "from": "cobertura", "to": "build", "branch": "no", "style": "dashed", "label": "Não · diagnóstico" },
+    { "from": "restaurar", "to": "build", "style": "dashed", "label": "estado anterior" },
+    { "from": "build", "to": "pacote", "channel": "bottom", "label": "se houve refresh" }
   ],
   "legend": [
-    { "type": "box", "role": "step", "label": "etapas do ciclo" },
-    { "type": "box", "role": "warning", "label": "decisão e exceção" },
-    { "type": "box", "role": "output", "label": "publicação do diagnóstico" }
+    { "type": "box", "role": "warning", "label": "Decisão operacional" },
+    { "type": "box", "role": "step", "label": "Etapa executável" },
+    { "type": "box", "role": "output", "label": "Pacote durável" },
+    { "type": "dashed", "role": "neutral", "label": "Caminho de republicação ou diagnóstico" }
   ],
-  "note": "A falha final também é normalizada e publicada como diagnóstico; ela não se transforma em zero. A repetição de resposta vazia só ocorre para fonte que já teve dados válidos."
+  "note": "Mesmo quando nenhuma fonte entrega métricas válidas, a execução pode concluir, publicar o diagnóstico e preservar o panorama anterior. Sucesso do workflow significa processamento e publicação concluídos, não saúde dos dados."
 }
 ```
 
-### Etapas do ciclo
+### Ordem efetiva da execução
 
-1. **Preparar.** Validar catálogo, regras e lock; carregar o estado anterior. Se não houver estado, o primeiro ciclo faz uma coleta inicial.
-2. **Capturar.** Abrir uma conexão HTTP/2 com TLS do sistema, timeout de 20 s, sem seguir redirecionamentos e com `User-Agent` próprio. Até quatro fontes concorrem por vez.
-3. **Paginar.** Solicitar `page=1..20`, `page-size=1000`, `period=ALL`; limitar o corpo a 16 MiB e o total a 10.000 identidades por fonte.
-4. **Deduplicar.** Usar `endpoint` como identidade dentro da fonte. Duplicata idêntica é ignorada; duplicata com valores diferentes marca `conflicting_endpoint` e impede `complete`.
-5. **Conciliar cobertura.** Comparar a quantidade única com `meta.totalRecords`; registrar `total_mismatch`, `page_metadata_conflict`, `record_limit` ou `unconfirmed` quando aplicável.
-6. **Repetir vazio.** Se a fonte já teve dados válidos e retornou HTTP 200 sem linhas, repetir após 10 s e 30 s, liberando a vaga de concorrência durante a espera. O retry HTTP de transporte/5xx é separado.
-7. **Normalizar.** Converter campos, validar inteiros, calcular taxas, flags, baseline, recorrência e fingerprint; atribuir o dia pelo `HTTP Date` da página.
-8. **Aplicar.** Comparar com a observação anterior, atualizar incidentes, preservar o último contexto, aplicar retenção e só então gerar Parquet, payload e site.
+1. **Validar configuração** — `validate_reporters` confere lista, campos obrigatórios, CNPJ de 14 dígitos, unicidade de `id` e URL exata; `validate_rules` exige o conjunto completo de parâmetros e limites coerentes.
+2. **Adquirir o lock** — `data/.writer.lock` é criado com `O_EXCL`. Se já existir, a execução falha com “Escritor ativo ou lock abandonado”.
+3. **Carregar o estado** — `state.json` versão 1 é lido; se não existir, o estado vazio contém `runs`, `observations`, `incidents` e `latest_rows`.
+4. **Reconciliar links de execução** — recibos de Release podem preencher `execution_url` de ciclos antigos; links não são adivinhados por horário.
+5. **Coletar quando `refresh=True`** — um `run_id` UTC com sufixo aleatório é criado; fontes anteriormente válidas são passadas para a política de repetição de resposta vazia.
+6. **Aplicar a análise** — normalização, dia, qualidade, intervalos, incidentes e saúde são calculados; `model_version=3` é gravado no ciclo.
+7. **Validar o estado** — `archive.validate` verifica versão, modelo suportado, unicidade de run, referências e hashes de bronze recentes.
+8. **Gerar marts e artefatos** — DuckDB recriado, cinco Parquet, payload, dashboard, manual runtime, assets e cópia da documentação v2.
+9. **Gravar o estado** — somente depois do build; em seguida, o GC remove bronzes fora dos dois ciclos recentes.
+10. **Publicar e confirmar** — GitHub Pages recebe `site/`; se houve refresh, um draft de Release é criado e só é promovido após o job `deploy` comprovadamente concluído com sucesso.
 
-### Limites e decisões de captura
+### Coleta em detalhe
 
-| Parâmetro | Valor implementado | Efeito |
+| Parâmetro / comportamento | Valor implementado | Efeito |
 |---|---|---|
-| Concorrência | 4 fontes | Limita carga e mantém o ciclo curto. |
-| Timeout | 20 s por requisição | Falha de transporte vira diagnóstico, não bloqueia as demais fontes. |
-| Retry HTTP | 2 repetições | Até 3 tentativas para transporte, 408, 429, 500, 502, 503, 504 e 529. |
-| Espera | `Retry-After` limitado a 15 s | Valores maiores são truncados; sem header, usa backoff exponencial com jitter. |
-| Redirecionamentos | Não seguidos | Evita sair do host/caminho permitido. |
-| Páginas | 20 | Exceder gera `page_limit`; a captura fica incompleta. |
-| Identidades | 10.000 | Exceder gera `record_limit` e cobertura não confirmada. |
-| Corpo | 16 MiB por resposta | Exceder gera erro de tamanho e captura inválida. |
-| Repetição de vazio | 2, após 10 s e 30 s | Só para fonte com histórico válido; cada tentativa é preservada. |
+| Protocolo | HTTPS com `truststore` e HTTP/2 | Usa a confiança do sistema operacional |
+| Timeout | 20 segundos | Limita uma tentativa individual |
+| Concorrência | 4 conexões simultâneas | Não sobrecarrega as oito fontes |
+| Redirecionamentos | Não seguidos | Evita sair do catálogo permitido |
+| Páginas | Até 20 | `page` começa em 1 |
+| Tamanho de página | 1000 | Enviado como `page-size=1000` |
+| Período | `ALL` | Enviado em todas as requisições |
+| Corpo máximo | 16 MiB | Acima disso, a tentativa falha por `response_size_limit` |
+| Registros únicos | 10.000 | Ao atingir, a captura fica incompleta (`record_limit`) |
+| Retries HTTP | 2 (3 tentativas) | Aplicados a transporte, 408, 429, 500, 502, 503, 504 e 529 |
+| Espera | `Retry-After` ou backoff exponencial | Limitada a 15 segundos |
+| Repetição de vazio | 10 e 30 segundos | Somente para fonte que já teve dados válidos; não ocupa a vaga de outra fonte durante a espera |
+| User-Agent | `SantanderAdminMetrics/1.0` | Identificação da coleta |
 
-### Estados de cobertura
+A deduplicação usa o valor exato de `endpoint` como identidade dentro da captura. Se a mesma identidade aparecer em páginas diferentes, o primeiro registro é mantido. Quando os demais campos, exceto `requestTime`, divergem, a captura recebe `duplicate_endpoint` e `conflicting_endpoint`, e o registro é marcado como ambíguo. A captura não é considerada completa nesse caso.
 
-| `coverage` | Significado | `complete` |
+A completude não depende apenas de HTTP 200. O código exige `data` como lista, `meta` como objeto, totais inteiros não negativos e conciliação entre identidades únicas e `totalRecords`. Uma página vazia depois de uma página com dados gera `pagination_no_new_identity`; um `totalRecords` atingido antes de `totalPages` gera `page_metadata_conflict`; um total que nunca é alcançado gera `total_mismatch` ou `missing_total`.
+
+### Análise em detalhe
+
+| Etapa | O que faz | Principal saída |
 |---|---|---|
-| `reported_total_reconciled` | Total único igual a `totalRecords`, sem conflito de identidade. | Sim, se houver linhas e nenhum `invalid_endpoint_record` ou `conflicting_endpoint`. |
-| `total_mismatch` | O total declarado não foi conciliado. | Não. |
-| `empty_response` | HTTP 200 com `data` vazio e total zero. | Não; `data_status=empty`. |
-| `unconfirmed` | Paginação sem novas identidades ou metadados insuficientes. | Não. |
-| `record_limit` | Limite de 10.000 identidades atingido. | Não. |
-| `invalid_records` | Registros com endpoint inválido foram removidos. | Não. |
-| `mixed_reference_day` | Páginas da mesma captura cruzaram o dia de referência. | Não. |
-| `unknown` | Cobertura não determinada. | Não. |
+| Normalização | Lê `invocations`, `errors`, `rejections`, `averageResponse`, `averageTps` e `peakTps` do `currentDay` | Campos `calls`, `errors`, `rejections`, `mean_ms`, `average_tps`, `peak_tps` |
+| Contrato de histórico | Aceita até 7 posições em `previousDays` e exige inteiros não negativos | `previous` por métrica e flags de histórico |
+| Disponibilidade | Converte `uptimeRate` e `generalUptimeRate` para razão finita em [0,1] | `uptime`, `general_uptime` e flags |
+| Dia analítico | Usa o `HTTP Date` da página em `America/Sao_Paulo`; fallback para `observed_at` | `day` e `day_basis` |
+| Relógio declarado | Compara `observed_at` com `requestTime` | `clock_offset_seconds` e `reported_clock_skew` |
+| Identidade | `SHA-256([reporter_id, endpoint])[:24]` | `entity_id` estável por fonte e endpoint |
+| Fingerprint | Hash de seis métricas, uptime, downtime e histórico | Detecta repetição sem mudança de conteúdo |
+| Intervalo | Compara a observação anterior da mesma entidade | Estados e deltas de chamadas, erros e rejeições |
+| Sinais | Aplica limiares configuráveis | Lista de regras, severidade e evidência |
+| Incidentes | Abre, confirma, recupera ou resolve por regra e entidade | Estado persistido em `incidents[]` |
 
-> Exemplo prático: a página 1 declara `totalRecords=1` e `totalPages=2`, mas só há uma identidade. O monitor concilia o total, encerra a paginação, marca `page_metadata_conflict` e mantém `complete=true`. O metadado excedente é diagnóstico, não motivo para buscar uma página fantasma.
+> Exemplo prático: suponha que a página 1 retorne o endpoint `A` com 100 erros e `meta.totalRecords=2`, e a página 2 retorne o mesmo endpoint `A` com 101 erros. O primeiro registro é mantido, mas a captura recebe `duplicate_endpoint`, `conflicting_endpoint` e `pagination_no_new_identity`. O relatório fica incompleto, ambos os corpos brutos permanecem no bronze e a fonte pode abrir um incidente de coleta.
 
-> Exemplo prático: duas páginas retornam o mesmo `endpoint` com valores diferentes. A primeira versão é preservada, a segunda marca `conflicting_endpoint`, a captura não fica completa e a identidade fica ambígua. O hash dos dois corpos permanece no bronze.
+> Exemplo prático: uma resposta `HTTP 200` com `data=[]` e `totalRecords=0` tem cobertura reconciliada, mas não é utilizável. O estado registra `empty_response`, `complete=false` e `data_status=empty`; se a fonte tinha um panorama anterior, ele permanece identificado como anterior.
 
-> Atenção: HTTP 200 com corpo vazio é `empty`, não `valid`. Se a fonte nunca teve dados válidos, não há repetição de vazio; se já teve, as repetições preservam cada tentativa e podem recuperar a captura com `empty_response_recovered`.
+> Atenção: um build que falha antes da gravação do estado preserva `state.json` e o `index.html` já publicado. O próximo ciclo não herda um estado parcial; a falha é registrada no job e o candidato correspondente é descartado quando aplicável.
 
-> Limitação: o limite de 20 páginas e 10.000 identidades é uma proteção operacional. Se o Admin crescer além disso, a captura fica explicitamente incompleta; o monitor não inventa registros faltantes.
+## Regras de negócio e critérios analíticos
 
-## Modelo de dados e grão
+As regras são parâmetros versionados em `config/rules.json` e validadas antes de qualquer coleta. O conjunto de chaves é fechado: uma chave ausente, desconhecida ou fora dos limites faz a execução falhar antes de chamar a origem. Os valores padrão também são verificados por teste contra o cron do workflow.
 
-O estado persistido é um **JSON versionado** (`version: 1`) com quatro coleções: `runs`, `observations`, `incidents` e `latest_rows`. Cada run carrega os relatórios das fontes e as tentativas HTTP; cada observação normalizada é uma linha por endpoint, reporte e run. O modelo lógico é independente do modelo físico Arrow/DuckDB.
+### Limiares e condições
+
+| Regra | Condição de detecção | Severidade | Cuidado de leitura |
+|---|---|---|---|
+| Taxa de erro | `errors ÷ calls ≥ 5%` e `calls ≥ 100` | Atenção | O denominador é o total de chamadas declarado no dia |
+| Taxa de erro crítica | `errors ÷ calls ≥ 20%` e `calls ≥ 1.000` | Crítico | Uma taxa alta com menos de 1.000 chamadas não vira crítica |
+| Taxa de rejeição | `rejections ÷ calls ≥ 5%` e `calls ≥ 100` | Atenção | Não existe nível crítico nem causa inferida |
+| Média de resposta | `mean_ms ≥ 2.000` e `calls ≥ 100` | Atenção | Média declarada, não p95 |
+| Média crítica | `mean_ms ≥ 4.000` e `calls ≥ 100` | Crítico | A amostra mínima é a mesma da atenção |
+| Regressão | `mean_ms ≥ 2 × mediana` de pelo menos 3 médias diárias anteriores positivas | Atenção | A mediana usa `previousDays`; não é média das médias |
+| Recorrência contextual | Pelo menos 3 dias anteriores com `calls ≥ 100` e erro ≥ 5% | Sinal de contexto | O detalhe visual mostra somente D−1 a D−3 |
+| Falha de coleta | Resposta não 200, incompleta ou sem registros | Atenção na primeira, crítico na segunda consecutiva | A falha é da nossa tentativa, não prova indisponibilidade dos serviços |
+| Confirmação | Duas detecções consecutivas da mesma regra e entidade | `confirmed=true` | Confirma persistência do sinal, não novos erros no intervalo |
+| Recuperação | Duas amostras avaliáveis consecutivas sem o sinal | `resolved` | Ausência, baixa amostra ou métrica inválida não resolvem |
+
+### Fórmulas e denominadores
+
+| Cálculo | Fórmula implementada | Quando fica nulo |
+|---|---|---|
+| Taxa de erro | `100 × errors ÷ calls` | `calls ≤ 0`, numerador nulo, numerador maior que chamadas ou valor inválido |
+| Taxa de rejeição | `100 × rejections ÷ calls` | Mesmos critérios, com denominador válido próprio |
+| Média ponderada | `Σ(mean_ms × calls) ÷ Σ(calls)` | Nenhuma linha com `mean_ms > 0` e `calls > 0` |
+| Baseline de latência | Mediana das médias diárias anteriores positivas | Menos de `baseline_minimum_days` (3) médias positivas |
+| Regressão | `mean_ms ÷ baseline_mean_ms` | Baseline ausente ou média atual inválida |
+| Recorrência | Contagem de dias anteriores que passam em `calls` e taxa de erro | Histórico ausente ou sem posições suficientes |
+| Delta de contador | `current − previous` para chamadas, erros e rejeições | Reset, dia diferente, origem incompleta, fingerprint igual ou delta impossível |
+
+O cálculo de taxa agregada não soma percentuais: ele soma numeradores e denominadores **válidos correspondentes**. Uma linha com `errors > calls` fica fora do denominador daquela taxa; uma linha com `mean_ms = 0` e chamadas positivas não entra na média ponderada.
+
+### Exemplos numéricos
+
+> Exemplo prático: um endpoint declara 120 chamadas e 4 erros. A taxa é `100 × 4 ÷ 120 = 3,33%`. Como 3,33% é menor que 5%, não há sinal de erro, embora o valor apareça na tabela e no detalhe. O limite mínimo de 100 chamadas foi atendido.
+
+> Exemplo prático: um endpoint declara 100 chamadas e 6 erros. A taxa é `6%`, então o sinal é de **atenção**. Para ser **crítico**, seriam necessárias pelo menos 1.000 chamadas e taxa ≥ 20%.
+
+> Exemplo prático: um endpoint declara 999 chamadas e 250 erros. A taxa é `25,03%`, mas o sinal permanece de **atenção** porque o piso de criticidade é 1.000 chamadas. O mesmo endpoint com 1.000 chamadas e 250 erros seria crítico.
+
+> Exemplo prático: duas linhas válidas compõem a média ponderada. A primeira tem 1.000 chamadas e média 100 ms; a segunda tem 4.000 chamadas e média 400 ms. A média ponderada é `(1.000 × 100 + 4.000 × 400) ÷ 5.000 = 340 ms`. A média simples de 250 ms estaria errada para o volume.
+
+> Exemplo prático: a mediana das médias anteriores positivas é 300 ms. A média atual é 650 ms. Como `650 ≥ 2 × 300`, há regressão de latência. Se a média atual fosse 590 ms, não haveria regressão, mesmo com aumento de 96,7%.
+
+### Ciclo de vida dos incidentes
+
+| Estado | Condição implementada | Leitura no dashboard |
+|---|---|---|
+| Aberto, provisório | Primeira detecção da regra para a entidade | “sinal provisório”; ainda não confirmado |
+| Aberto, confirmado | `consecutive_samples ≥ 2` | “persistência confirmada” |
+| Em recuperação | Uma amostra avaliável sem o sinal após detecção | Ainda não resolvido; `recovery_samples` mostra o avanço |
+| Resolvido | Duas amostras avaliáveis consecutivas sem o sinal | “resolvido” e horário da resolução |
+| Reaberto | Nova detecção após resolução | Cria novo `id` porque inclui o run de abertura |
+
+Uma amostra é avaliável para uma regra quando a origem está completa, há pelo menos `minimum_calls` chamadas e o estado de intervalo não bloqueia a métrica. Para latência, a média precisa ser positiva; para erro e rejeição, cada numerador tem seu próprio estado de intervalo. Uma amostra desconhecida, ausente ou inválida **zera** a sequência de recuperação; ela não conta como recuperação.
+
+> Regra de negócio: o incidente descreve a persistência de um sinal acima do limiar, não a existência de novos erros entre duas coletas. Como os contadores são cumulativos, uma sequência de duas detecções pode ocorrer sem mudança nos erros.
+
+> Atenção: reset ou revisão de um contador suspende as regras daquele contador, mas não invalida uma latência válida. Erro e rejeição têm estados de intervalo independentes; um reset de rejeições não esconde uma taxa de erro válida.
+
+> Limitação: o monitor não identifica o status HTTP de cada erro, não distingue 429 de outras rejeições e não observa os serviços de clientes. Os sinais são critérios analíticos, não laudo de conformidade nem diagnóstico causal.
+
+## Modelo de dados e dicionário
+
+O modelo separa **estado de captura** (ciclos, relatórios, tentativas, bronze e incidentes) das **projeções analíticas** (linhas atuais, observações e marts). O grão é declarado em cada objeto; agregações usam linhagem tracejada, não chaves estrangeiras inventadas.
+
+### Captura e estado
 
 ```schema
 {
-  "title": "Estado lógico: ciclos, tentativas e observações",
-  "colGap": 112,
-  "rowGap": 68,
+  "title": "Estado de captura · ciclo, relatório, tentativa e observação",
+  "colGap": 118,
+  "rowGap": 58,
   "entities": [
     {
       "id": "run",
       "name": "run",
       "kind": "json",
-      "grain": "Grão: 1 run = 1 ciclo de coleta",
+      "grain": "Grão: 1 objeto = 1 ciclo de execução",
       "col": 0,
       "row": 0,
       "columns": [
         { "key": "PK", "name": "run_id", "type": "string" },
-        { "name": "observed_at", "type": "timestamp UTC" },
-        { "name": "model_version", "type": "int?" },
-        { "name": "reports[]", "type": "array<report>" },
-        { "name": "rules", "type": "object" },
-        { "name": "execution_url", "type": "string?" }
+        { "name": "observed_at", "type": "string" },
+        { "name": "model_version", "type": "int" },
+        { "name": "collection_health", "type": "json" },
+        { "name": "rules", "type": "json" },
+        { "name": "execution_url", "type": "string", "nullable": true }
       ]
     },
     {
       "id": "report",
       "name": "report",
       "kind": "json",
-      "grain": "Grão: 1 report = 1 fonte dentro do run",
+      "grain": "Grão: 1 objeto = 1 fonte em 1 ciclo",
       "col": 1,
       "row": 0,
       "columns": [
+        { "key": "PK,FK", "name": "run_id", "type": "string" },
         { "key": "PK", "name": "id", "type": "string" },
         { "name": "status", "type": "int" },
-        { "name": "records", "type": "int" },
         { "name": "complete", "type": "bool" },
+        { "name": "records", "type": "int" },
         { "name": "coverage", "type": "string" },
-        { "name": "probes[]", "type": "array<probe>" },
-        { "name": "issues[]", "type": "array<string>" }
+        { "name": "issues", "type": "array" },
+        { "name": "observed_at", "type": "string" }
       ]
     },
     {
       "id": "probe",
       "name": "probe",
-      "kind": "json",
-      "grain": "Grão: 1 probe = 1 tentativa HTTP",
+      "kind": "table",
+      "grain": "Grão: 1 linha = 1 tentativa HTTP",
       "col": 2,
       "row": 0,
       "columns": [
-        { "key": "PK", "name": "page", "type": "int" },
-        { "key": "PK", "name": "attempt", "type": "int" },
+        { "key": "FK", "name": "run_id", "type": "string" },
+        { "key": "FK", "name": "report_id", "type": "string" },
+        { "name": "page", "type": "int" },
+        { "name": "attempt", "type": "int" },
         { "name": "capture_attempt", "type": "int" },
         { "name": "status", "type": "int" },
-        { "name": "source_sha", "type": "string?" },
-        { "name": "duration_ms", "type": "number" },
-        { "name": "error", "type": "string?" }
+        { "name": "duration_ms", "type": "double" },
+        { "name": "bytes", "type": "int" },
+        { "name": "source_sha", "type": "string" }
+      ]
+    },
+    {
+      "id": "bronze",
+      "name": "bronze",
+      "kind": "external",
+      "grain": "Grão: 1 objeto = 1 corpo HTTP integral",
+      "col": 0,
+      "row": 1,
+      "columns": [
+        { "key": "PK", "name": "source_sha", "type": "string" },
+        { "name": "bytes", "type": "int" },
+        { "name": "arquivo", "type": "string" }
       ]
     },
     {
       "id": "observation",
       "name": "observation",
       "kind": "table",
-      "grain": "Grão: 1 linha = endpoint × reporte × run",
+      "grain": "Grão: 1 linha = 1 endpoint × fonte × ciclo",
       "col": 1,
       "row": 1,
       "columns": [
-        { "key": "PK", "name": "run_id", "type": "string" },
+        { "key": "PK,FK", "name": "run_id", "type": "string" },
         { "key": "PK", "name": "entity_id", "type": "string" },
-        { "name": "reporter_id", "type": "string" },
-        { "name": "day", "type": "date" },
+        { "key": "FK", "name": "reporter_id", "type": "string" },
+        { "name": "endpoint", "type": "string" },
+        { "name": "day", "type": "string" },
+        { "name": "source_complete", "type": "bool" },
         { "name": "calls", "type": "int64" },
         { "name": "errors", "type": "int64" },
-        { "name": "mean_ms", "type": "int64" },
-        { "name": "source_complete", "type": "bool" },
-        { "name": "previous", "type": "object" },
-        { "name": "quality[]", "type": "array<string>" }
+        { "name": "mean_ms", "type": "int64" }
+      ]
+    },
+    {
+      "id": "incident",
+      "name": "incident",
+      "kind": "json",
+      "grain": "Grão: 1 objeto = 1 entidade × regra aberta",
+      "col": 2,
+      "row": 1,
+      "columns": [
+        { "key": "PK", "name": "id", "type": "string" },
+        { "key": "FK", "name": "entity_id", "type": "string" },
+        { "name": "rule", "type": "string" },
+        { "name": "status", "type": "string" },
+        { "name": "severity", "type": "string" },
+        { "name": "consecutive_samples", "type": "int" },
+        { "name": "recovery_samples", "type": "int" },
+        { "key": "FK", "name": "opened_run", "type": "string" }
       ]
     }
   ],
   "relations": [
-    { "from": "run", "to": "report", "fromCard": "1", "toCard": "1..N", "label": "reports[]" },
-    { "from": "report", "to": "probe", "fromCard": "1", "toCard": "1..N", "label": "probes[]" },
-    { "from": "run", "to": "observation", "kind": "lineage", "label": "normaliza reports" },
-    { "from": "report", "to": "observation", "kind": "lineage", "label": "1 report → N endpoints" }
+    { "from": "run", "to": "report", "fromCard": "1", "toCard": "1..N", "label": "contém" },
+    { "from": "report", "to": "probe", "fromCard": "1", "toCard": "1..N", "label": "tentativas" },
+    { "from": "report", "to": "observation", "kind": "lineage", "label": "normaliza linhas" },
+    { "from": "bronze", "to": "observation", "kind": "lineage", "label": "source_sha" }
   ],
-  "note": "Relações de containment são estruturais; as setas tracejadas indicam normalização/derivação, não chave estrangeira. O estado é JSON, não um schema relacional."
+  "note": "O estado lógico usa JSON; as entidades acima descrevem o contrato, não tabelas relacionais. No JSON, report e probe são aninhados em runs[].reports[] e report_id é a chave lógica do relatório. Incidentes referenciam o run de abertura por opened_run. Source_sha é referência ao corpo bronze, e não uma chave estrangeira de banco."
 }
 ```
 
-| Coleção | Grão | Identidade | Retenção |
-|---|---|---|---|
-| `runs` | 1 ciclo de coleta | `run_id` | 30 dias, por ciclo inteiro |
-| `observations` | 1 endpoint × reporte × run | `run_id` + `entity_id` | 30 dias, removida com o run |
-| `latest_rows` | 1 último contexto por `entity_id` | `entity_id` | Enquanto o run de origem estiver retido |
-| `incidents` | 1 ocorrência por entidade × regra × abertura | `id` | Abertos persistem; resolvidos por 30 dias |
-| `probes` | 1 tentativa HTTP de uma página | `page` + `attempt` + `capture_attempt` | Dentro do run; bronze bruto por 2 ciclos |
-
-> Regra de negócio: `entity_id` é `SHA-256` de `[reporter_id, endpoint]`, truncado em 24 caracteres. O mesmo endpoint declarado por dois reportes gera duas entidades distintas. `run_id` é UTC com sufixo aleatório e **não** é a data de referência do banco.
-
-O envelope de estado usa `version: 1`. O modelo de análise atual é `MODEL_VERSION = 3`; runs legados podem ter `model_version` 1, 2, 3 ou o campo ausente, mas uma versão desconhecida bloqueia o pacote antes do restore.
-
-> Exemplo prático: o endpoint `/open-banking/accounts/v2/accounts` aparece no Santander e no CCVM. São duas linhas, dois `entity_id` e dois contextos de incidente, mesmo que o caminho textual seja igual. O agregado entre reportes soma as duas fontes, sem prometer transações únicas.
-
-### Dia analítico
-
-O dia de referência é calculado a partir do cabeçalho `HTTP Date` da página que produziu cada linha, convertido para `America/Sao_Paulo`. Se o header não for interpretável, o monitor usa o instante de aquisição e registra `day_basis` como fallback. O `requestTime` original é preservado, mas não substitui o `HTTP Date`.
-
-> Atenção: se páginas de uma mesma captura cruzarem a meia-noite, a captura é marcada como `page_day_changed`, as linhas ficam com `source_complete=false` e o run não alimenta os KPIs. Isso evita misturar dois dias em um único panorama.
-
-> Limitação: a convenção de dia do monitor não comprova o fuso de consolidação usado pela origem. `requestTime` com divergência acima de 900 s é sinalizado como `reported_clock_skew`, sem correção silenciosa.
-
-### Dicionário da projeção Arrow
-
-<details>
-<summary>Campos de current_rows e observations</summary>
-
-| Campo | Tipo Arrow | Semântica e nulos |
-|---|---|---|
-| `run_id` | `string` | Identidade do ciclo; não é a data de referência. |
-| `entity_id` | `string` | Hash truncado de `reporter_id` + `endpoint`; chave técnica da entidade. |
-| `observed_at` | `string` | Instante UTC de início da observação da fonte. |
-| `day` | `string` | Dia analítico em `America/Sao_Paulo`, derivado do `HTTP Date` da página. |
-| `reporter_id` | `string` | Identidade estável do host no catálogo. |
-| `reporter` | `string` | Rótulo operacional; pode mudar sem alterar a identidade. |
-| `endpoint` | `string` | URL/URI declarada pelo banco; nunca chamada pelo monitor. |
-| `path` | `string` | Caminho extraído de `endpoint`, preservando parâmetros de rota. |
-| `family` | `string` | Primeiro segmento após `/open-banking/`. |
-| `calls` | `int64` | `invocations.currentDay`, inteiro não negativo ou nulo. |
-| `errors` | `int64` | `errors.currentDay`; não discrimina status HTTP. |
-| `rejections` | `int64` | `rejections.currentDay`; não prova causa. |
-| `mean_ms` | `int64` | `averageResponse.currentDay`, em milissegundos; média, não p95. |
-| `error_pct` | `double` | `100 × errors ÷ calls` com denominador válido; nulo caso contrário. |
-| `rejection_pct` | `double` | `100 × rejections ÷ calls` sob os mesmos critérios. |
-| `uptime` | `double` | `uptimeRate` finito em `[0,1]`; a interface multiplica por 100. |
-| `source_complete` | `bool` | A captura que produziu a linha foi conciliada; não atesta todos os campos. |
-| `fresh` | `bool` | Presente em `current_rows`: a linha pertence ao último run. |
-
-</details>
-
-<details>
-<summary>Campos adicionais da observação no estado</summary>
-
-| Campo | Tipo lógico | Semântica |
-|---|---|---|
-| `day_basis` | string | Explica qual relógio fundamentou `day`; não altera `requestTime`. |
-| `source_sha` | SHA-256 | Hash do corpo bronze; os bytes podem expirar da retenção. |
-| `json_path` | string | Posição `$.data[n]` no corpo identificado pelo hash. |
-| `request_time` | string/nulo | `requestTime` original, sem correção automática de fuso. |
-| `clock_offset_seconds` | número/nulo | `observed_at − requestTime`; limiar `clock_skew_seconds` = 900 s. |
-| `average_tps` / `peak_tps` | int64/nulo | TPS médio e pico declarados; não são calculados a partir de chamadas. |
-| `general_uptime` | razão/nulo | `generalUptimeRate` declarado, independente do uptime do endpoint. |
-| `downtime_seconds` / `general_downtime` / `scheduled_outage` | int64/nulo | Segundos declarados de downtime parcial, geral e parada programada. |
-| `previous` | objeto de arrays | Até 7 posições por métrica, com D−1 primeiro. |
-| `baseline_mean_ms` | número/nulo | Mediana das médias diárias anteriores positivas, com mínimo de 3. |
-| `recurrent_days` | inteiro | Dias anteriores com chamadas ≥ 100 e erro ≥ 5%. |
-| `quality` | array de strings | Ocorrências de contrato/consistência; não reescreve o valor informado. |
-| `fingerprint` | SHA-256 | Seis métricas atuais, uptime, downtime e `previous`; exclui `requestTime`. |
-| `interval_from` / `interval_to` | UTC/nulo | Instantes das duas observações comparadas; não é janela oficial da origem. |
-| `interval_seconds` | número/nulo | Diferença entre os instantes; tempo não crescente invalida o intervalo. |
-| `interval_calls` / `interval_errors` / `interval_rejections` | int64/nulo | Diferenças aceitas dos cumulativos; indisponíveis fora de `valid`. |
-| `interval_error_pct` / `interval_rejection_pct` | percentual/nulo | Taxas dos deltas aceitos; sem denominador positivo ficam nulas. |
-| `interval_state` | enum | Motivo da comparação aceita ou suspensa. |
-| `interval_error_state` / `interval_rejection_state` | enum | Comparabilidade de cada numerador com chamadas. |
-
-</details>
-
-<details>
-<summary>Tentativas HTTP: runs[].reports[].probes[]</summary>
-
-| Campo | Tipo lógico | Semântica |
-|---|---|---|
-| `capture_attempt` | inteiro | Captura a partir de 1; separa repetição de vazio do retry HTTP. |
-| `page` | inteiro | Página solicitada. |
-| `attempt` | inteiro | Tentativa HTTP dentro da captura, a partir de 1. |
-| `observed_at` | UTC | Início da tentativa; distinto do início do ciclo e da fonte. |
-| `url` | URL | Admin e parâmetros solicitados; redirecionamentos não são seguidos. |
-| `status` | inteiro | HTTP recebido; `0` quando não houve resposta HTTP. |
-| `duration_ms` | número | Tempo até leitura do corpo ou erro; não é a média do serviço. |
-| `http_date` | string/nulo | Cabeçalho `Date` recebido, preservado sem substituir `requestTime`. |
-| `source_sha` | hash/nulo | Corpo completo preservado; pode faltar em transporte ou limite de tamanho. |
-| `bytes` | inteiro/nulo | Tamanho do corpo; pode faltar quando não houve corpo completo. |
-| `error` | string/nulo | Condição final da tentativa; tentativas transitórias permanecem no histórico. |
-| `data_status` | enum | Resultado da captura: `valid`, `empty`, `http_error`, `transport_error` ou `invalid_report`. |
-
-</details>
-
-<details>
-<summary>Ocorrências: incidents[]</summary>
-
-| Campo | Tipo lógico | Semântica |
-|---|---|---|
-| `id` | hash truncado | Entidade + regra + run de abertura; reabertura cria outro ID. |
-| `entity_id` / `rule` | string | Entidade do serviço ou `source:<reporter_id>`, mais a regra detectada. |
-| `reporter_id` / `reporter` / `endpoint` | string/nulo | ID estável, rótulo atual e endpoint; coleta não tem endpoint de serviço. |
-| `opened_at` / `opened_run` | UTC / ID | Primeira detecção observada; não é necessariamente o início real da falha. |
-| `last_seen` | UTC | Última detecção acima do limiar; não é a última coleta bem-sucedida. |
-| `evaluated_at` | UTC | Última avaliação conclusiva de detecção/recuperação. |
-| `samples` | inteiro | Total de detecções, inclusive sequências separadas por recuperação parcial. |
-| `consecutive_samples` | inteiro | Tamanho da sequência atual de detecções. |
-| `confirmed` | booleano | A sequência atingiu `confirmation_samples`; não prova erros novos. |
-| `recovery_samples` | inteiro | Amostras avaliáveis consecutivas abaixo do limiar. |
-| `status` / `severity` | enum | `open`, `recovering`, `resolved` e `attention`, `critical`. |
-| `evidence` | string | Numerador, denominador ou contexto da última detecção. |
-| `resolved_at` | UTC opcional | Registrado apenas após completar a recuperação configurada. |
-
-</details>
-
-```chart
-{"type":"bar","title":"Retenção configurada por camada","unit":"dias","source":"config/rules.json e build.py","asOf":"15/11/2026","data":[{"label":"Estado normalizado","value":30,"variant":"accent"},{"label":"Janela do dashboard","value":3,"variant":"success"},{"label":"Incidentes resolvidos","value":30,"variant":"neutral"}]}
-```
-
-> Atenção: o gráfico acima mostra camadas medidas em dias. O bronze local e as Releases usam outra unidade: **dois ciclos** e **dois pacotes aprovados**, respectivamente. Não converta ciclos em dias por conveniência.
-
-## Linhagem, marts e consultas
-
-O build materializa cinco arquivos Parquet tipados. `current_rows` e `observations` são projeções do estado; `report_summary`, `family_summary` e `observation_trends` são marts derivados por SQL. A linhagem é analítica: setas tracejadas indicam agregação/filtro, nunca chave estrangeira.
+### Projeções e marts
 
 ```schema
 {
-  "title": "Projeções publicadas: Parquet, marts e payload",
-  "colGap": 112,
-  "rowGap": 68,
+  "title": "Projeções publicadas · linhas atuais, histórico e marts",
+  "colGap": 126,
+  "rowGap": 62,
   "entities": [
     {
       "id": "current",
       "name": "current_rows",
       "kind": "table",
-      "grain": "Grão: 1 linha = último contexto por entity_id",
+      "grain": "Grão: 1 linha = 1 endpoint no último contexto por fonte",
       "col": 0,
       "row": 0,
       "columns": [
         { "key": "PK", "name": "entity_id", "type": "string" },
+        { "key": "FK", "name": "reporter_id", "type": "string" },
         { "name": "run_id", "type": "string" },
-        { "name": "reporter_id", "type": "string" },
-        { "name": "day", "type": "date" },
-        { "name": "calls", "type": "int64" },
-        { "name": "errors", "type": "int64" },
-        { "name": "mean_ms", "type": "int64" },
         { "name": "fresh", "type": "bool" },
-        { "name": "source_complete", "type": "bool" }
-      ]
-    },
-    {
-      "id": "obs",
-      "name": "observations",
-      "kind": "table",
-      "grain": "Grão: 1 linha = endpoint × reporte × run",
-      "col": 0,
-      "row": 1,
-      "columns": [
-        { "key": "PK", "name": "run_id", "type": "string" },
-        { "key": "PK", "name": "entity_id", "type": "string" },
-        { "name": "observed_at", "type": "timestamp UTC" },
-        { "name": "reporter_id", "type": "string" },
-        { "name": "day", "type": "date" },
+        { "name": "source_complete", "type": "bool" },
         { "name": "calls", "type": "int64" },
         { "name": "errors", "type": "int64" },
-        { "name": "mean_ms", "type": "int64" },
-        { "name": "source_complete", "type": "bool" }
+        { "name": "mean_ms", "type": "int64" }
       ]
     },
     {
       "id": "report_summary",
       "name": "report_summary",
       "kind": "mart",
-      "grain": "Grão: 1 linha = reporter_id no ciclo atual",
+      "grain": "Grão: 1 linha = 1 reporte no ciclo atual",
       "col": 1,
       "row": 0,
       "columns": [
         { "key": "PK", "name": "reporter_id", "type": "string" },
-        { "name": "endpoints", "type": "bigint" },
-        { "name": "calls", "type": "bigint" },
-        { "name": "errors", "type": "bigint" },
+        { "name": "reporter", "type": "string" },
+        { "name": "endpoints", "type": "int" },
+        { "name": "calls", "type": "int" },
+        { "name": "errors", "type": "int" },
         { "name": "error_pct", "type": "double" },
         { "name": "mean_ms", "type": "double" }
       ]
@@ -754,422 +718,695 @@ O build materializa cinco arquivos Parquet tipados. `current_rows` e `observatio
       "id": "family_summary",
       "name": "family_summary",
       "kind": "mart",
-      "grain": "Grão: 1 linha = family no ciclo atual",
-      "col": 1,
-      "row": 1,
+      "grain": "Grão: 1 linha = 1 família no ciclo atual",
+      "col": 2,
+      "row": 0,
       "columns": [
         { "key": "PK", "name": "family", "type": "string" },
-        { "name": "endpoints", "type": "bigint" },
-        { "name": "calls", "type": "bigint" },
-        { "name": "errors", "type": "bigint" },
+        { "name": "endpoints", "type": "int" },
+        { "name": "calls", "type": "int" },
+        { "name": "errors", "type": "int" },
         { "name": "error_pct", "type": "double" }
+      ]
+    },
+    {
+      "id": "observations",
+      "name": "observations",
+      "kind": "table",
+      "grain": "Grão: 1 linha = 1 endpoint × fonte × ciclo",
+      "col": 0,
+      "row": 1,
+      "columns": [
+        { "key": "PK", "name": "run_id", "type": "string" },
+        { "key": "PK", "name": "entity_id", "type": "string" },
+        { "name": "observed_at", "type": "string" },
+        { "name": "day", "type": "string" },
+        { "name": "calls", "type": "int64" },
+        { "name": "errors", "type": "int64" },
+        { "name": "source_complete", "type": "bool" }
       ]
     },
     {
       "id": "trends",
       "name": "observation_trends",
       "kind": "mart",
-      "grain": "Grão: 1 linha = run_id × reporter_id",
-      "col": 2,
+      "grain": "Grão: 1 linha = 1 reporte × ciclo",
+      "col": 1,
       "row": 1,
       "columns": [
         { "key": "PK", "name": "run_id", "type": "string" },
         { "key": "PK", "name": "reporter_id", "type": "string" },
-        { "name": "observed_at", "type": "timestamp UTC" },
-        { "name": "calls", "type": "bigint" },
-        { "name": "errors", "type": "bigint" },
+        { "name": "observed_at", "type": "string" },
+        { "name": "calls", "type": "int" },
+        { "name": "errors", "type": "int" },
         { "name": "error_pct", "type": "double" },
         { "name": "mean_ms", "type": "double" }
       ]
     },
     {
       "id": "payload",
-      "name": "dashboard.json",
+      "name": "dashboard_payload",
       "kind": "json",
-      "grain": "Grão: 1 objeto = payload publicado",
-      "col": 3,
-      "row": 0,
+      "grain": "Grão: 1 objeto = 1 publicação",
+      "col": 2,
+      "row": 1,
       "columns": [
-        { "name": "meta", "type": "object" },
-        { "name": "latest[]", "type": "array<row>" },
-        { "name": "runs[]", "type": "array<run>" },
-        { "name": "points[]", "type": "array<point>" },
-        { "name": "panoramas", "type": "object" },
-        { "name": "incidents[]", "type": "array<incident>" },
-        { "name": "collection_health", "type": "object" }
+        { "key": "PK", "name": "meta.run_id", "type": "string" },
+        { "name": "latest", "type": "array" },
+        { "name": "runs", "type": "array" },
+        { "name": "panoramas", "type": "json" },
+        { "name": "collection_health", "type": "json" },
+        { "name": "points", "type": "array" }
       ]
     }
   ],
   "relations": [
-    { "from": "current", "to": "report_summary", "kind": "lineage", "label": "fresh + source_complete" },
-    { "from": "current", "to": "family_summary", "kind": "lineage", "label": "fresh + source_complete" },
-    { "from": "current", "to": "payload", "kind": "lineage", "channel": "top", "label": "latest" },
-    { "from": "obs", "to": "trends", "kind": "lineage", "channel": "bottom", "label": "source_complete" },
-    { "from": "trends", "to": "payload", "kind": "lineage", "label": "observation_trends" }
+    { "from": "observations", "to": "current", "kind": "lineage", "label": "último contexto por fonte" },
+    { "from": "current", "to": "report_summary", "kind": "lineage", "label": "agrega por reporte" },
+    { "from": "current", "to": "family_summary", "kind": "lineage", "label": "agrega por família" },
+    { "from": "observations", "to": "trends", "kind": "lineage", "label": "agrega por reporte e ciclo" },
+    { "from": "trends", "to": "payload", "kind": "lineage", "label": "série visível" }
   ],
-  "note": "Setas tracejadas são linhagem de agregação/filtro. current_rows não é um recorte do ciclo atual: é o último contexto conhecido por entidade; fresh indica se ele veio do último run."
+  "note": "Os marts são recriados a cada build. O dashboard_payload é montado a partir de latest, runs, panoramas, saúde e marts. current_rows contém o último contexto por fonte, que pode estar antigo; fresh indica se ele pertence ao ciclo mais recente. Não some snapshots cumulativos entre ciclos."
 }
 ```
 
-| Objeto | Grão | Fonte | Consumo |
+### Identidade, grão e cardinalidade
+
+| Objeto | Chave / identidade | Grão | Observação |
 |---|---|---|---|
-| `data/gold/current_rows.parquet` | 1 linha = último contexto por `entity_id` | `state.latest_rows` + `fresh` | Dashboard, marts e análise de endpoint. |
-| `data/gold/observations.parquet` | 1 linha = endpoint × reporte × run | `state.observations` | Séries, deltas e marts de tendência. |
-| `data/gold/report_summary.parquet` | 1 linha = `reporter_id` no ciclo atual | `current_rows` filtrado | Resumo por reporte. |
-| `data/gold/family_summary.parquet` | 1 linha = `family` no ciclo atual | `current_rows` filtrado | Resumo por família de serviço. |
-| `data/gold/observation_trends.parquet` | 1 linha = `run_id` × `reporter_id` | `observations` | Série agregada do dashboard. |
+| Ciclo | `run_id` | 1 execução lógica | Formado por timestamp UTC e sufixo aleatório; não é a data de referência do banco |
+| Relatório | `(run_id, reporter id)` | 1 fonte em 1 ciclo | Guarda status, cobertura, issues e tentativas |
+| Tentativa | `(run_id, report, page, attempt)` | 1 requisição HTTP | Tentativas transitórias permanecem no histórico |
+| Observação | `(run_id, entity_id)` | 1 endpoint × fonte × ciclo | Identidade única dentro do ciclo |
+| Linha atual | `entity_id` | 1 endpoint no último contexto por fonte | Pode ser de ciclo antigo; `fresh` distingue |
+| Incidente | `id` | 1 entidade × regra aberta | Reabertura após resolução cria novo `id` |
+| Bronze | `source_sha` | 1 corpo HTTP integral | Conteúdo endereçado por SHA-256 |
+| Release | `tag state-*` | 1 pacote de estado aprovado | Até dois pacotes aprovados |
 
-> Regra de negócio: os marts do ciclo atual filtram `fresh AND source_complete`. Uma linha antiga preservada em `current_rows` continua disponível para contexto, mas não entra no agregado do ciclo. `observation_trends` usa `observations` com `source_complete` e pode cobrir runs além do último.
+O `entity_id` é `SHA-256` de `[reporter_id, endpoint]`, truncado em 24 caracteres. O mesmo caminho em reportes diferentes gera identidades diferentes. O `endpoint` é comparado como string exata; variações de caixa, barras ou parâmetros podem gerar identidades distintas. O CNPJ **não** é chave: Nissan e Renault compartilham CNPJ, mas têm `reporter_id` próprios.
 
-> Exemplo prático: uma linha tem `calls=100`, `errors=150` e `mean_ms=300`. Ela é inválida para taxa de erro: `errors > calls`. A linha é excluída do numerador e do denominador da taxa; a média ainda pode entrar no ponderado se `mean_ms > 0` e `calls > 0`. Não se “corrige” o erro para 100.
+### Semântica temporal
 
-> Atenção: as taxas são razões de somas, não médias de percentuais. Some `errors` e `calls` das linhas válidas e divida uma única vez. Somar snapshots cumulativos ou tirar média de `error_pct` produz um número que o código não usa.
+| Campo | Origem | Significado | Cuidado |
+|---|---|---|---|
+| `observed_at` | Relógio da coleta | Início da observação da fonte ou da tentativa | É UTC; não é a data do relatório |
+| `http_date` | Cabeçalho `Date` | Horário declarado pelo servidor na página | Pode estar ausente ou divergir do `requestTime` |
+| `day` | `http_date` em `America/Sao_Paulo` | Dia analítico da linha | Fallback para `observed_at` quando o `Date` não é interpretável |
+| `day_basis` | Código | Explica qual relógio fundamentou o dia | Não altera o `requestTime` original |
+| `request_time` | `requestTime` do registro | Horário declarado pelo banco no payload | Preservado sem correção automática |
+| `clock_offset_seconds` | `observed_at − requestTime` | Diferença observada | `reported_clock_skew` acima de 900 s |
+| `interval_from` / `interval_to` | Observações comparadas | Instantes da comparação | Não são a janela oficial de agregação da instituição |
+| `history_window_start/end` | Build | Janela fixa de 72 horas do painel | Pode conter lacunas; não é preenchida retroativamente |
 
-> Limitação: os marts não calculam p95, não separam status HTTP de erro, não deduplicam serviços compartilhados entre reportes e não inferem causa de rejeição. O grão é o endpoint declarado, não a transação individual.
+> Regra de negócio: se páginas de uma mesma captura cruzarem o dia analítico, a captura é marcada como incompleta (`mixed_reference_day`, `page_day_changed`) e não alimenta os KPIs. O projeto não força um único dia para “corrigir” a origem.
 
-## Continuidade, qualidade e incidentes
+### Contrato Arrow de `current_rows` e `observations`
 
-A continuidade é tratada em duas camadas independentes: o **panorama** escolhe um ciclo completo e um único dia por recorte; a **saúde da coleta** descreve a última tentativa. É possível ter saúde `unavailable` e panorama anterior preservado, ou saúde `healthy` e panorama antigo se o dia não for coerente.
+| Campo | Tipo Arrow | Papel | Semântica / nulos |
+|---|---|---|---|
+| `run_id` | `string` | `PK` | Identidade do ciclo UTC; não é a data de referência |
+| `entity_id` | `string` | `PK` | SHA-256 de reporter + endpoint, truncado em 24 |
+| `observed_at` | `string` | Tempo | Início da observação da fonte em UTC |
+| `day` | `string` | Tempo | Dia analítico em `America/Sao_Paulo` |
+| `reporter_id` | `string` | `FK` | Identidade estável do catálogo |
+| `reporter` | `string` | Rótulo | Nome operacional; não prova controle societário |
+| `endpoint` | `string` | Identidade | URI declarada; nunca chamada pelo monitor |
+| `path` | `string` | Classificação | Caminho extraído da URI |
+| `family` | `string` | Classificação | Primeiro segmento depois de `/open-banking/` |
+| `calls` | `int64` | Métrica | `invocations.currentDay`; não negativo ou nulo |
+| `errors` | `int64` | Métrica | `errors.currentDay`; sem status HTTP detalhado |
+| `rejections` | `int64` | Métrica | `rejections.currentDay`; sem causa inferida |
+| `mean_ms` | `int64` | Métrica | `averageResponse.currentDay`; média, não p95 |
+| `error_pct` | `double` | Derivado | `100 × errors ÷ calls` com denominador válido |
+| `rejection_pct` | `double` | Derivado | `100 × rejections ÷ calls` com denominador válido |
+| `uptime` | `double` | Disponibilidade | Razão em [0,1]; interface multiplica por 100 |
+| `source_complete` | `bool` | Contrato | Cobertura reconciliada da captura; não atesta todos os campos |
+| `fresh` | `bool` | Contexto | Linha do ciclo mais recente; na projeção histórica pode ser nulo |
 
-```mermaid Ciclo de estados de um incidente
-stateDiagram-v2
-  [*] --> Aberto: primeira detecção
-  Aberto --> Recuperando: primeira amostra avaliável abaixo do limiar
-  Recuperando --> Resolvido: segunda amostra avaliável
-  Recuperando --> Aberto: amostra ausente, inválida ou novo sinal
-  Resolvido --> [*]
-```
+<details>
+<summary>Campos adicionais da observação no estado e no JSON</summary>
 
-### Seleção do panorama
-
-1. Agrupar observações com `source_complete=true` por `run_id`.
-2. Definir os recortes: `all` com todos os reportes e um recorte por `reporter_id`.
-3. Percorrer os runs do mais recente para o mais antigo.
-4. Para cada recorte ainda não resolvido, exigir que todas as fontes do recorte tenham `outcome=valid`.
-5. Exigir que as linhas selecionadas tenham um único `day` e que a contagem por fonte seja exatamente `records`.
-6. Congelar o primeiro ciclo que atende; marcar `fresh=true` somente se ele for o último run.
-7. Repetir até todos os recortes terem panorama ou até acabar o histórico.
-
-> Regra de negócio: o panorama nunca mistura fontes de runs diferentes. O recorte `all` pode ficar em um run anterior enquanto um recorte individual avança, porque a disponibilidade de cada fonte é avaliada separadamente.
-
-> Exemplo prático: o run 10 está completo para todos; o run 11 tem uma fonte vazia. O panorama `all` continua no run 10, o recorte da fonte saudável pode avançar para o run 11 e a saúde da coleta reporta `partial`. O dashboard exibe `DADOS ANTERIORES` no agregado e o ciclo atual no recorte individual.
-
-### Qualidade do reporte
-
-| Condição | Comportamento implementado | Impacto no consumidor |
+| Campo | Tipo lógico | Semântica |
 |---|---|---|
-| `requestTime` ausente ou inválido | `request_time_invalid`; dia usa `HTTP Date` ou aquisição | A linha pode ser válida para métricas, mas o horário declarado não é confiável. |
-| Divergência de relógio > 900 s | `reported_clock_skew`; valor original preservado | O horário do banco é sinalizado, não corrigido. |
-| Inteiro ausente, negativo ou acima de int64 | Campo vira nulo e recebe flag `*_invalid` | A métrica sai do denominador correspondente. |
-| `previousDays` com mais de 7 posições | `*_history_invalid`; histórico ignorado | Baseline e recorrência podem ficar indisponíveis. |
-| Arrays históricos com comprimentos diferentes | `history_lengths_differ` | A leitura de D−1 a D−3 pode ficar incompleta. |
-| Uptime 100% com downtime positivo | `uptime_downtime_conflict` | Contradição declarada; não se escolhe um dos dois silenciosamente. |
-| Uptime zero sem tráfego | `zero_uptime_without_traffic` | Pode ser ausência de chamadas, não indisponibilidade. |
-| TPS médio acima do pico | `average_tps_above_peak` | Inconsistência declarada; não se recalcula o TPS. |
-| Erro ou rejeição acima de chamadas | `counter_above_invocations` | A taxa daquela linha fica nula. |
-| Média zero com chamadas | `zero_mean_with_traffic` | Média não entra no ponderado; o zero é suspeito. |
-| Endpoint declarado inválido | `invalid_endpoint_record`; registro removido | A captura não fica completa. |
-| Identidade repetida com valores conflitantes | `conflicting_endpoint`; identidade ambígua | A captura não fica completa e o valor não é escolhido por sorte. |
-| Páginas cruzando o dia | `page_day_changed`; `source_complete=false` | A captura não alimenta KPIs. |
-| Reporte vazio após HTTP 200 | `empty_report`; `data_status=empty` | Não renova métricas; pode ser repetido se havia histórico válido. |
+| `day_basis` | string | Explica qual relógio fundamentou `day` |
+| `source_sha` | SHA-256 | Corpo bronze de origem; os bytes podem expirar |
+| `json_path` | string | Posição `$.data[n]` no corpo identificado |
+| `request_time` | string/nulo | `requestTime` original, sem correção de fuso |
+| `clock_offset_seconds` | número/nulo | `observed_at − requestTime` |
+| `average_tps` / `peak_tps` | int64/nulo | TPS médio e pico declarados; não calculados |
+| `general_uptime` | razão/nulo | `generalUptimeRate` declarado |
+| `downtime_seconds` / `general_downtime` / `scheduled_outage` | int64/nulo | Segundos declarados nos campos de downtime |
+| `previous` | objeto de arrays | Até 7 posições por métrica; D−1 primeiro |
+| `baseline_mean_ms` | número/nulo | Mediana das médias diárias anteriores positivas |
+| `recurrent_days` | inteiro | Dias anteriores com chamadas e erro acima dos limiares |
+| `quality` | array de strings | Ocorrências de contrato/consistência; não reescreve o valor |
+| `fingerprint` | SHA-256 | Seis métricas atuais, uptime, downtime e histórico |
+| `interval_from` / `interval_to` | UTC/nulo | Instantes das duas observações comparadas |
+| `interval_seconds` | número/nulo | Diferença entre os instantes; tempo não crescente invalida |
+| `interval_calls` / `interval_errors` / `interval_rejections` | int64/nulo | Diferenças aceitas dos cumulativos |
+| `interval_error_pct` / `interval_rejection_pct` | percentual/nulo | Taxas dos deltas aceitos |
+| `interval_state` | enum | Motivo da comparação aceita ou suspensa |
+| `interval_error_state` / `interval_rejection_state` | enum | Comparabilidade de cada numerador com chamadas |
 
-### Estados de intervalo
+</details>
 
-| `interval_state` | Significado | Delta disponível? |
+<details>
+<summary>Tentativas HTTP: runs[].reports[].probes[]</summary>
+
+| Campo | Tipo lógico | Semântica |
 |---|---|---|
-| `first_observation` | Não há observação anterior para a entidade. | Não. |
-| `observation_time_not_increasing` | O instante atual não avançou em relação ao anterior. | Não. |
-| `day_changed` | O dia de referência mudou entre as observações. | Não. |
-| `incomplete_source` | Uma das capturas não estava completa. | Não. |
-| `unchanged_report` | O fingerprint das métricas é idêntico. | Não; não se infere tráfego. |
-| `invalid_counter` | Contador nulo ou maior que chamadas. | Não. |
-| `counter_reset_or_revision` | Contador diminuiu. | Não para aquele contador. |
-| `inconsistent_delta` | Delta de erro/rejeição maior que o delta de chamadas. | Não. |
-| `valid` | Todos os critérios de comparação foram atendidos. | Sim. |
+| `capture_attempt` / `data_status` | inteiro / enum | Captura a partir de 1 e resultado da resposta |
+| `page` / `attempt` | inteiro | Página solicitada e tentativa HTTP a partir de 1 |
+| `observed_at` | UTC | Início da tentativa, distinto do início do ciclo |
+| `url` | URL | Admin e parâmetros solicitados; redirecionamentos não são seguidos |
+| `status` | inteiro | HTTP recebido; 0 quando não houve resposta HTTP |
+| `duration_ms` | número | Tempo da tentativa até leitura do corpo ou erro |
+| `http_date` | string/nulo | Cabeçalho `Date` recebido, preservado |
+| `source_sha` / `bytes` | hash/inteiro | Corpo completo preservado e seu tamanho |
+| `error` | string/nulo | Condição final da tentativa; tentativas transitórias permanecem |
 
-> Exemplo prático: um incidente de erro é aberto no ciclo 1. No ciclo 2, o erro persiste e a sequência chega a 2: o incidente fica confirmado. No ciclo 3, a taxa cai abaixo do limiar e há amostra avaliável: status `recovering`, recuperação 1/2. No ciclo 4, a fonte não retorna dados: a recuperação zera e o incidente continua aberto. No ciclo 5, outra amostra válida abaixo do limiar: recuperação 1/2. No ciclo 6, a segunda amostra válida: `resolved`.
+</details>
 
-> Atenção: uma amostra ausente, parcial, inválida ou com menos de 100 chamadas **não** resolve o incidente. A ausência de sinal só conta como recuperação quando a regra era elegível naquela amostra.
+<details>
+<summary>Ocorrências: incidents[]</summary>
 
-> Limitação: “confirmado por persistência” significa que o sinal se repetiu acima do limiar em duas observações. Pode ocorrer com contadores cumulativos sem mudança e não demonstra novos erros no intervalo. O monitor não transforma persistência em causalidade.
-
-## Como consultar os dados
-
-Os artefatos foram desenhados para consulta local e offline. Use DuckDB para ler Parquet diretamente, ou Python com `pyarrow`/`pandas`. O dashboard não consulta banco no navegador: ele recebe `site/data.js` e `site/dashboard.json`.
-
-| Artefato | Caminho | Uso |
+| Campo | Tipo lógico | Semântica |
 |---|---|---|
-| Estado completo | `data/state.json` | Auditoria, recuperação e reconstrução local. |
-| Warehouse | `data/gold/warehouse.duckdb` | Inspeção local; é recriado a cada build. |
-| Parquet atual | `data/gold/current_rows.parquet` | Último contexto por endpoint e `fresh`. |
-| Parquet histórico | `data/gold/observations.parquet` | Série normalizada de 30 dias. |
-| Marts | `data/gold/report_summary.parquet`, `family_summary.parquet`, `observation_trends.parquet` | Agregados prontos para BI. |
-| Payload do site | `site/dashboard.json` e `site/data.js` | Consumo pelo dashboard e inspeção do JSON publicado. |
-| Manual | `site/docs_v2/documentacao-v2.html` | Este documento, autocontido. |
+| `id` | hash truncado | Entidade + regra + run de abertura |
+| `entity_id` / `rule` | strings | Entidade do serviço ou `source:<reporter_id>`, mais a regra |
+| `reporter_id` / `reporter` / `endpoint` | string/nulo | Identidade estável, rótulo atual e endpoint |
+| `opened_at` / `opened_run` | UTC / ID | Primeira detecção observada |
+| `last_seen` | UTC | Última detecção acima do limiar |
+| `evaluated_at` | UTC | Última avaliação conclusiva |
+| `samples` | inteiro | Total de detecções da ocorrência |
+| `consecutive_samples` | inteiro | Sequência atual de detecções |
+| `confirmed` | booleano | Sequência atingiu `confirmation_samples` |
+| `recovery_samples` | inteiro | Amostras avaliáveis consecutivas abaixo do limiar |
+| `status` / `severity` | enum | `open` / `recovering` / `resolved` e `attention` / `critical` |
+| `evidence` | string | Numerador, denominador ou contexto da última detecção |
+| `resolved_at` | UTC opcional | Registrado após completar a recuperação |
 
-### Receita 1 · taxa de erro por reporte no ciclo atual
+</details>
 
-```sql
-SELECT
-  reporter_id,
-  any_value(reporter) AS reporter,
-  count(*) AS endpoints,
-  sum(calls) AS calls,
-  sum(errors) AS errors,
-  100.0 * sum(errors) FILTER (WHERE errors <= calls AND calls > 0)
-    / nullif(sum(calls) FILTER (WHERE errors <= calls AND calls > 0), 0) AS error_pct
-FROM read_parquet('data/gold/current_rows.parquet')
-WHERE fresh AND source_complete
-GROUP BY reporter_id
-ORDER BY error_pct DESC NULLS LAST;
-```
+<details>
+<summary>Payload publicado: chaves de topo</summary>
 
-### Receita 2 · média ponderada sem tratar média como p95
+| Chave | Conteúdo | Consumo |
+|---|---|---|
+| `meta` | Versão, run, datas, janelas, cron e contagens retidas | Cabeçalho e frescor |
+| `rules` | Parâmetros aplicados no ciclo | Metodologia e limiares |
+| `reporters` | Catálogo dos oito reportes | Filtros e rótulos |
+| `latest` | Último contexto por endpoint | Tabela de endpoints e detalhe |
+| `runs` | Ciclos visíveis na janela de 72h | Tendências e monitor de execuções |
+| `incidents` | Incidentes abertos e resolvidos recentes | Seção de incidentes |
+| `reported_history` | Até 3 dias anteriores declarados | Gráficos D−1 a D−3 |
+| `panoramas` | Último ciclo completo por recorte | KPIs e ranking |
+| `collection_health` | Saúde da última tentativa e por fonte | Aviso de frescor |
+| `points` | Pontos próprios para detalhe | Série do endpoint |
+| `report_summary` | Agregado por reporte | Cards e leitura executiva |
+| `family_summary` | Agregado por família | Apoio analítico |
+| `observation_trends` | Série por reporte e ciclo | Tendências |
 
-```sql
-SELECT
-  reporter_id,
-  sum(mean_ms::DOUBLE * calls) FILTER (WHERE mean_ms > 0 AND calls > 0)
-    / nullif(sum(calls) FILTER (WHERE mean_ms > 0 AND calls > 0), 0) AS weighted_mean_ms
-FROM read_parquet('data/gold/current_rows.parquet')
-WHERE fresh AND source_complete
-GROUP BY reporter_id
-ORDER BY weighted_mean_ms DESC NULLS LAST;
-```
+</details>
 
-### Receita 3 · famílias com maior taxa de erro
+> Limitação: `source_complete` indica que a captura reconciliou a cobertura esperada; não garante que todos os campos estejam corretos. `quality` registra suspeitas sem reescrever os valores. O dicionário descreve o contrato implementado, não uma garantia de qualidade da origem.
 
-```sql
-SELECT
-  family,
-  count(*) AS endpoints,
-  sum(calls) AS calls,
-  sum(errors) AS errors,
-  100.0 * sum(errors) FILTER (WHERE errors <= calls AND calls > 0)
-    / nullif(sum(calls) FILTER (WHERE errors <= calls AND calls > 0), 0) AS error_pct
-FROM read_parquet('data/gold/current_rows.parquet')
-WHERE fresh AND source_complete
-GROUP BY family
-ORDER BY error_pct DESC NULLS LAST;
-```
+## Consulta e consumo dos dados
 
-### Receita 4 · contexto antigo versus ciclo atual
+O projeto entrega três formas de consumo: o dashboard para leitura, o JSON para integrações simples e os arquivos Parquet/DuckDB para análise. Todas derivam do mesmo estado lógico; a diferença é o recorte e a forma de acesso.
 
-```sql
-SELECT
-  reporter_id,
-  entity_id,
-  path,
-  run_id,
-  fresh,
-  source_complete,
-  day,
-  calls,
-  errors,
-  error_pct
-FROM read_parquet('data/gold/current_rows.parquet')
-WHERE NOT fresh OR NOT source_complete
-ORDER BY reporter_id, path;
-```
+### Artefatos entregues
 
-### Receita 5 · série de tendência publicada
+| Caminho | Grão / conteúdo | Uso recomendado | Observação |
+|---|---|---|---|
+| `site/index.html` | Dashboard completo | Leitura operacional no navegador | Requer toda a pasta `site/` |
+| `site/dashboard.json` | Payload da publicação | Integrações e inspeção | Inclui `meta`, `latest`, `runs`, `incidents`, `panoramas` e marts |
+| `site/data.js` | `window.ADMIN_DATA` | Carregamento do dashboard | Não é formato de integração; prefira o JSON |
+| `site/documentacao.html` | Manual runtime autocontido | Distribuição offline | Gerado a partir dos dados e do código |
+| `site/docs_v2/documentacao-v2.html` | Esta documentação | Leitura funcional e técnica | Build independente da skill `project-html-docs` |
+| `data/gold/current_rows.parquet` | 1 linha por endpoint no último contexto | Consulta do retrato atual | Filtrar `fresh AND source_complete` para o ciclo atual |
+| `data/gold/observations.parquet` | 1 linha por endpoint × ciclo | Série e auditoria | Não somar cumulativos entre ciclos |
+| `data/gold/report_summary.parquet` | 1 linha por reporte | Comparação entre fontes | Mesmo grão do card por reporte |
+| `data/gold/family_summary.parquet` | 1 linha por família | Visão por domínio | Famílias vêm do caminho do endpoint |
+| `data/gold/observation_trends.parquet` | 1 linha por reporte × ciclo | Tendência agregada | Somente ciclos visíveis na janela |
+| `data/gold/warehouse.duckdb` | Tabelas e views do build | Consulta local ad hoc | Recriado a cada build |
+| Release `state.zip` | Estado + bronzes + manifesto | Recuperação operacional | Até dois pacotes aprovados |
 
-```sql
-SELECT
-  observed_at,
-  reporter_id,
-  calls,
-  errors,
-  error_pct,
-  mean_ms
-FROM read_parquet('data/gold/observation_trends.parquet')
-ORDER BY observed_at, reporter_id;
-```
-
-### Receita 6 · inspecionar o payload JSON
-
-```sql
-SELECT
-  json_extract_string(content, '$.meta.run_id') AS run_id,
-  json_extract_string(content, '$.meta.observed_at') AS observed_at,
-  json_array_length(json_extract(content, '$.latest')) AS latest_rows,
-  json_array_length(json_extract(content, '$.runs')) AS runs,
-  json_array_length(json_extract(content, '$.incidents')) AS incidents
-FROM read_text('site/dashboard.json');
-```
-
-### Python com pyarrow
-
-```python
-from pathlib import Path
-import pyarrow.parquet as pq
-
-path = Path("data/gold/current_rows.parquet")
-table = pq.read_table(path)
-print(table.schema)
-print(table.num_rows)
-```
-
-> Atenção: use `FILTER` na mesma condição para numerador e denominador. Um `WHERE errors <= calls` antes da agregação também remove a linha do denominador, mas esconder a linha do `count(*)` pode mudar a leitura de cobertura. O SQL dos marts usa `FILTER` para manter o grão visível.
-
-> Limitação: os Parquet refletem o último build local ou o artefato publicado; eles não são uma conexão ao vivo com a produção. Para dados além dos 30 dias, é necessário um pacote de estado aprovado ou uma cópia externa do warehouse.
-
-## Operação e recuperação
-
-A operação local serve para desenvolver e auditar; a operação remota é o GitHub Actions. O ciclo remoto usa runner Linux, Python 3.12, DuckDB embutido e um repositório público. Não há servidor contratado nem credencial de banco.
-
-<div class="cards">
-<div class="card"><h3>Executar localmente</h3><p>Crie o virtualenv, instale os locks, rode `collect` e sirva `site/`. Use `build` para republicar sem criar nova observação.</p></div>
-<div class="card"><h3>Publicar no Pages</h3><p>Push na `main` republica o estado aprovado. Schedule coleta; dispatch permite escolher entre coletar ou apenas republicar.</p></div>
-<div class="card"><h3>Recuperar com evidência</h3><p>Baixe um pacote aprovado, restaure em diretório vazio, valide checksums e reconstrua. Não sobrescreva o estado existente.</p></div>
-</div>
-
-### Pré-requisitos e comandos locais
-
-Python 3.11 ou 3.12, 64 bits. No Windows:
+### Preparar o ambiente local
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.lock
 .\.venv\Scripts\python.exe -m pip install --no-deps -e .
-.\.venv\Scripts\python.exe -m admin_metrics.cli collect
+.\.venv\Scripts\python.exe -m admin_metrics.cli build
 .\.venv\Scripts\python.exe -m http.server 8766 --bind 127.0.0.1 --directory site
 ```
 
-Em Linux/macOS:
+Abra `http://127.0.0.1:8766/`. Use `collect` no lugar de `build` para criar uma nova amostra; `build` republica o estado existente sem criar observação. Os caminhos padrão são `--root data`, `--output site` e `--config config`.
 
-```bash
-python -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.lock
-.venv/bin/python -m pip install --no-deps -e .
-.venv/bin/python -m admin_metrics.cli collect
-.venv/bin/python -m http.server 8766 --bind 127.0.0.1 --directory site
+### Receitas DuckDB
+
+As receitas abaixo consideram o diretório do projeto como diretório atual. Ajuste os caminhos se o checkout estiver em outro local.
+
+**1. Abrir o warehouse e conferir os objetos disponíveis**
+
+```sql
+SELECT table_name, table_type
+FROM information_schema.tables
+WHERE table_schema = 'main'
+ORDER BY table_name;
 ```
 
-Abra `http://127.0.0.1:8766/`. Para republicar sem coletar, troque `collect` por `build`. Parâmetros disponíveis: `--root data`, `--output site`, `--config config`.
+**2. Retrato atual por endpoint, sem misturar contexto antigo**
+
+```sql
+SELECT reporter_id, reporter, family, path, calls, errors, error_pct, mean_ms, quality
+FROM read_parquet('data/gold/current_rows.parquet')
+WHERE fresh AND source_complete
+ORDER BY errors DESC NULLS LAST
+LIMIT 50;
+```
+
+**3. Reconciliar a taxa por reporte com a mesma regra dos marts**
+
+```sql
+SELECT reporter_id,
+       count(*) AS endpoints,
+       sum(calls) AS calls,
+       100.0 * sum(errors) FILTER (WHERE errors <= calls AND calls > 0)
+         / nullif(sum(calls) FILTER (WHERE errors <= calls AND calls > 0), 0) AS error_pct,
+       sum(mean_ms::DOUBLE * calls) FILTER (WHERE mean_ms > 0 AND calls > 0)
+         / nullif(sum(calls) FILTER (WHERE mean_ms > 0 AND calls > 0), 0) AS mean_ms
+FROM read_parquet('data/gold/current_rows.parquet')
+WHERE fresh AND source_complete
+GROUP BY reporter_id
+ORDER BY error_pct DESC NULLS LAST;
+```
+
+**4. Visão por família**
+
+```sql
+SELECT family,
+       count(*) AS endpoints,
+       sum(calls) AS calls,
+       sum(errors) AS errors,
+       100.0 * sum(errors) FILTER (WHERE errors <= calls AND calls > 0)
+         / nullif(sum(calls) FILTER (WHERE errors <= calls AND calls > 0), 0) AS error_pct
+FROM read_parquet('data/gold/current_rows.parquet')
+WHERE fresh AND source_complete
+GROUP BY family
+ORDER BY calls DESC;
+```
+
+**5. Série de um reporte na janela publicada**
+
+```sql
+SELECT run_id, observed_at, reporter_id, calls, errors, error_pct, mean_ms
+FROM read_parquet('data/gold/observation_trends.parquet')
+WHERE reporter_id = 'openbanking'
+ORDER BY observed_at;
+```
+
+**6. Listar ocorrências de qualidade por endpoint**
+
+```sql
+SELECT reporter_id, path, quality
+FROM read_parquet('data/gold/current_rows.parquet')
+WHERE fresh AND len(quality) > 0
+ORDER BY reporter_id, path;
+```
+
+**7. Analisar intervalos aceitos e suspensos**
+
+```sql
+SELECT reporter_id, path, interval_state,
+       interval_error_state, interval_rejection_state,
+       interval_calls, interval_errors, interval_error_pct
+FROM read_parquet('data/gold/observations.parquet')
+WHERE interval_state <> 'first_observation'
+ORDER BY observed_at DESC, interval_state;
+```
+
+**8. Consultar o estado bruto em Python**
+
+```python
+import json
+from pathlib import Path
+
+state = json.loads(Path("data/state.json").read_text(encoding="utf-8"))
+open_incidents = [i for i in state["incidents"] if i["status"] != "resolved"]
+latest_run = state["runs"][-1]
+print(latest_run["run_id"], len(open_incidents), len(state["observations"]))
+```
+
+> Atenção: em `current_rows`, `fresh=false` identifica o último contexto de uma fonte que não renovou o ciclo. Essas linhas são úteis para diagnóstico, mas não entram nos KPIs atuais nem nos marts `report_summary` e `family_summary`. Sempre filtre `fresh AND source_complete` ao reproduzir os cards.
+
+> Exemplo prático: no snapshot local, `current_rows` tem 276 linhas, todas com `fresh=true` e `source_complete=true`; `report_summary` tem 8 linhas e `family_summary` tem 26. Se uma fonte falhar no próximo ciclo, `latest` ainda terá suas linhas antigas com `fresh=false`, e os marts do ciclo atual ficarão sem essa fonte.
+
+### Cuidados de consulta
+
+| Armadilha | Por que acontece | Como evitar |
+|---|---|---|
+| Somar chamadas de vários `run_id` | Os contadores são cumulativos do dia | Escolha um ciclo ou use deltas validados |
+| Somar reportes como transações únicas | Serviços podem ser compartilhados | Trate o agregado como soma de declarações, não deduplicação de clientes |
+| Usar `mean_ms` como p95 | A origem só declara média | Não derive percentis |
+| Tratar `error_pct` nulo como zero | Denominador inválido ou numerador impossível | Mantenha nulo e exclua do denominador correspondente |
+| Comparar `day` com `request_time` | O dia usa `HTTP Date`, não o `requestTime` | Leia `day_basis` e preserve o horário original |
+| Considerar incidente resolvido como falha atual | O estado preserva resolvidos por 30 dias | Filtre `status != 'resolved'` para leitura corrente |
+| Contar bronzes como observações | O bronze é conteúdo HTTP endereçado por hash | Use `observations` para o grão analítico |
+| Usar a janela de 72h como histórico completo | O painel publica 3 dias; o estado guarda 30 | Consulte o estado/Parquet para o histórico durável |
+
+## Operação, agenda e recuperação
+
+A operação normal é conduzida pelo GitHub Actions. O checkout local serve para desenvolvimento, inspeção e recuperação assistida. O projeto não tem API de administração, painel de escrita ou autenticação corporativa; o controle é o workflow, o catálogo e o estado em Release.
+
+### Pré-requisitos
+
+| Requisito | Versão / observação |
+|---|---|
+| Python | 3.11 ou 3.12, 64 bits |
+| Node.js | 22 ou superior para as verificações do dashboard |
+| Dependências Python | `requirements-dev.lock` para desenvolvimento; `requirements.lock` para runtime |
+| GitHub CLI | `gh` autenticado para restaurar, criar ou promover Releases |
+| Acesso ao repositório | `GH_REPO=alebitencourtx/admin-metrics` no ambiente do workflow |
+
+### Comandos locais
 
 ```powershell
+# Instalar
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.lock
+.\.venv\Scripts\python.exe -m pip install --no-deps -e .
+
+# Coletar uma nova amostra e publicar
+.\.venv\Scripts\python.exe -m admin_metrics.cli collect
+
+# Republicar o estado existente sem criar observação
+.\.venv\Scripts\python.exe -m admin_metrics.cli build
+
+# Servir o site local
+.\.venv\Scripts\python.exe -m http.server 8766 --bind 127.0.0.1 --directory site
+
+# Verificações
 .\.venv\Scripts\python.exe -m pytest -q
 node --check src/admin_metrics/web/app.js
 node --test tests/test_dashboard.cjs
 ```
 
-### Gatilhos remotos
+### Parâmetros de configuração
 
-| Gatilho | Coleta nova? | Comportamento |
+| Parâmetro | Valor padrão | Efeito | Restrição validada |
+|---|---:|---|---|
+| `retention_days` | 30 | Retenção de ciclos, observações e incidentes resolvidos | Inteiro > 0; ≥ `dashboard_history_days` |
+| `dashboard_history_days` | 3 | Janela publicada no painel | Inteiro > 0; ≤ retenção |
+| `schedule_interval_hours` | 1 | Intervalo esperado do cron | 1, 2, 3, 4, 6, 8, 12 ou 24 |
+| `schedule_minute` | 17 | Minuto do cron | 0–59 |
+| `error_attention_pct` | 5 | Limiar de atenção de erro | 0–100; ≤ crítico |
+| `error_critical_pct` | 20 | Limiar crítico de erro | 0–100 |
+| `minimum_calls` | 100 | Amostra mínima para regras | Inteiro > 0; ≤ crítico |
+| `critical_minimum_calls` | 1000 | Amostra mínima para erro crítico | Inteiro > 0 |
+| `rejection_attention_pct` | 5 | Limiar de atenção de rejeição | 0–100 |
+| `latency_attention_ms` | 2000 | Limiar de atenção de latência | Inteiro > 0; ≤ crítico |
+| `latency_critical_ms` | 4000 | Limiar crítico de latência | Inteiro > 0 |
+| `regression_multiplier` | 2 | Fator de regressão sobre a mediana | > 1 |
+| `recovery_samples` | 2 | Amostras para resolver | Inteiro > 0 |
+| `confirmation_samples` | 2 | Amostras para confirmar | Inteiro > 0 |
+| `baseline_minimum_days` | 3 | Mínimo de médias anteriores para baseline | Inteiro > 0; ≤ histórico |
+| `recurrent_minimum_days` | 3 | Mínimo de dias para recorrência | Inteiro > 0; ≤ histórico |
+| `reported_history_days` | 7 | Máximo de posições em `previousDays` | ≤ 7 |
+| `clock_skew_seconds` | 900 | Tolerância entre `requestTime` e coleta | Número ≥ 0 |
+| `stale_after_hours` | 2 | Idade que aciona aviso de dados antigos | ≥ intervalo do cron |
+| `chart_gap_hours` | 1.5 | Lacuna que interrompe a linha do gráfico | ≥ intervalo do cron |
+| `empty_retry_delays_seconds` | `[10, 30]` | Repetições após resposta vazia | Até 2 inteiros entre 1 e 60 |
+
+> Atenção: alterar `rules.json` exige manter exatamente o conjunto de chaves e respeitar as ordens de grandeza. O teste `test_versioned_configuration_matches_hourly_workflow` compara o cron gerado com o workflow; uma mudança de agenda precisa atualizar ambos.
+
+### Agenda e gatilhos
+
+| Gatilho | Comportamento |
+|---|---|
+| `push` na `main` | Republica o estado aprovado sem criar nova observação, salvo bootstrap sem estado |
+| `schedule` `17 * * * *` UTC | Cria uma nova observação a cada hora, em melhor esforço |
+| `workflow_dispatch` com `refresh_data=true` | Coleta uma nova observação |
+| `workflow_dispatch` com `refresh_data=false` | Apenas republica o estado aprovado |
+| `pull_request` | Executa o workflow de CI, não o de Pages |
+
+O workflow `pages.yml` usa concorrência `admin-state-and-pages` com `cancel-in-progress: false`, instala dependências, roda `pytest`, verifica o JavaScript, prepara o estado, envia `site/` como artefato e faz o deploy. O job `confirm` promove o candidato somente se o job `deploy` terminou com sucesso; caso contrário, descarta o draft.
+
+### Ciclo de Release
+
+1. **Preparar** — restaura a Release aprovada mais recente, se existir; executa o pipeline; publica o site; cria um draft `state-<run>-<attempt>` com `state.zip`, `SHA256SUMS` e um corpo JSON de recibo.
+2. **Publicar Pages** — o artefato `site/` é enviado ao GitHub Pages.
+3. **Confirmar** — o job `confirm` verifica o recibo do deploy; se houver sucesso, promove o draft e mantém apenas os dois pacotes aprovados mais recentes.
+4. **Descartar** — se o build ou o deploy falhar, o draft é excluído. Uma Release já aprovada não é apagada por falha de deploy.
+
+O corpo do recibo contém `data_run_id`, `workflow_run_id`, `source_sha` e `purpose=approved-monitor-state`. A promoção exige um job `deploy` com `status=completed` e `conclusion=success`; links de execução de ciclos antigos só são preenchidos quando há recibo de Release que comprove a associação.
+
+### Runbook de recuperação
+
+| Sintoma | Causa provável | Ação |
 |---|---|---|
-| `push` na `main` | Não, salvo bootstrap | Restaura o estado aprovado mais recente e republica o site. Sem estado aprovado, faz coleta inicial. |
-| `schedule` | Sim | Cron `17 * * * *` UTC; agenda por melhor esforço. |
-| `workflow_dispatch` com `refresh_data=true` | Sim | Coleta uma nova observação. |
-| `workflow_dispatch` com `refresh_data=false` | Não | Republica o estado aprovado sem criar observação. |
+| Build falhou antes de gravar o estado | Erro de código, DuckDB, template ou validação | Corrigir a causa, reexecutar; o estado e o site anterior permanecem |
+| Deploy do Pages falhou | Indisponibilidade do Pages ou artefato inválido | O job `confirm` descarta o draft; reexecute após o serviço normalizar |
+| Candidato ficou em draft após deploy aprovado | Falha no `confirm` ou no recibo | Verificar o ID do dashboard e o job; promover manualmente com `gh release edit` só após comprovar o deploy |
+| Fonte respondeu HTTP 200 vazio | Relatório sem métricas naquele instante | A fonte pode ser recapturada após 10 e 30 s se já tinha dados válidos; o panorama anterior é preservado |
+| Fonte retornou HTTP 4xx/5xx | Acesso, indisponibilidade ou bloqueio | Ver as tentativas preservadas; não inferir causa dos serviços de clientes |
+| Estado restaurado em raiz não vazia | Proteção contra sobrescrita | Escolha um diretório vazio; o restore não altera o estado atual |
+| Checkup externo/interno falhou | ZIP corrompido, checksum divergente ou entrada inválida | Não use o pacote; restaure outro backup aprovado |
+| Lock abandonado | Processo anterior interrompido | Confirme que não há escritor ativo e remova `data/.writer.lock`; nunca remova com uma execução em andamento |
+| Estado com versão incompatível | Pacote de outra geração | Use um pacote com `version=1` e modelo suportado (1–3) |
+| Site sem a documentação v2 | Build antigo ou arquivo ausente | Confirme `docs_v2/documentacao-v2.html` e reexecute o build |
+| Dados desatualizados no navegador | Última tentativa recente, panorama antigo | Verifique a saúde da coleta e o motivo da não renovação; não trate como zero |
 
-O job `build` roda testes, prepara o estado, gera o site, cria um candidato draft e envia o artefato do Pages. O job `deploy` publica o Pages. O job `confirm` só promove o candidato se o job `deploy` estiver concluído com sucesso; caso contrário, descarta o draft. Um workflow verde significa que o processamento e a publicação concluíram, não que todas as fontes retornaram métricas válidas.
-
-### Retenção e pacotes
-
-| Camada | Retenção | Unidade |
-|---|---|---|
-| Observações e tentativas normalizadas | 30 dias, cerca de 720 ciclos horários | Dias |
-| Bronze no estado atual | Dois últimos ciclos | Ciclos |
-| Dashboard publicado | 3 dias | Dias |
-| Incidentes abertos | Persistem até resolução | Estado |
-| Incidentes resolvidos | 30 dias | Dias |
-| Releases aprovadas | 2 pacotes, atual e anterior | Pacotes |
-| Bronze dentro de um pacote | Dois ciclos recentes do estado empacotado | Ciclos |
-
-O pacote `state.zip` contém `state.json`, `manifest.json` e `bronze/<sha256>.json`. O `SHA256SUMS` externo cobre o ZIP; o manifesto cobre cada entrada. O restore verifica checksum externo e interno, nomes permitidos, duplicatas, caminhos, limites de expansão e referências bronze antes de gravar. A gravação é atômica e o `state.json` é o último ponteiro; se a escrita falhar, os arquivos da tentativa são removidos.
-
-### Recuperação
-
-Com `gh` autenticado e `GH_REPO=alebitencourtx/admin-metrics`, em um diretório de dados vazio:
+Restauração explícita em diretório vazio, com `gh` autenticado:
 
 ```powershell
+$env:GH_REPO = "alebitencourtx/admin-metrics"
 python scripts/cloud_pipeline.py restore --tag state-<run>-<tentativa>
 python -m admin_metrics.cli build
 ```
 
-O restore não sobrescreve estado existente nem troca automaticamente o estado remoto atual. Para conferir um candidato após falha de confirmação, consulte o ID do dashboard e o job `deploy`; não apague o pacote anterior antes de validar a recuperação.
+> Atenção: o restore não sobrescreve estado existente e não troca automaticamente o estado remoto atual. Nunca apague o pacote anterior antes de verificar a recuperação e o build local.
 
-| Sintoma | Causa provável | Ação de recuperação |
+> Limitação: o agendamento do GitHub Actions é de melhor esforço. Uma execução pode atrasar ou não ocorrer; o aviso de dados desatualizados usa a idade real do último panorama, não a promessa do cron.
+
+## Qualidade, continuidade e limites
+
+O projeto prefere **diagnóstico explícito** a correção silenciosa. Uma resposta HTTP 200 pode ser publicada com um diagnóstico de fonte vazia; um build bem-sucedido pode publicar um panorama anterior identificado. Sucesso do workflow não é o mesmo que saúde dos dados.
+
+### Matriz de condições e comportamento
+
+| Condição | Comportamento implementado | Impacto no consumidor |
 |---|---|---|
-| Workflow falhou antes de criar candidato | Teste, build ou prepare interrompido | Corrigir a causa e reexecutar; não há draft a descartar. |
-| Fonte respondeu HTTP 403/500 | Acesso ou falha transitória do Admin | Verificar o diagnóstico; reexecutar a coleta. Não converter em zero. |
-| HTTP 200 com corpo vazio | Admin respondeu sem métricas | Se havia histórico válido, as repetições de 10 s/30 s ocorrem; se persistir, o panorama anterior é preservado. |
-| Candidato draft após deploy falho | Pages e Releases não são transacionais | Inspecionar o run e o job; promover manualmente apenas com recibo de deploy, ou descartar. |
-| Pacote corrompido | Checksum, caminho ou manifesto inválido | Usar o pacote aprovado anterior; não editar o ZIP para “consertar”. |
-| Schedule atrasado ou desabilitado | GitHub Actions é best effort | Executar `workflow_dispatch`; o dashboard avisa após 2 h sem dados válidos. |
-| Dashboard antigo | Falta de ciclo completo ou dia coerente | Conferir `DADOS ANTERIORES`, idade do último dado válido e saúde da coleta. |
+| HTTP 200 com `data=[]` e total 0 | `coverage=empty_response`, `complete=false`, `data_status=empty` | Fonte não renova o panorama; dados anteriores permanecem rotulados |
+| HTTP 200 com corpo malformado | `data_not_array`, `meta_not_object` ou `invalid_totals`; captura incompleta | Fonte entra em falha de coleta; sem métricas novas |
+| HTTP 4xx/5xx | `http_<status>` e captura incompleta | Diagnóstico de coleta; não é indisponibilidade dos serviços de clientes |
+| Falha de transporte | `status=0`, `transport_error` | Pode haver retry; se persistir, saúde parcial ou indisponível |
+| Paginação sem novas identidades | `pagination_no_new_identity`; cobertura não confirmada | Captura incompleta; evita loop infinito |
+| Identidade duplicada com valores iguais | `duplicate_endpoint`; primeiro registro mantido | Captura incompleta, mas sem conflito de valores |
+| Identidade duplicada com valores diferentes | `duplicate_endpoint` + `conflicting_endpoint`; registro ambíguo | Captura incompleta; não entra como ciclo completo |
+| Total alcançado antes de `totalPages` | `page_metadata_conflict`, mas `complete=true` se o total reconciliar | Cobertura conciliada com alerta de metadados |
+| Total nunca alcançado | `total_mismatch` ou `missing_total`; `unconfirmed` | Captura incompleta |
+| Limite de 10.000 identidades | `record_limit`, `coverage=record_limit` | Captura incompleta; pode indicar crescimento anormal |
+| Páginas cruzam o dia | `page_day_changed`, `mixed_reference_day`; `source_complete=false` | Linhas ficam fora dos KPIs do ciclo |
+| `requestTime` ausente ou inválido | `request_time_invalid` | `clock_offset_seconds` nulo; valor original preservado |
+| `requestTime` diverge mais de 900 s | `reported_clock_skew` | Sinal de relógio; não corrige o horário |
+| Uptime booleano | `uptime_invalid` | Valor nulo; não é convertido em 1 nem 0 |
+| Uptime 100% com downtime positivo | `uptime_downtime_conflict` | Valor original mantido; interpretação exige cautela |
+| TPS médio maior que o pico | `average_tps_above_peak` | Inconsistência registrada; valores preservados |
+| Erro ou rejeição maior que chamadas | `counter_above_invocations`; taxa nula | Linha fora do denominador daquela taxa |
+| Média zero com chamadas positivas | `zero_mean_with_traffic` | Média não entra na média ponderada |
+| Históricos de métricas com tamanhos diferentes | `history_lengths_differ` | Baseline e recorrência podem ficar indisponíveis |
+| `previousDays` com valor inválido | `<métrica>_history_value_invalid`; posição nula | Histórico não é corrigido |
+| Reset ou revisão de contador | `counter_reset_or_revision`; intervalo suspenso | Regras daquele contador não avaliam; latência válida continua |
+| Fingerprint igual ao anterior | `unchanged_report`; intervalo suspenso | Não conta como tráfego novo |
+| Reporte incompleto | `source_complete=false` | Fora dos KPIs e dos marts do ciclo |
+| Fonte nunca completou | `latest_rows` mantém o contexto parcial mais recente | Diagnóstico disponível, mas sem promessa de completude |
+| Release sem recibo de deploy | Promoção rejeitada | O draft não vira pacote aprovado |
+| ZIP com caminho não permitido | Restore rejeitado antes de qualquer escrita | Nenhum arquivo é extraído |
+| Estado com modelo desconhecido | `archive.validate` rejeita | Pacote incompatível não é promovido |
 
-> Atenção: um deploy aprovado com confirmação falha pode deixar um candidato em draft. O candidato só deve ser promovido após um job `deploy` comprovadamente concluído com sucesso no workflow correspondente.
+### Estados de cobertura e saúde
 
-> Exemplo prático: o restore é feito em `data/` vazio; o pacote contém `state.json` com 720 runs e dois bronzes recentes. O restore valida o checksum do ZIP, o manifesto, os caminhos e os hashes; depois grava o estado e reconstrói o site. Se o `state.json` existisse, o comando falharia antes de qualquer mutação.
+| Campo / valor | Significado |
+|---|---|
+| `coverage=reported_total_reconciled` | Total de identidades conciliado com `totalRecords` |
+| `coverage=total_mismatch` | Total declarado não foi alcançado |
+| `coverage=empty_response` | Resposta reconciliada sem métricas |
+| `coverage=record_limit` | Limite de identidades atingido |
+| `coverage=unconfirmed` | Paginação encerrou sem confirmação |
+| `coverage=invalid_records` | Havia registros inválidos na captura |
+| `coverage=mixed_reference_day` | Páginas cruzaram o dia de referência |
+| `coverage=unknown` | Cobertura não determinada |
+| `data_status=valid` | HTTP 200, captura completa e ao menos um registro |
+| `data_status=empty` | HTTP 200 sem métricas utilizáveis |
+| `data_status=http_error` | HTTP diferente de 200 |
+| `data_status=transport_error` | Sem resposta HTTP |
+| `data_status=invalid_report` | Corpo recebido, mas contrato/cobertura inválidos |
+| `collection_health=healthy` | Todas as fontes com dados válidos |
+| `collection_health=partial` | Ao menos uma fonte válida e ao menos uma não válida |
+| `collection_health=unavailable` | Nenhuma fonte com dados válidos |
 
-> Limitação: o pacote aprovado preserva o estado limitado e os bronzes recentes, não todos os bytes históricos. Hashes antigos podem permanecer no estado enquanto os bytes correspondentes já expiraram. O monitor é de nó único, sem autenticação corporativa e sem alta disponibilidade.
+### Continuidade do panorama
 
-## Decisões de projeto e limitações
+O panorama é escolhido percorrendo os ciclos do mais recente para o mais antigo. Para o escopo “todos”, todas as oito fontes precisam estar válidas, com a contagem normalizada exata e um único dia de referência. Para um escopo de fonte, basta aquela fonte. O primeiro ciclo que satisfizer o critério vira o panorama daquele recorte; não há mistura de fontes ou dias.
 
-| Decisão implementada | Efeito | Evidência |
+A saúde (`collection_health`) sempre descreve a **última tentativa**, mesmo que o panorama venha de um ciclo anterior. Os campos `last_attempt_at` e `last_valid_at` são separados de propósito. O navegador calcula a idade do último dado válido, não a idade da última tentativa.
+
+> Regra de negócio: uma tentativa vazia recente não renova a idade do panorama. O aviso “Dados válidos desatualizados” usa o instante do último ciclo completo, por isso pode aparecer mesmo com uma execução recente.
+
+### Retenção e expiração
+
+| Camada | Retenção | Consequência |
 |---|---|---|
-| Catálogo fechado de oito hosts | Reduz risco de chamar URLs descritas no relatório | `collect.validate_reporter` |
-| HTTPS, host exato e caminho exato | Impede redirecionamento, query livre e host alternativo | `validate_reporter` |
-| Bronze por SHA-256 | Prova de integridade e deduplicação de corpos | `storage.put` |
-| Lock de escritor único | Evita dois processos alterando o mesmo estado | `storage.lock` |
-| Estado JSON versionado | Simples de inspecionar, empacotar e restaurar | `storage.empty_state`, `archive.validate` |
-| Arrow + DuckDB + Parquet | Consulta analítica local sem servidor | `build.SCHEMA`, `marts.sql` |
-| Site estático sem CDN | Leitura offline e publicação no Pages | `web/index.html`, `build.py` |
-| Dashboard sem consulta ao vivo | Não depende de banco no navegador | `data.js`, `app.js` |
-| Retenção de 30 dias e janela de 3 dias | Histórico auditável sem publicar tudo | `config/rules.json` |
-| Dois pacotes aprovados | Recuperação atual e anterior | `cloud_pipeline.promote` |
+| Painel publicado | 72 horas de ciclos e pontos | Lacunas ficam vazias; não há preenchimento retroativo |
+| Estado lógico | 30 dias de ciclos, observações e `latest_rows` | Ciclos antigos são removidos inteiros, não linha a linha |
+| Incidentes | Abertos persistem; resolvidos por 30 dias | Histórico de resolução limitado à janela |
+| Bronze local | Dois ciclos recentes referenciados | Hashes antigos permanecem no estado, mas os bytes podem expirar |
+| Release | Dois pacotes aprovados | A união do atual com o anterior pode conter bronzes de três ciclos |
+| Warehouse/Parquet | Recriados a cada build | O warehouse local não é fonte de verdade nem é publicado |
+| GitHub Pages | Conteúdo do último deploy | O site é uma projeção; não é backup do estado |
 
-As decisões acima são as que o código e a configuração comprovam. Quando a motivação histórica não está registrada, este documento descreve o comportamento e o efeito, sem inventar justificativa.
+### Limitações conhecidas
 
-> Regra de negócio: a publicação é separada da saúde. O Pages pode publicar um diagnóstico de falha; a saúde `unavailable` não impede o workflow de concluir, desde que o processamento e a publicação tenham sido concluídos.
+- **Média não é p95.** A origem declara `averageResponse`; o projeto não inventa distribuição.
+- **Erro não tem status HTTP.** O campo `errors` é um contador; não é possível separar 400, 401, 429 ou 500 por endpoint.
+- **Rejeição não prova causa.** O projeto não afirma bloqueio, fraude, limite de taxa ou falha de negócio.
+- **Serviços podem ser compartilhados.** O agregado soma declarações de reportes; não garante transações únicas entre instituições.
+- **Um único escritor.** Não há coordenação distribuída; o lock local e o workflow com concorrência são a proteção.
+- **Agenda de melhor esforço.** O GitHub pode atrasar ou desabilitar schedules de repositórios públicos inativos.
+- **Dados publicados são reais, mas não contínuos.** A série começa na primeira execução; não há preenchimento de horários não coletados.
+- **O snapshot local não é produção.** Números de exemplo têm data e run; não devem ser citados como estado atual.
+- **Sem autenticação corporativa.** O site é público e não tem controle de acesso por usuário.
+- **Sem transação distribuída.** Pages, Releases e estado local não formam uma transação única; uma falha de confirmação pode deixar um draft para inspeção.
 
-> Limitação: o monitor não substitui uma plataforma de observabilidade. Ele amostra uma vez por hora, não captura cada requisição, não calcula percentis, não separa códigos de erro e não prova causalidade. Serviços compartilhados entre reportes podem aparecer em mais de uma fonte.
+> Limitação: o projeto documenta o comportamento implementado. Ele não certifica que a origem cumpriu o contrato Admin, não mede disponibilidade real dos serviços de clientes e não substitui os relatórios oficiais do regulador.
 
-> Limitação: a agenda do GitHub Actions é de melhor esforço. Atrasos, execuções perdidas e desabilitação de schedule em repositório público inativo são possíveis; a janela de 72 horas mostra lacunas em vez de preencher horários não coletados.
+## Decisões de implementação e configuração
 
-> Limitação: a média ponderada usa apenas linhas com média positiva e chamadas positivas. Uma média zero com tráfego é sinalizada, mas não é substituída; uma linha sem média válida não entra no denominador do ponderado.
+As decisões abaixo descrevem o que está implementado e as consequências observáveis. Elas não são um histórico de arquitetura nem uma proposta de modernização; são a leitura do código desta revisão.
+
+| Decisão | Implementação | Consequência |
+|---|---|---|
+| Estado como JSON versionado | `state.json` versão 1, com listas de runs, observations, incidents e latest_rows | Simples de inspecionar, restaurar e transportar; requer escrita atômica e lock |
+| Escritor único | `data/.writer.lock` com `O_EXCL` | Evita dois processos alterando o mesmo estado; lock abandonado exige intervenção |
+| Warehouse embutido | DuckDB recriado a cada build, com `memory_limit=1GB` e `threads=2` | Sem servidor de banco; o build é determinístico a partir do estado |
+| Parquet como entrega analítica | Cinco arquivos Arrow/Parquet com compressão Zstandard | Consumo portátil; não é necessário subir banco para consultar |
+| Site estático | HTML, JS e dados no próprio `site/`, sem CDN | Leitura offline e CSP restritiva; toda a pasta é necessária no dashboard |
+| Assets endereçados por hash | `site/assets/<sha20>/` e poda de versões antigas | Cache seguro e rollback de assets; o índice aponta para a versão atual |
+| Release como estado durável | `state.zip` + manifesto + checksums, até dois aprovados | Recuperação independente do histórico Git; bytes de bronze podem expirar |
+| Catálogo allowlist | Host exato, caminho exato e HTTPS; CNPJ de 14 dígitos | Impede chamadas a URLs arbitrárias; mudanças de catálogo exigem edição explícita |
+| Evidência de catálogo | `catalog-evidence.json` com fonte, data, hash, bytes e matches | Rastreia o vínculo URL/CNPJ; não comprova controle societário |
+| Nulo não é zero | Campos inválidos ficam nulos e fora dos denominadores | Evita subestimar taxas e inventar tráfego |
+| Dia pelo HTTP Date | `http_date` da página em `America/Sao_Paulo`; fallback para coleta | Evita usar o relógio local como verdade; páginas que cruzam o dia invalidam a captura |
+| Erro e rejeição separados | Estados de intervalo independentes por numerador | Reset de rejeição não esconde erro válido; latência tem elegibilidade própria |
+| Configuração fechada | Conjunto exato de 21 chaves, ordens e limites validados | Falha cedo; evita regra silenciosamente ignorada |
+| Dois manuais | Manual runtime gerado por `documentation.py` e documentação v2 independente | O site mantém o manual operacional; a v2 cobre a jornada funcional/técnica |
+| Sem chamadas a clientes | `contracts.endpoint_parts` valida texto e nunca faz request | Reduz risco e mantém o escopo Admin estrito |
+| TLS do sistema | `truststore.SSLContext` com HTTP/2 | Confiança alinhada ao sistema operacional do runner |
+
+### Validação da configuração
+
+`validate_rules` exige que o objeto tenha exatamente as chaves de `DEFAULT_RULES`. Ele rejeita booleanos onde se espera número, valores não finitos, percentuais acima de 100, ordens invertidas, intervalos de agenda não suportados e listas de retry com mais de duas posições ou fora de 1–60 segundos. `schedule_cron` deriva o cron do intervalo e do minuto; o teste de configuração compara o resultado com `pages.yml`.
+
+`validate_reporters` exige lista não vazia, campos de identidade preenchidos, `id` único, CNPJ de 14 dígitos e URL compatível com `https://<id>.api.santander.com.br/open-banking/admin/v2/metrics`, sem query, fragmento, usuário, senha ou porta alternativa.
+
+### Consequências operacionais
+
+- Alterar a retenção ou a janela do painel exige revisar o payload, os testes e a documentação; a retenção é aplicada em ciclos inteiros.
+- Alterar o cron exige atualizar `rules.json` e `pages.yml`; o teste falha se divergirem.
+- Alterar o esquema Arrow exige atualizar `build.SCHEMA`, o dicionário, as receitas e os testes de pipeline.
+- Alterar o catálogo exige atualizar `reporters.json` e, idealmente, a evidência do Diretório; o catálogo é a fronteira de segurança.
+- Alterar o layout do payload exige atualizar `web/app.js`, o manual runtime e esta documentação.
+
+> Atenção: não edite `data/state.json` manualmente para “corrigir” uma observação. Use o fluxo de coleta/build ou restaure um pacote aprovado; a validação de estado e o checksum existem para proteger a série.
+
+> Limitação: o repositório não contém um registro histórico de decisões (ADR) com justificativas originais. As decisões acima são inferidas do código, da configuração e dos testes; quando a motivação não é demonstrável, ela não é inventada.
 
 ## Glossário e referências
 
-| Termo | Definição neste projeto |
+### Glossário
+
+| Termo | Definição |
 |---|---|
-| Admin API | Contrato Open Finance consultado em `/open-banking/admin/v2/metrics`. |
-| Reporte | Fonte operacional identificada por `reporter_id`, com host e CNPJ no catálogo. |
-| Run | Ciclo de coleta com `run_id`, instante UTC e relatórios por fonte. |
-| Observação | Linha normalizada de um endpoint em um reporte e run. |
-| `entity_id` | Hash truncado de `reporter_id` + `endpoint`; identidade técnica da entidade. |
-| Bronze | Corpo bruto da resposta, endereçado por SHA-256. |
-| Panorama | Ciclo completo e dia único escolhido para um recorte. |
-| `DADOS ANTERIORES` | Panorama preservado de um run anterior, exibido com data explícita. |
-| Fingerprint | Hash das métricas atuais e histórico; detecta reporte sem mudança. |
-| Intervalo válido | Delta de contadores comparável entre duas observações do mesmo dia. |
-| Baseline | Mediana das médias diárias anteriores positivas, com mínimo de 3. |
-| Recorrência | Dias anteriores com erro acima do limiar e amostra mínima. |
-| Incidente | Ocorrência por entidade e regra, com estados aberto, recuperando e resolvido. |
-| Confirmação | Duas detecções consecutivas acima do limiar. |
-| Recuperação | Duas amostras avaliáveis consecutivas abaixo do limiar. |
-| `source_complete` | A captura que produziu a linha foi conciliada. |
-| `fresh` | A linha pertence ao último run. |
-| Mart | Agregação derivada por SQL, como `report_summary`. |
-| Release aprovada | Pacote de estado com checksum, promovido após deploy bem-sucedido. |
+| Admin | API pública do Open Finance brasileiro que declara métricas operacionais dos serviços |
+| Reporte | Fonte do catálogo; um dos oito hosts Santander |
+| Endpoint declarado | URI descrita pelo banco dentro do relatório; não é chamada pelo monitor |
+| Identidade / `entity_id` | Hash de `reporter_id` + `endpoint`, truncado em 24 caracteres |
+| Ciclo / `run_id` | Execução lógica que agrupa coletas, análises e publicação |
+| Observação | Linha normalizada de um endpoint em um ciclo |
+| Bronze | Corpo HTTP integral preservado e endereçado por SHA-256 |
+| Panorama | Último ciclo completo e coerente para um recorte (`all` ou uma fonte) |
+| Dia analítico | Dia derivado do `HTTP Date` em `America/Sao_Paulo`, com fallback para a coleta |
+| Intervalo | Comparação entre duas observações da mesma entidade e dia |
+| Fingerprint | Hash das métricas atuais e do histórico, usado para detectar repetição |
+| Sinal | Regra acima do limiar, ainda sem confirmação |
+| Incidente | Ocorrência persistida de uma regra para uma entidade |
+| Confirmado | Sinal repetido em `confirmation_samples` amostras consecutivas |
+| Recuperação | Amostras avaliáveis consecutivas abaixo do limiar |
+| `source_complete` | Cobertura reconciliada da captura que produziu a linha |
+| `fresh` | Linha do ciclo mais recente; não mede idade do relógio |
+| Mart | Tabela agregada derivada por SQL (`report_summary`, `family_summary`, `observation_trends`) |
+| Release aprovada | Pacote `state-*` com recibo de deploy e checksums |
+| Draft | Candidato de Release ainda não promovido |
+| p95 | Percentil 95; não disponível no projeto |
+| Taxa de erro | `100 × errors ÷ calls` com denominador válido |
+| Taxa de rejeição | `100 × rejections ÷ calls` com denominador válido |
+| Média ponderada | `Σ(mean_ms × calls) ÷ Σ(calls)` para linhas válidas com tráfego |
+| Baseline | Mediana das médias diárias anteriores positivas |
+| Recorrência contextual | Contagem de dias anteriores acima dos limiares de erro |
+| DADOS ANTERIORES | Rótulo do painel quando o panorama preservado não é do ciclo atual |
+| Lock | Arquivo `.writer.lock` que impede dois escritores simultâneos |
+| Checksum | SHA-256 externo e interno usado para validar pacotes e bronzes |
 
-### Fontes externas
+### Mapa de módulos
 
-- [OpenAPI Admin 2.0.1](https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml) — contrato oficial consultado.
-- [Diretório oficial de participantes](https://data.directory.openbankingbrasil.org.br/participants) — evidência de URL e CNPJ do catálogo.
-- [GitHub Actions schedule](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) — comportamento de agenda por melhor esforço.
+| Arquivo | Responsabilidade |
+|---|---|
+| `src/admin_metrics/pipeline.py` | Orquestra coleta, análise, build, estado e GC de bronze |
+| `src/admin_metrics/collect.py` | HTTP, catálogo, paginação, retry, deduplicação e bronze |
+| `src/admin_metrics/contracts.py` | Validação passiva de URIs declaradas |
+| `src/admin_metrics/storage.py` | Hash, escrita atômica, lock e contrato de estado |
+| `src/admin_metrics/analysis.py` | Normalização, dia, qualidade, deltas, sinais e incidentes |
+| `src/admin_metrics/health.py` | Classificação da tentativa e saúde da coleta |
+| `src/admin_metrics/panorama.py` | Seleção do último ciclo completo por escopo |
+| `src/admin_metrics/rules.py` | Validação de parâmetros e geração do cron |
+| `src/admin_metrics/build.py` | Arrow, DuckDB, marts, Parquet, site e cópia da v2 |
+| `src/admin_metrics/marts.sql` | Agregações SQL dos três marts |
+| `src/admin_metrics/documentation.py` | Manual runtime autocontido |
+| `src/admin_metrics/web/` | Dashboard estático e interativo |
+| `scripts/cloud_pipeline.py` | Restore, candidato, promoção, descarte e retenção |
+| `.github/workflows/pages.yml` | Agenda, build, deploy e confirmação |
+| `.github/workflows/ci.yml` | Matriz de testes Python e dashboard |
+| `config/reporters.json` | Catálogo dos oito reportes |
+| `config/rules.json` | Parâmetros analíticos e de apresentação |
+| `config/catalog-evidence.json` | Evidência do vínculo URL/CNPJ no Diretório |
 
-### Manutenção deste manual
+### Referências externas
 
-Este documento é a versão **2.0** da documentação, mantida em `docs_v2/`. A home do dashboard aponta para `docs_v2/documentacao-v2.html`, abaixo do link do manual atual `documentacao.html`. O HTML é autocontido e não depende de servidor.
+- [Dashboard publicado](https://alebitencourtx.github.io/admin-metrics/)
+- [Manual runtime publicado](https://alebitencourtx.github.io/admin-metrics/documentacao.html)
+- [Documentação v2 publicada](https://alebitencourtx.github.io/admin-metrics/docs_v2/documentacao-v2.html)
+- [Contrato oficial Admin 2.0.1](https://raw.githubusercontent.com/OpenBanking-Brasil/openapi/main/swagger-apis/admin/2.0.1.yml)
+- [Diretório de participantes do Open Finance](https://data.directory.openbankingbrasil.org.br/participants)
+- [Workflow de coleta e publicação](https://github.com/alebitencourtx/admin-metrics/actions/workflows/pages.yml)
 
-Para reconstruir e verificar localmente:
+### Manutenção desta documentação
+
+Esta documentação foi gerada com a skill `project-html-docs` a partir do código e da configuração da revisão `5a8cda6`. Os arquivos editáveis ficam em `docs_v2/document.json` e `docs_v2/content.md`; o HTML é um artefato de build e não deve ser editado manualmente.
 
 ```powershell
-node <skill>\scripts\build.mjs docs_v2\document.json --out docs_v2\documentacao-v2.html --force
-node <skill>\scripts\verify.mjs docs_v2\document.json docs_v2\documentacao-v2.validation.json
+# Inventário estático e plano de leitura
+python <skill>/scripts/inspect_repo.py . --out docs_v2/inventory.json --plan docs_v2/reading-plan.md
+
+# Impacto incremental contra uma documentação existente
+node <skill>/scripts/verify.mjs docs_v2/document.json docs_v2/documentacao-v2.validation.json --impact --dossier docs_v2/inventory.json --plan docs_v2/update-plan.md
+
+# Build e verificação
+node <skill>/scripts/build.mjs docs_v2/document.json --out docs_v2/documentacao-v2.html --force
+node <skill>/scripts/verify.mjs docs_v2/document.json docs_v2/documentacao-v2.validation.json
 ```
 
-> Limitação: este manual descreve a revisão de código e o snapshot local indicados no cabeçalho. Ele não certifica uma execução de produção, não atualiza os dados e não substitui a leitura do estado, dos logs do Actions ou dos pacotes aprovados.
+> Regra de negócio: a documentação descreve a implementação da revisão indicada e o snapshot local identificado; ela não substitui a leitura do dashboard, das Releases ou dos relatórios oficiais para decisões operacionais.
+
+> Limitação: o código prova a implementação, não uma execução de produção bem-sucedida. Números do snapshot têm data e origem; não devem ser tratados como telemetria ao vivo.

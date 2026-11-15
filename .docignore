@@ -1,0 +1,14 @@
+.git/
+.venv/
+.runtime/
+.pytest_cache/
+__pycache__/
+node_modules/
+site/
+data/
+artifacts/
+docs/
+docs_v2/
+docs_v2_old/
+docs_v3/
+*.egg-info/

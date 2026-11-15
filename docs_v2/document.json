@@ -1,237 +1,140 @@
 {
   "title": "Admin Metrics · Observatório Santander",
-  "subtitle": "Monitor horário dos oito reportes Admin do Open Finance: escopo, regras, dados, dashboard e operação.",
-  "eyebrow": "Documentação funcional e técnica · Admin Metrics",
-  "version": "2.0",
+  "subtitle": "Manual funcional e técnico do monitor horário dos oito reportes Admin do Open Finance Santander: coleta auditável, análise de incidentes, publicação estática, consulta dos dados e recuperação.",
+  "eyebrow": "Open Finance · Admin 2.0.1 · Observabilidade operacional",
+  "version": "Documentação v2 · pacote 1.2.0",
   "updated": "2026-11-15",
   "language": "pt-BR",
   "theme": "santander",
   "content": "content.md",
   "repoRoot": "..",
-  "revision": "042610172aafa30179b19a74a7df5b2e14259043",
-  "dataAsOf": "Código em 15/11/2026 (revisão 0426101); snapshot local de implementação em 10/11/2026 18:37 UTC — não é telemetria de produção.",
+  "revision": "5a8cda640e978d668e28e49053a52fb3a7314d0a",
+  "dataAsOf": "2026-11-10T18:37:28Z · snapshot local de site/dashboard.json; não é telemetria ao vivo",
   "cards": [
     {
       "label": "Origens",
-      "value": "8 reportes Admin",
-      "description": "GET /open-banking/admin/v2/metrics nos oito hosts Santander; nenhum endpoint de cliente é chamado."
+      "value": "8 hosts Admin",
+      "description": "Somente GET /open-banking/admin/v2/metrics dos reportes Santander catalogados e verificados no Diretório oficial."
     },
     {
       "label": "Cadência / janela",
-      "value": "1×/h · 72 h",
-      "description": "Cron 17 * * * * UTC; o dashboard publica 3 dias e o estado normalizado retém 30 dias."
+      "value": "1×/hora · :17 UTC",
+      "description": "Agenda GitHub Actions em melhor esforço; painel com 72 horas de observações próprias e estado normalizado de 30 dias."
     },
     {
       "label": "Entrega / grão",
-      "value": "Dashboard + Parquet",
-      "description": "Uma linha por endpoint × reporte × observação; o panorama usa um ciclo completo e um único dia."
+      "value": "1 linha = 1 endpoint × fonte × ciclo",
+      "description": "Dashboard estático, JSON, Parquet/DuckDB e manual offline; cada linha preserva a identidade do endpoint reportado."
     },
     {
       "label": "Escopo / limites",
-      "value": "Somente Admin",
-      "description": "Métricas autodeclaradas; média não é p95; sem causa, sem p95 e sem laudo regulatório."
+      "value": "Admin only",
+      "description": "Nenhuma chamada aos serviços de clientes citados no relatório; média declarada não é p95 e erro/rejeição não provam causa."
     }
   ],
   "sections": [
     {
-      "id": "resumo-executivo",
-      "title": "Resumo executivo",
+      "id": "resumo",
+      "title": "Resumo executivo e escopo",
       "audience": "all",
-      "sources": ["readme", "rules"]
+      "sources": ["readme", "pyproject", "pages-workflow"]
     },
     {
-      "id": "escopo-funcional",
-      "title": "Escopo funcional e origens",
-      "audience": "business",
-      "sources": ["reporters", "catalog", "readme"]
+      "id": "estado",
+      "title": "Estado atual observado",
+      "audience": "technical",
+      "sources": ["readme", "build", "tests-pipeline", "tests-dashboard"]
     },
     {
-      "id": "dashboard",
-      "title": "Como usar o dashboard",
+      "id": "uso",
+      "title": "Uso do dashboard e leitura executiva",
       "audience": "business",
-      "sources": ["dashboard-html", "dashboard-js", "rules"]
-    },
-    {
-      "id": "regras-negocio",
-      "title": "Regras de negócio e triagem",
-      "audience": "business",
-      "sources": ["rules", "analysis", "tests-analysis"]
+      "sources": ["web-index", "web-app", "tests-dashboard", "readme"]
     },
     {
       "id": "arquitetura",
       "title": "Arquitetura da solução",
       "audience": "technical",
-      "sources": ["collect", "analysis", "build", "archive", "cloud", "pages-workflow"]
+      "sources": ["readme", "pipeline", "build", "docs-generator", "cloud-pipeline", "pages-workflow"]
     },
     {
-      "id": "coleta-processamento",
-      "title": "Coleta e processamento",
+      "id": "fluxo",
+      "title": "Fluxo de coleta, análise e publicação",
       "audience": "technical",
-      "sources": ["collect", "health", "tests-collect"]
+      "sources": ["pipeline", "collect", "analysis", "build", "archive", "cloud-pipeline"]
     },
     {
-      "id": "modelo-dados",
-      "title": "Modelo de dados e grão",
+      "id": "regras",
+      "title": "Regras de negócio e critérios analíticos",
+      "audience": "business",
+      "sources": ["rules-config", "rules", "analysis", "tests-analysis", "tests-rules"]
+    },
+    {
+      "id": "dados",
+      "title": "Modelo de dados e dicionário",
       "audience": "technical",
-      "sources": ["analysis", "storage", "build", "archive", "tests-analysis"]
+      "sources": ["analysis", "storage", "build", "marts-sql", "docs-generator", "tests-analysis"]
     },
     {
-      "id": "linhagem-marts",
-      "title": "Linhagem, marts e consultas",
+      "id": "consumo",
+      "title": "Consulta e consumo dos dados",
       "audience": "technical",
-      "sources": ["build", "marts", "tests-pipeline"]
-    },
-    {
-      "id": "continuidade-qualidade",
-      "title": "Continuidade, qualidade e incidentes",
-      "audience": "operations",
-      "sources": ["panorama", "analysis", "health", "tests-panorama", "tests-analysis"]
-    },
-    {
-      "id": "consulta-dados",
-      "title": "Como consultar os dados",
-      "audience": "technical",
-      "sources": ["build", "marts", "dashboard-js", "dashboard-html"]
+      "sources": ["build", "marts-sql", "docs-generator", "readme"]
     },
     {
       "id": "operacao",
-      "title": "Operação e recuperação",
+      "title": "Operação, agenda e recuperação",
       "audience": "operations",
-      "sources": ["cloud", "archive", "pages-workflow", "ci-workflow", "pyproject", "readme"]
+      "sources": ["readme", "pages-workflow", "cloud-pipeline", "archive", "rules", "tests-cloud"]
+    },
+    {
+      "id": "qualidade",
+      "title": "Qualidade, continuidade e limites",
+      "audience": "operations",
+      "sources": ["collect", "analysis", "health", "panorama", "tests-collect", "tests-panorama", "archive", "tests-pipeline"]
     },
     {
       "id": "decisoes",
-      "title": "Decisões de projeto e limitações",
+      "title": "Decisões de implementação e configuração",
       "audience": "technical",
-      "sources": ["readme", "rules", "pages-workflow", "build"]
+      "sources": ["readme", "storage", "archive", "collect", "build", "rules", "tests-rules", "cloud-pipeline"]
     },
     {
-      "id": "glossario",
+      "id": "referencias",
       "title": "Glossário e referências",
       "audience": "all",
-      "sources": ["reporters", "catalog", "rules", "readme"]
+      "sources": ["readme", "pyproject", "catalog-evidence", "docs-generator", "web-index"]
     }
   ],
   "sources": [
-    {
-      "id": "readme",
-      "path": "README.md",
-      "description": "Visão de produto, escopo, engenharia, operação e limitações declaradas."
-    },
-    {
-      "id": "collect",
-      "path": "src/admin_metrics/collect.py",
-      "description": "Catálogo, TLS, timeout, retries, paginação, deduplicação e repetição de vazio."
-    },
-    {
-      "id": "analysis",
-      "path": "src/admin_metrics/analysis.py",
-      "description": "Normalização, taxas, flags, deltas, fingerprints, incidentes e retenção."
-    },
-    {
-      "id": "pipeline",
-      "path": "src/admin_metrics/pipeline.py",
-      "description": "Orquestração local: coleta, aplicação, build e commit do estado."
-    },
-    {
-      "id": "build",
-      "path": "src/admin_metrics/build.py",
-      "description": "Arrow, DuckDB, Parquet, payload, assets, Pages e limites de publicação."
-    },
-    {
-      "id": "marts",
-      "path": "src/admin_metrics/marts.sql",
-      "description": "Definições SQL de report_summary, family_summary e observation_trends."
-    },
-    {
-      "id": "rules",
-      "path": "config/rules.json",
-      "description": "Limiares, amostras, retenção, janela, agenda e parâmetros versionados."
-    },
-    {
-      "id": "reporters",
-      "path": "config/reporters.json",
-      "description": "Catálogo dos oito reportes, identidades, CNPJs e hosts Admin."
-    },
-    {
-      "id": "catalog",
-      "path": "config/catalog-evidence.json",
-      "description": "Evidência de verificação de URL/CNPJ no Diretório oficial."
-    },
-    {
-      "id": "panorama",
-      "path": "src/admin_metrics/panorama.py",
-      "description": "Seleção do último ciclo completo e de um único dia por recorte."
-    },
-    {
-      "id": "health",
-      "path": "src/admin_metrics/health.py",
-      "description": "Resultado da coleta e saúde agregada independentes da publicação."
-    },
-    {
-      "id": "storage",
-      "path": "src/admin_metrics/storage.py",
-      "description": "Hash, escrita atômica, lock exclusivo e envelope de estado."
-    },
-    {
-      "id": "archive",
-      "path": "src/admin_metrics/archive.py",
-      "description": "Pacote limitado, manifesto, checksums e restore com rollback."
-    },
-    {
-      "id": "cloud",
-      "path": "scripts/cloud_pipeline.py",
-      "description": "Restore, candidato draft, promoção após deploy e retenção de duas Releases."
-    },
-    {
-      "id": "pages-workflow",
-      "path": ".github/workflows/pages.yml",
-      "description": "Agenda, jobs build/deploy/confirm, permissões e publicação do Pages."
-    },
-    {
-      "id": "ci-workflow",
-      "path": ".github/workflows/ci.yml",
-      "description": "Matriz de testes Windows/Linux e verificações de Python e Node."
-    },
-    {
-      "id": "dashboard-html",
-      "path": "src/admin_metrics/web/index.html",
-      "description": "Estrutura da home, seções, controles, CSP e links de documentação."
-    },
-    {
-      "id": "dashboard-js",
-      "path": "src/admin_metrics/web/app.js",
-      "description": "Renderização, filtros, gráficos, detalhes, monitor, CSV e deep links."
-    },
-    {
-      "id": "pyproject",
-      "path": "pyproject.toml",
-      "description": "Versão do pacote, dependências, entrypoint e configuração de testes."
-    },
-    {
-      "id": "tests-analysis",
-      "path": "tests/test_analysis.py",
-      "description": "Casos de taxas, deltas, qualidade, incidentes, recuperação e retenção."
-    },
-    {
-      "id": "tests-collect",
-      "path": "tests/test_collect.py",
-      "description": "Casos de paginação, conflitos, retry, vazio, limites e dia por página."
-    },
-    {
-      "id": "tests-pipeline",
-      "path": "tests/test_pipeline.py",
-      "description": "Casos ponta a ponta de marts, archive, restore, retenção e falha preservada."
-    },
-    {
-      "id": "tests-panorama",
-      "path": "tests/test_panorama.py",
-      "description": "Casos de panorama preservado, falha parcial, dia misto e recuperação."
-    },
-    {
-      "id": "tests-cloud",
-      "path": "tests/test_cloud.py",
-      "description": "Casos de promoção, recibos de deploy, Releases e resumo de saúde."
-    }
+    { "id": "readme", "path": "README.md", "description": "Escopo, regras, operação e limites declarados pelo projeto." },
+    { "id": "pyproject", "path": "pyproject.toml", "description": "Pacote, versão, dependências e entrada de linha de comando." },
+    { "id": "rules-config", "path": "config/rules.json", "description": "Parâmetros analíticos e de apresentação versionados." },
+    { "id": "reporters-config", "path": "config/reporters.json", "description": "Catálogo dos oito reportes Admin permitidos." },
+    { "id": "catalog-evidence", "path": "config/catalog-evidence.json", "description": "Comprovação de vínculo entre URL Admin, CNPJ e empresa no Diretório." },
+    { "id": "pipeline", "path": "src/admin_metrics/pipeline.py", "description": "Orquestração da coleta, aplicação, build e commit de estado." },
+    { "id": "collect", "path": "src/admin_metrics/collect.py", "description": "HTTP, catálogo, paginação, retries, deduplicação e bronze." },
+    { "id": "analysis", "path": "src/admin_metrics/analysis.py", "description": "Normalização, contratos, deltas, sinais e ciclo de vida dos incidentes." },
+    { "id": "storage", "path": "src/admin_metrics/storage.py", "description": "Hash SHA-256, escrita atômica, lock e contrato do estado." },
+    { "id": "archive", "path": "src/admin_metrics/archive.py", "description": "Pacote limitado, checksums e restauração segura do estado." },
+    { "id": "build", "path": "src/admin_metrics/build.py", "description": "Arrow, DuckDB, marts, Parquet e artefatos estáticos." },
+    { "id": "panorama", "path": "src/admin_metrics/panorama.py", "description": "Seleção do último ciclo completo e de um único dia por recorte." },
+    { "id": "health", "path": "src/admin_metrics/health.py", "description": "Saúde da coleta independente do sucesso de publicação." },
+    { "id": "rules", "path": "src/admin_metrics/rules.py", "description": "Validação tipada das regras e geração do cron." },
+    { "id": "contracts", "path": "src/admin_metrics/contracts.py", "description": "Validação passiva das URIs declaradas, sem chamadas." },
+    { "id": "docs-generator", "path": "src/admin_metrics/documentation.py", "description": "Gerador do manual runtime autocontido publicado no site." },
+    { "id": "marts-sql", "path": "src/admin_metrics/marts.sql", "description": "Definições SQL de report_summary, family_summary e observation_trends." },
+    { "id": "web-index", "path": "src/admin_metrics/web/index.html", "description": "Estrutura, navegação e links do dashboard publicado." },
+    { "id": "web-app", "path": "src/admin_metrics/web/app.js", "description": "Filtros, indicadores, gráficos, detalhes e exportação do dashboard." },
+    { "id": "cloud-pipeline", "path": "scripts/cloud_pipeline.py", "description": "Ciclo de release: restore, candidato, promoção, descarte e retenção." },
+    { "id": "pages-workflow", "path": ".github/workflows/pages.yml", "description": "Agenda horária, build, deploy Pages e confirmação do candidato." },
+    { "id": "ci-workflow", "path": ".github/workflows/ci.yml", "description": "Matriz de testes Python e verificações do dashboard em CI." },
+    { "id": "tests-analysis", "path": "tests/test_analysis.py", "description": "Contratos de normalização, intervalos, incidentes e retenção." },
+    { "id": "tests-collect", "path": "tests/test_collect.py", "description": "Cenários de paginação, retry, vazio, conflito e limites." },
+    { "id": "tests-pipeline", "path": "tests/test_pipeline.py", "description": "Ponta a ponta, arquivo, restore, falha de build e retenção." },
+    { "id": "tests-panorama", "path": "tests/test_panorama.py", "description": "Continuidade do panorama e escopos sem mistura de ciclos." },
+    { "id": "tests-cloud", "path": "tests/test_cloud.py", "description": "Promoção, recibos, retenção de releases e links de execução." },
+    { "id": "tests-rules", "path": "tests/test_rules.py", "description": "Limites de configuração e aderência do cron ao workflow." },
+    { "id": "tests-dashboard", "path": "tests/test_dashboard.cjs", "description": "Comportamentos do dashboard em cenários de falha e janela fixa." }
   ]
 }
